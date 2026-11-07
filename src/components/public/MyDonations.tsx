@@ -4,158 +4,355 @@ import Link from "next/link";
 import { useMemo, useSyncExternalStore } from "react";
 import { useQuery } from "convex/react";
 import { useI18n } from "@/lib/i18n";
+import { useSession } from "@/lib/session";
 import type { DictKey } from "@/lib/dict";
+import { DoubleRule, FlagBand, Kicker, StageSwatch, btn, intlLocale } from "@/components/ui/tricolor";
+import { MaterialGlyph } from "@/components/ui/MaterialGlyph";
 import { parsePledges, pledgesSnapshot, subscribePledges, type SavedPledge } from "@/components/donate/followTokens";
 import { CategoryBadge } from "./CategoryBadge";
-import { MaterialImage } from "./MaterialImage";
 import { PledgeProgress, VerifiedHeadline, pledgeStageQty } from "./PledgeProgress";
-import { DemoStamp, DemoTag, PausedNotice, StatusBadge, useDateFmt } from "./PublicMeta";
+import { DemoStamp, PausedNotice, StatusBadge, useDateFmt } from "./PublicMeta";
 import { api } from "../../../convex/_generated/api";
 import type { FollowPledgeData } from "./publicApi";
 
-type Row = { saved: SavedPledge; data: FollowPledgeData | null };
+type Source = "account" | "device";
+type Row = { key: string; source: Source; saved: SavedPledge | null; data: FollowPledgeData | null };
 
-export function MyDonations() {
-  const { t } = useI18n();
+const inactive = (d: FollowPledgeData) => d.status === "canceled" || d.status === "expired";
+
+/** Pledges saved on this device (follow tokens in localStorage), matched to server rows. */
+function useDeviceRows(): Row[] | undefined {
   // null on the server / before hydration so we don't flash "empty".
   const raw = useSyncExternalStore(subscribePledges, pledgesSnapshot, () => null);
   const saved = useMemo(() => (raw === null ? null : parsePledges(raw)), [raw]);
   const tokens = useMemo(() => (saved ?? []).map((p) => p.token), [saved]);
   const results = useQuery(api.public.myPledges, saved && tokens.length > 0 ? { followTokens: tokens } : "skip");
 
-  const rows: Row[] | undefined = useMemo(() => {
+  return useMemo(() => {
     if (!saved) return undefined;
     if (tokens.length === 0) return [];
     if (results === undefined) return undefined;
-    // myPledges omits tokens: match by pledgeId (saved since Update 2), else by item + qty + closest time.
-    const pool = [...results];
-    const take = (i: number) => (i >= 0 ? pool.splice(i, 1)[0] : null);
-    const byToken = new Map<string, Row["data"]>();
-    for (const sp of saved) {
-      if (!sp.pledgeId) continue;
-      byToken.set(sp.token, take(pool.findIndex((r) => r.pledgeId === sp.pledgeId)));
-    }
-    for (const sp of saved) {
-      if (sp.pledgeId) continue;
-      let best = -1;
-      let bestGap = 10 * 60_000;
-      pool.forEach((r, i) => {
-        const gap = Math.abs(r.createdAt - sp.at);
-        if (r.qty === sp.qty && r.need.nameEs === sp.nameEs && gap < bestGap) {
-          best = i;
-          bestGap = gap;
-        }
-      });
-      byToken.set(sp.token, take(best));
-    }
-    return saved.map((s) => ({ saved: s, data: byToken.get(s.token) ?? null }));
+    const byToken = new Map(results.map((r) => [r.followToken, r]));
+    return saved.map((s) => ({
+      key: `device:${s.token}`,
+      source: "device" as const,
+      saved: s,
+      data: byToken.get(s.token) ?? null,
+    }));
   }, [saved, tokens, results]);
+}
 
-  const totals = useMemo(() => {
-    let pledged = 0;
-    let verified = 0;
-    for (const r of rows ?? []) {
-      if (!r.data || r.data.status === "canceled" || r.data.status === "expired") continue;
-      const q = pledgeStageQty(r.data);
-      pledged += q.pledged;
-      verified += q.verified;
+export function MyDonations() {
+  const { user, sessionToken } = useSession();
+  const isDonor = user?.role === "donor" && !!sessionToken;
+  const deviceRows = useDeviceRows();
+  const account = useQuery(api.donor.myPledges, isDonor && sessionToken ? { sessionToken } : "skip");
+
+  // Donor: account pledges first, then any device-only pledges (dedupe by pledgeId).
+  const donorRows: Row[] | undefined = useMemo(() => {
+    if (!isDonor || account === undefined || deviceRows === undefined) return undefined;
+    const ids = new Set<string>(account.map((a) => a.pledgeId));
+    const rows: Row[] = account.map((a) => ({ key: `acct:${a.pledgeId}`, source: "account", saved: null, data: a }));
+    for (const r of deviceRows) {
+      const id = r.data?.pledgeId ?? r.saved?.pledgeId;
+      if (id && ids.has(id)) continue;
+      if (id) ids.add(id);
+      rows.push(r);
     }
-    return { pledged, verified };
-  }, [rows]);
+    return rows;
+  }, [isDonor, account, deviceRows]);
+
+  if (isDonor) return <DonorHome name={user.name} rows={donorRows} />;
+  return <AnonymousView rows={deviceRows} showSignInHint={user === null} />;
+}
+
+function totalsOf(rows: Row[] | undefined) {
+  let committed = 0;
+  let received = 0;
+  let verified = 0;
+  for (const r of rows ?? []) {
+    if (!r.data || inactive(r.data)) continue;
+    const q = pledgeStageQty(r.data);
+    committed += q.pledged;
+    received += q.received;
+    verified += q.verified;
+  }
+  return { committed, received, verified };
+}
+
+/* ------------------------------------------------------------------ */
+/* Signed-in donor                                                     */
+/* ------------------------------------------------------------------ */
+
+type Group = "waiting" | "custody" | "verified" | "closed";
+const GROUPS: Group[] = ["waiting", "custody", "verified", "closed"];
+
+function groupOf(d: FollowPledgeData): Group {
+  if (inactive(d)) return "closed";
+  const q = pledgeStageQty(d);
+  if (q.verified > 0) return "verified";
+  if (q.received > 0) return "custody";
+  return "waiting";
+}
+
+function DonorHome({ name, rows }: { name: string; rows: Row[] | undefined }) {
+  const { t, locale } = useI18n();
+  const nf = new Intl.NumberFormat(intlLocale(locale));
+  const totals = totalsOf(rows);
+  const live = (rows ?? []).filter((r): r is Row & { data: FollowPledgeData } => !!r.data);
+  const action = live.filter((r) => r.data.status === "active" && r.data.receivedQty < r.data.qty);
+  const grouped = GROUPS.map((g) => ({ g, items: live.filter((r) => groupOf(r.data) === g) })).filter((x) => x.items.length);
+  const missing = (rows ?? []).filter((r) => !r.data);
 
   return (
-    <div className="pt-6 sm:pt-10 max-w-3xl">
-      <h1 className="font-display text-4xl sm:text-5xl font-semibold leading-[1.05]">{t("donations.title")}</h1>
-      <p className="mt-3 text-lg text-muted leading-relaxed">{t("donations.lead")}</p>
+    <div className="max-w-3xl pt-6 sm:pt-10">
+      <Kicker>{t("donorHome.kicker")}</Kicker>
+      <h1 className="mt-1 font-display text-4xl font-normal leading-[1.05] sm:text-5xl">
+        {t("donorHome.greeting").replace("{name}", name)}
+      </h1>
+      <p className="mt-3 text-lg leading-relaxed text-muted">{t("donorHome.lead")}</p>
       <DemoStamp className="mt-4" />
 
       {rows === undefined ? (
         <p className="mt-10 text-muted">{t("common.loading")}</p>
       ) : rows.length === 0 ? (
-        <div className="mt-10 rounded-3xl border-2 border-dashed border-border p-8 text-center">
-          <p className="font-display text-2xl font-semibold">{t("donations.empty")}</p>
-          <Link
-            href="/donate"
-            className="mt-5 inline-flex rounded-full bg-clay text-white px-6 py-3.5 font-semibold shadow-[0_2px_0_var(--brick)]"
-          >
-            {t("donations.emptyCta")}
-          </Link>
-        </div>
+        <EmptyState text={t("donorHome.empty")} />
       ) : (
         <>
-          <dl className="mt-8 grid grid-cols-2 border-y-2 border-foreground/80">
-            <div className="py-4 pr-3">
-              <dd className="font-display text-4xl font-semibold tabular-nums text-amber">{totals.pledged}</dd>
-              <dt className="text-sm text-muted">{t("donations.totalPledged")}</dt>
-            </div>
-            <div className="py-4 pl-4 border-l border-border">
-              <dd className="font-display text-4xl font-semibold tabular-nums text-leaf">{totals.verified}</dd>
-              <dt className="text-sm font-semibold text-leaf">{t("donations.totalVerified")}</dt>
-            </div>
+          <DoubleRule className="mt-8" />
+          <dl className="grid grid-cols-3">
+            <TotalCell label={t("donorHome.totalCommitted")} value={nf.format(totals.committed)} stage="pledged" tone="text-gold-ink" />
+            <TotalCell label={t("donorHome.totalReceived")} value={nf.format(totals.received)} stage="received" tone="text-foreground" border />
+            <TotalCell label={t("donorHome.totalVerified")} value={nf.format(totals.verified)} stage="verified" tone="text-emerald" border />
           </dl>
-          <ul className="mt-8 space-y-5">
-            {rows.map((r) => (
-              <PledgeItem key={r.saved.token} row={r} />
+          <p className="border-t border-border pt-2 text-xs text-muted">{t("donorHome.totalsNote")}</p>
+
+          <section aria-labelledby="donor-action" className="mt-10">
+            <h2 id="donor-action" className="font-display text-2xl font-normal">
+              {t("donorHome.actionTitle")}
+            </h2>
+            {action.length === 0 ? (
+              <p className="mt-3 border-y border-border py-4 text-muted">{t("donorHome.noAction")}</p>
+            ) : (
+              <ul className="mt-3 space-y-3">
+                {action.map((r) => (
+                  <ActionItem key={r.key} data={r.data} />
+                ))}
+              </ul>
+            )}
+          </section>
+
+          <section aria-labelledby="donor-history" className="mt-12">
+            <h2 id="donor-history" className="font-display text-2xl font-normal">
+              {t("donorHome.historyTitle")}
+            </h2>
+            {grouped.map(({ g, items }) => (
+              <div key={g} className="mt-6">
+                <h3 className="flex items-center gap-2 border-b border-rule pb-1.5 text-sm font-semibold">
+                  {g !== "closed" && <StageSwatch stage={g === "waiting" ? "pledged" : g === "custody" ? "received" : "verified"} />}
+                  {t(`donorHome.group.${g}` as DictKey)}
+                  <span className="ml-auto font-display text-base font-normal tabular-nums text-muted">{items.length}</span>
+                </h3>
+                <ul className="mt-4 space-y-5">
+                  {items.map((r) => (
+                    <PledgeItem key={r.key} row={r} showSource />
+                  ))}
+                </ul>
+              </div>
             ))}
-          </ul>
-          <p className="mt-6 text-xs text-muted">{t("donations.localOnly")}</p>
+            {missing.length > 0 && (
+              <ul className="mt-6 space-y-3">
+                {missing.map((r) => (
+                  <PledgeItem key={r.key} row={r} />
+                ))}
+              </ul>
+            )}
+          </section>
         </>
       )}
     </div>
   );
 }
 
-function PledgeItem({ row }: { row: Row }) {
+function TotalCell({
+  label,
+  value,
+  stage,
+  tone,
+  border = false,
+}: {
+  label: string;
+  value: string;
+  stage: "pledged" | "received" | "verified";
+  tone: string;
+  border?: boolean;
+}) {
+  return (
+    <div className={`flex flex-col-reverse justify-end py-4 ${border ? "border-l border-border pl-3 sm:pl-4" : "pr-3"}`}>
+      <dt className="mt-1 flex items-start gap-1.5 text-[13px] leading-snug text-muted">
+        <StageSwatch stage={stage} className="mt-1" />
+        {label}
+      </dt>
+      <dd className={`font-display text-4xl font-normal tabular-nums leading-none sm:text-5xl ${tone}`}>{value}</dd>
+    </div>
+  );
+}
+
+function ActionItem({ data }: { data: FollowPledgeData }) {
+  const { t, pick, locale } = useI18n();
+  const fmt = useDateFmt();
+  const nf = new Intl.NumberFormat(intlLocale(locale));
+  const instructions = data.mode === "request_instructions";
+  const remaining = data.qty - data.receivedQty;
+  return (
+    <li className="flex flex-col gap-3 border-l-2 border-gold bg-gold-soft/60 px-4 py-3 sm:flex-row sm:items-center">
+      <div className="flex min-w-0 flex-1 items-center gap-3">
+        <MaterialGlyph itemKey={data.need.itemKey} className="size-10 shrink-0 text-gold-ink" />
+        <div className="min-w-0">
+          <p className="font-semibold text-gold-ink">
+            {instructions ? t("donorHome.expectInstructions") : t("donorHome.expectDelivery")}
+          </p>
+          <p className="text-sm">
+            {t("donorHome.remaining")}:{" "}
+            <strong className="tabular-nums">{nf.format(remaining)}</strong> {pick(data.need.nameEs, data.need.nameEn).toLocaleLowerCase(locale)}
+            {data.project && <span className="text-muted"> · {data.project.publicAlias}</span>}
+          </p>
+          <p className="text-xs text-muted">
+            {t("donorHome.expires")} {fmt.date(data.expiresAt)}
+          </p>
+        </div>
+      </div>
+      <Link href={`/follow/${data.followToken}`} className={btn("secondary", "sm", "shrink-0 self-start sm:self-center")}>
+        {t("donations.follow")}
+      </Link>
+    </li>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* Anonymous (device-only follow tokens)                               */
+/* ------------------------------------------------------------------ */
+
+function AnonymousView({ rows, showSignInHint }: { rows: Row[] | undefined; showSignInHint: boolean }) {
+  const { t, locale } = useI18n();
+  const nf = new Intl.NumberFormat(intlLocale(locale));
+  const totals = totalsOf(rows);
+  return (
+    <div className="pt-6 sm:pt-10 max-w-3xl">
+      <Kicker>{t("donations.receiptKicker")}</Kicker>
+      <h1 className="mt-1 font-display text-[2.6rem] sm:text-6xl font-normal leading-[1.02]">{t("donations.title")}</h1>
+      <p className="mt-3 text-[17px] text-muted leading-relaxed max-w-prose">{t("donations.lead")}</p>
+      <DemoStamp className="mt-4" />
+      {showSignInHint && <p className="mt-4 border-l-2 border-rule pl-3 text-sm text-muted">{t("donorHome.signInHint")}</p>}
+
+      {rows === undefined ? (
+        <p className="mt-10 text-muted">{t("common.loading")}</p>
+      ) : rows.length === 0 ? (
+        <EmptyState text={t("donations.empty")} />
+      ) : (
+        <>
+          <dl className="mt-8 grid grid-cols-2 border-y border-rule">
+            <div className="py-5 pr-3 flex flex-col-reverse justify-end">
+              <dt className="mt-1 flex items-center gap-2 text-sm text-gold-ink">
+                <StageSwatch stage="pledged" size={10} />
+                {t("donations.totalPledged")}
+              </dt>
+              <dd className="font-display text-5xl font-normal tabular-nums leading-none text-gold-ink">
+                {nf.format(totals.committed)}
+              </dd>
+            </div>
+            <div className="py-5 pl-5 border-l border-border flex flex-col-reverse justify-end">
+              <dt className="mt-1 flex items-center gap-2 text-sm font-semibold text-emerald">
+                <StageSwatch stage="verified" size={10} />
+                {t("donations.totalVerified")}
+              </dt>
+              <dd className="font-display text-5xl font-normal tabular-nums leading-none text-emerald">
+                {nf.format(totals.verified)}
+              </dd>
+            </div>
+          </dl>
+          <ul className="mt-2">
+            {rows.map((r) => (
+              <PledgeItem key={r.key} row={r} />
+            ))}
+          </ul>
+          <p className="mt-6 border-t border-rule pt-4 text-xs text-muted">{t("donations.localOnly")}</p>
+        </>
+      )}
+    </div>
+  );
+}
+
+function EmptyState({ text }: { text: string }) {
+  const { t } = useI18n();
+  return (
+    <div className="mt-10 border border-border">
+      <FlagBand />
+      <div className="p-8 sm:p-10 text-center">
+        <p className="font-display text-2xl font-normal">{text}</p>
+        <Link href="/donate" className={btn("primary", "lg", "mt-6")}>
+          {t("donations.emptyCta")}
+        </Link>
+      </div>
+    </div>
+  );
+}
+
+function PledgeItem({ row, showSource = false }: { row: Row; showSource?: boolean }) {
   const { t, pick } = useI18n();
   const fmt = useDateFmt();
   const { saved, data } = row;
   if (!data) {
+    if (!saved) return null;
     return (
-      <li className="rounded-3xl border border-border bg-surface p-5">
-        <p className="font-display text-xl font-semibold tabular-nums">
-          {saved.qty} {pick(saved.nameEs, saved.nameEn)} <span className="text-muted text-base">({saved.alias})</span>
+      <li className="border-b border-border py-6">
+        <p className="font-display text-2xl font-normal tabular-nums">
+          {saved.qty} {pick(saved.nameEs, saved.nameEn)}{" "}
+          <span className="font-sans text-base text-muted">({saved.alias})</span>
         </p>
         <p className="mt-1 text-sm text-muted">{t("donations.missing")}</p>
       </li>
     );
   }
-  const inactive = data.status === "canceled" || data.status === "expired";
+  const closed = inactive(data);
   const verified = pledgeStageQty(data).verified;
   return (
-    <li className={`rounded-3xl border bg-surface p-5 sm:p-6 ${verified > 0 ? "border-leaf/50" : "border-border"}`}>
+    <li className={`border-b border-border py-7 ${verified > 0 ? "border-l-2 border-l-emerald pl-4 sm:pl-5" : ""}`}>
       <div className="flex items-start gap-4">
-        <div className="size-14 shrink-0 rounded-2xl bg-background grid place-items-center">
-          <MaterialImage itemKey={data.need.itemKey} alt="" className="size-12" />
-        </div>
+        <MaterialGlyph itemKey={data.need.itemKey} className="mt-1 size-11 shrink-0 text-foreground" />
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
             {data.project && <CategoryBadge category={data.project.category} />}
             {data.project && <StatusBadge status={data.project.status} />}
-            <DemoTag />
+            {showSource && (
+              <span className="text-xs text-muted">
+                {t(row.source === "account" ? "donorHome.sourceAccount" : "donorHome.sourceDevice")}
+              </span>
+            )}
           </div>
-          <p className="mt-1.5 font-display text-2xl font-semibold tabular-nums leading-tight">
+          <p className="mt-2 font-display text-3xl font-normal tabular-nums leading-tight">
             {data.qty} {pick(data.need.nameEs, data.need.nameEn).toLocaleLowerCase()}
           </p>
-          <p className="text-sm text-muted">
-            {data.project?.publicAlias ?? saved.alias} · {t(`donate.mode.${data.mode}` as DictKey)} ·{" "}
+          <p className="mt-0.5 text-sm text-muted">
+            {data.project?.publicAlias ?? saved?.alias ?? ""} · {t(`donate.mode.${data.mode}` as DictKey)} ·{" "}
             {fmt.date(data.createdAt)}
           </p>
         </div>
       </div>
 
-      {inactive ? (
-        <p className="mt-4 inline-flex rounded-xl border-2 border-border px-3 py-1.5 font-semibold text-muted">
+      {closed ? (
+        <p className="mt-4 inline-flex rounded-[2px] px-3 py-1.5 font-display italic text-lg text-muted shadow-[inset_0_0_0_1px_var(--border)]">
           {t(`project.follow.status.${data.status}` as DictKey)}
         </p>
       ) : (
         <>
-          <div className="mt-5">
+          <div className="mt-6">
             <PledgeProgress data={data} compact />
           </div>
           {verified > 0 ? (
-            <VerifiedHeadline data={data} className="mt-4 text-2xl" />
+            <VerifiedHeadline data={data} className="mt-5 text-2xl" />
           ) : (
-            <p className="mt-4 text-sm font-semibold text-amber">{t("donations.notYetVerified")}</p>
+            <p className="mt-5 text-sm font-semibold text-gold-ink">{t("donations.notYetVerified")}</p>
           )}
         </>
       )}
@@ -166,15 +363,12 @@ function PledgeItem({ row }: { row: Row }) {
         </div>
       )}
 
-      <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-sm font-semibold">
-        <Link href={`/follow/${saved.token}`} className="underline underline-offset-4 decoration-2">
+      <div className="mt-3 flex flex-wrap gap-x-6 text-sm">
+        <Link href={`/follow/${data.followToken}`} className={btn("quiet", "md", "min-h-11")}>
           {t("donations.follow")}
         </Link>
         {data.project && (
-          <Link
-            href={`/transparency/projects/${data.project.projectId}`}
-            className="underline underline-offset-4 decoration-2"
-          >
+          <Link href={`/transparency/projects/${data.project.projectId}`} className={btn("quiet", "md", "min-h-11")}>
             {t("donate.viewProject")}
           </Link>
         )}

@@ -7,7 +7,8 @@ import type { Id } from "../../../convex/_generated/dataModel";
 import { useI18n } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
 import type { DictKey } from "@/lib/dict";
-import { Button, Chip, Label, Section, formatDate, inputCls, useAction } from "./ui";
+import { STAGE_TEXT, StageSwatch, stageFill } from "@/components/ui/tricolor";
+import { Button, Chip, Label, Section, VerifyMark, formatDate, inputCls, useAction } from "./ui";
 import { MaterialIcon } from "./MaterialIcon";
 import { EvidenceAttach, emptyEvidence, evidenceState, syntheticEvidence, useCommitEvidence, type EvidenceDraft } from "./EvidenceAttach";
 import type { ReviewData, ReviewNeed, ReviewPledge } from "./types";
@@ -16,16 +17,6 @@ type Stage = "requested" | "pledged" | "received" | "delivered" | "used" | "veri
 type Step = "received" | "delivered" | "used" | "verified";
 const STAGES: Stage[] = ["requested", "pledged", "received", "delivered", "used", "verified"];
 const STEPS: Step[] = ["received", "delivered", "used", "verified"];
-
-/** One colour per stage, used for the number, the bar and the step button dot. */
-const STAGE_TONE: Record<Stage, { text: string; bg: string }> = {
-  requested: { text: "text-foreground", bg: "bg-foreground/70" },
-  pledged: { text: "text-amber", bg: "bg-amber" },
-  received: { text: "text-sky", bg: "bg-sky" },
-  delivered: { text: "text-clay", bg: "bg-clay" },
-  used: { text: "text-leaf", bg: "bg-leaf/70" },
-  verified: { text: "text-leaf", bg: "bg-leaf" },
-};
 
 const STEP_LABEL: Record<Step, DictKey> = {
   received: "coord.markReceived",
@@ -52,6 +43,14 @@ export function LedgerPanel({ data }: { data: ReviewData }) {
   return (
     <Section title={t("coord.ledger")}>
       <p className="mb-4 max-w-prose text-sm text-muted">{t("coord.ledger6.note")}</p>
+      <ul aria-hidden className="mb-5 flex flex-wrap gap-x-4 gap-y-1.5 text-[13px] text-muted">
+        {STAGES.map((s) => (
+          <li key={s} className="inline-flex items-center gap-1.5">
+            <StageSwatch stage={s} />
+            {t(`coord.stage.${s}` as DictKey)}
+          </li>
+        ))}
+      </ul>
       <style>{`
         @keyframes coord-num { from { transform: translateY(-4px); opacity: .2 } to { transform: none; opacity: 1 } }
         .coord-num { animation: coord-num 320ms ease-out }
@@ -61,7 +60,7 @@ export function LedgerPanel({ data }: { data: ReviewData }) {
       {needs.length === 0 ? (
         <p className="text-sm text-muted">{t("coord.need.noneApproved")}</p>
       ) : (
-        <div className="space-y-5">
+        <div className="space-y-6">
           {needs.map((n) => (
             <NeedLedger
               key={n.needId}
@@ -88,7 +87,7 @@ function NeedLedger({
   isDemo: boolean;
   pledges: ReviewPledge[];
 }) {
-  const { t, pick } = useI18n();
+  const { t, pick, u } = useI18n();
   const { sessionToken, user } = useSession();
   const record = useMutation(api.coordinator.recordMaterialEvent);
   const commitEvidence = useCommitEvidence();
@@ -139,19 +138,19 @@ function NeedLedger({
   };
 
   return (
-    <article id={`need-${need.needId}`} className="scroll-mt-24 overflow-hidden rounded-lg border border-border bg-background/60">
-      <header className="flex flex-wrap items-center gap-3 px-4 pt-4">
-        <MaterialIcon itemKey={need.itemKey} label={name} size={44} />
+    <article id={`need-${need.needId}`} className="scroll-mt-24 rounded-[2px] border border-border bg-surface">
+      <header className="flex flex-wrap items-center gap-3 px-4 pt-4 sm:px-5">
+        <MaterialIcon itemKey={need.itemKey} label={name} size={48} />
         <div className="min-w-0 flex-1">
-          <h3 className="font-display text-xl font-semibold leading-tight">{name}</h3>
-          <p className="text-xs text-muted">{need.unit}</p>
+          <h3 className="font-display text-2xl font-normal leading-tight">{name}</h3>
+          <p className="text-[13px] text-muted">{u(need.unit)}</p>
         </div>
-        {need.status === "fulfilled" && <Chip tone="leaf">{t("coord.need.fulfilled")}</Chip>}
-        {need.needsConfirmation && <Chip tone="amber">{t("ledger.needsConfirmation")}</Chip>}
+        {need.status === "fulfilled" && <Chip tone="navy">{t("coord.need.fulfilled")}</Chip>}
+        {need.needsConfirmation && <Chip tone="gold">{t("ledger.needsConfirmation")}</Chip>}
       </header>
 
       {/* Six separate numbers — never summed into each other. */}
-      <dl className="mt-3 grid grid-cols-3 border-y border-border bg-surface sm:grid-cols-6">
+      <dl className="mt-4 grid grid-cols-3 border-y border-rule sm:grid-cols-6">
         {STAGES.map((s, i) => (
           <Num
             key={s}
@@ -165,7 +164,8 @@ function NeedLedger({
       <FlowBar values={values} />
 
       {/* The four staff steps, in order. */}
-      <div className="grid grid-cols-2 gap-2 px-4 pt-3 sm:grid-cols-4">
+      <p className="px-4 pt-4 font-display text-[15px] italic text-muted sm:px-5">{t("coord.ledger.steps")}</p>
+      <div className="grid grid-cols-2 gap-2 px-4 pt-2 sm:grid-cols-4 sm:px-5">
         {STEPS.map((s) => {
           const cap = s === "received" ? null : caps[s];
           const disabled = cap === 0;
@@ -175,21 +175,26 @@ function NeedLedger({
             <Button
               key={s}
               size="sm"
-              variant={isOpen || isNext ? "primary" : "ghost"}
+              variant={isOpen || isNext ? (s === "verified" ? "leaf" : "primary") : "ghost"}
               aria-expanded={isOpen}
               disabled={disabled}
               title={disabled ? t(`coord.cap.none.${s}` as DictKey) : undefined}
               onClick={() => setOpen(isOpen ? null : s)}
               className="justify-start! text-left"
             >
-              <span aria-hidden className={`inline-block h-2 w-2 shrink-0 rounded-full ${STAGE_TONE[s].bg}`} />
-              <span className="min-w-0 flex-1 leading-tight">{t(STEP_LABEL[s])}</span>
-              {cap !== null && cap > 0 && <span className="tabular-nums opacity-80">{cap}</span>}
+              <StageSwatch stage={s} className="shadow-[0_0_0_1px_var(--surface)]" />
+              <span className="min-w-0 flex-1 py-1 leading-tight">{t(STEP_LABEL[s])}</span>
+              {cap !== null && cap > 0 && <span className="font-display text-base font-normal tabular-nums">{cap}</span>}
             </Button>
           );
         })}
       </div>
-      {next === null && L.received > 0 && <p className="px-4 pt-2 text-xs text-leaf">{t("coord.allVerified")}</p>}
+      {next === null && L.received > 0 && (
+        <p className="flex items-center gap-1.5 px-4 pt-2 text-[13px] font-semibold text-emerald sm:px-5">
+          <VerifyMark />
+          {t("coord.allVerified")}
+        </p>
+      )}
 
       {open === "received" && (
         <ReceiveForm
@@ -222,16 +227,12 @@ function NeedLedger({
 
 function Num({ stage, label, value, className }: { stage: Stage; label: string; value: number | null; className: string }) {
   return (
-    <div className={`border-border px-3 py-3 ${className}`}>
-      <dt className="flex items-center gap-1.5 text-[11px] leading-tight text-muted sm:text-xs">
-        {stage === "verified" && (
-          <svg aria-hidden viewBox="0 0 16 16" className="h-3 w-3 fill-leaf">
-            <path d="M8 0l2 2.2 2.9-.5.5 2.9L16 6l-1.3 2.6L16 11l-2.6 1.4-.5 2.9-2.9-.5L8 16l-2-2.2-2.9.5-.5-2.9L0 10l1.3-2.6L0 5l2.6-1.4.5-2.9 2.9.5z" />
-          </svg>
-        )}
+    <div className={`border-border px-3 py-3 sm:px-4 ${className}`}>
+      <dt className={`flex items-center gap-1.5 text-xs leading-tight ${stage === "verified" ? "font-semibold text-emerald" : stage === "pledged" ? "text-gold-ink" : "text-muted"}`}>
+        {stage === "verified" ? <VerifyMark className="size-3" /> : <StageSwatch stage={stage} size={8} />}
         {label}
       </dt>
-      <dd className={`mt-1 font-display text-2xl font-semibold tabular-nums leading-none sm:text-[28px] ${value === 0 ? "text-muted/50" : STAGE_TONE[stage].text}`}>
+      <dd className={`mt-1.5 font-display text-[28px] font-normal tabular-nums leading-none sm:text-[32px] ${value === 0 ? "text-muted/50" : STAGE_TEXT[stage]}`}>
         {/* key forces a re-mount so the number flashes when it changes */}
         <span key={value ?? "x"} className="coord-num inline-block">
           {value ?? "?"}
@@ -246,10 +247,10 @@ function FlowBar({ values }: { values: Record<Stage, number | null> }) {
   const max = Math.max(values.requested ?? 0, values.pledged ?? 0, values.received ?? 0, 1);
   const pct = (n: number) => `${Math.min(100, (n / max) * 100)}%`;
   return (
-    <div aria-hidden className="grid grid-cols-5 gap-1.5 px-4 pt-3">
+    <div aria-hidden className="grid grid-cols-5 gap-1.5 px-4 pt-3 sm:px-5">
       {STAGES.slice(1).map((s) => (
-        <div key={s} className="h-1.5 overflow-hidden rounded-full bg-border/60">
-          <div className={`h-full rounded-full ${STAGE_TONE[s].bg} transition-[width] duration-500`} style={{ width: pct(values[s] ?? 0) }} />
+        <div key={s} className="h-1.5 overflow-hidden bg-stage-track">
+          <div className="h-full transition-[width] duration-500 motion-reduce:transition-none" style={{ width: pct(values[s] ?? 0), background: stageFill(s) }} />
         </div>
       ))}
     </div>
@@ -267,28 +268,29 @@ function PledgeList({
 }) {
   const { t } = useI18n();
   return (
-    <div className="px-4 pt-4">
-      <p className="mb-1.5 text-xs font-medium text-muted">
-        {t("coord.pledgesForNeed")} · <span className="font-normal">{t("coord.contactPrivate")}</span>
+    <div className="px-4 pt-5 sm:px-5">
+      <p className="mb-1.5 text-[13px] text-muted">
+        <span className="font-display text-[15px] italic">{t("coord.pledgesForNeed")}</span> · {t("coord.contactPrivate")}
       </p>
       {pledges.length === 0 ? (
         <p className="text-sm text-muted">{t("coord.noPledges")}</p>
       ) : (
-        <ul className="divide-y divide-border rounded-md border border-border bg-surface">
+        <ul className="divide-y divide-border border-y border-border">
           {pledges.map((pl) => {
             const remaining = pl.qty - pl.receivedQty;
             return (
-              <li key={pl.pledgeId} className="flex flex-col gap-2 px-3 py-2.5 sm:flex-row sm:items-center">
+              <li key={pl.pledgeId} className="flex flex-col gap-2 py-2.5 sm:flex-row sm:items-center">
                 <div className="min-w-0 flex-1">
-                  <p className="text-sm">
-                    <strong className="tabular-nums">{pl.qty}</strong> · {pl.donorName} <span className="text-muted">· {pl.donorContact}</span>
+                  <p className="text-[15px]">
+                    <span className="font-display text-lg tabular-nums text-gold-ink">{pl.qty}</span> · <span className="font-semibold">{pl.donorName}</span>{" "}
+                    <span className="text-muted">· {pl.donorContact}</span>
                   </p>
                   <div className="mt-1 flex flex-wrap gap-1.5">
-                    <Chip tone="sky">{t(`coord.mode.${pl.mode}` as DictKey)}</Chip>
-                    <Chip tone={pl.status === "active" ? "amber" : pl.status === "fulfilled" ? "leaf" : "neutral"}>
+                    <Chip tone="navy">{t(`coord.mode.${pl.mode}` as DictKey)}</Chip>
+                    <Chip tone={pl.status === "active" ? "gold" : pl.status === "fulfilled" ? "navy" : "neutral"}>
                       {t(`coord.pledge.${pl.status}` as DictKey)}
                     </Chip>
-                    <span className="text-xs tabular-nums text-muted">
+                    <span className="text-[13px] tabular-nums text-muted">
                       {t("ledger.received")} {pl.receivedQty}/{pl.qty}
                     </span>
                   </div>
@@ -323,28 +325,27 @@ function NeedLog({ need }: { need: ReviewNeed }) {
   const { t, pick, locale } = useI18n();
   const events = ((need as { events?: LogEvent[] }).events ?? []).slice().sort((a, b) => b.createdAt - a.createdAt);
   return (
-    <details className="group mx-4 mb-4 mt-3 rounded-md border border-border bg-surface" open={events.length > 0 && events.length <= 4}>
-      <summary className="flex cursor-pointer list-none items-center gap-2 px-3 py-2 text-xs font-medium text-muted">
+    <details className="group mx-4 mb-4 mt-4 border-t border-border sm:mx-5" open={events.length > 0 && events.length <= 4}>
+      <summary className="flex min-h-10 cursor-pointer list-none items-center gap-2 text-[13px] font-semibold text-muted">
         <span aria-hidden className="inline-block transition group-open:rotate-90">›</span>
         {t("coord.log")} <span className="tabular-nums">({events.length})</span>
       </summary>
       {events.length === 0 ? (
-        <p className="border-t border-border px-3 py-2 text-xs text-muted">{t("coord.log.empty")}</p>
+        <p className="pb-1 text-[13px] text-muted">{t("coord.log.empty")}</p>
       ) : (
-        <ol className="divide-y divide-border border-t border-border">
+        <ol className="divide-y divide-border border-t border-dotted border-border">
           {events.map((e) => {
-            const tone = e.eventType === "returned" ? "bg-brick" : STAGE_TONE[e.eventType].bg;
             const note = pick(e.noteEs ?? undefined, e.noteEn ?? undefined);
             return (
-              <li key={e.eventId} className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5 px-3 py-2 text-sm">
-                <span aria-hidden className={`h-2 w-2 shrink-0 translate-y-[-1px] rounded-full ${tone}`} />
-                <strong className="font-medium">{t(`coord.event.${e.eventType}` as DictKey)}</strong>
-                <span className="tabular-nums">{e.qty}</span>
+              <li key={e.eventId} className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5 py-2 text-sm">
+                <StageSwatch stage={e.eventType === "returned" ? "requested" : e.eventType} size={8} />
+                <strong className={`font-semibold ${e.eventType === "verified" ? "text-emerald" : ""}`}>{t(`coord.event.${e.eventType}` as DictKey)}</strong>
+                <span className="font-display text-base tabular-nums">{e.qty}</span>
                 <span className="text-muted">
                   {t("coord.log.by")} <span className="text-foreground">{e.actorName ?? "—"}</span>, {formatDate(e.createdAt, locale)}
                 </span>
-                {e.evidenceId && <Chip tone="sky">{t("coord.log.withEvidence")}</Chip>}
-                {note && <span className="w-full pl-4 text-xs text-muted">{note}</span>}
+                {e.evidenceId && <Chip tone="navy">{t("coord.log.withEvidence")}</Chip>}
+                {note && <span className="w-full pl-4 text-[13px] text-muted">{note}</span>}
               </li>
             );
           })}
@@ -380,7 +381,7 @@ function ReceiveForm({
 
   return (
     <form
-      className="mx-4 mt-3 space-y-3 rounded-md border border-sky/40 bg-sky-soft/40 p-3"
+      className="mx-4 mt-3 space-y-3 rounded-[2px] border border-rule bg-paper p-3 sm:mx-5 sm:p-4"
       onSubmit={(e) => {
         e.preventDefault();
         if (valid) onSubmit(n, sel?.pledgeId, ev);
@@ -448,7 +449,7 @@ function StepForm({
 
   return (
     <form
-      className="mx-4 mt-3 space-y-3 rounded-md border border-clay/40 bg-clay-soft/30 p-3"
+      className="mx-4 mt-3 space-y-3 rounded-[2px] border border-rule bg-paper p-3 sm:mx-5 sm:p-4"
       onSubmit={(e) => {
         e.preventDefault();
         if (!valid) return;
@@ -467,7 +468,7 @@ function StepForm({
         </div>
       </div>
       <EvidenceAttach id={`${id}-ev`} value={ev} onChange={setEv} syntheticPreset={isDemo ? preset : undefined} />
-      <FormFooter busy={busy} valid={valid} onCancel={onCancel} label={`${t(STEP_LABEL[step])} · ${qty || 0}`} signer={user?.name} />
+      <FormFooter busy={busy} valid={valid} onCancel={onCancel} label={`${t(STEP_LABEL[step])} · ${qty || 0}`} signer={user?.name} verify={step === "verified"} />
     </form>
   );
 }
@@ -498,13 +499,13 @@ function QtyField({
           autoFocus
           value={qty}
           onChange={(e) => setQty(e.target.value.replace(/[^\d]/g, ""))}
-          className={`${inputCls} w-24! text-right tabular-nums`}
+          className={`${inputCls} w-24! text-right font-display text-lg! tabular-nums`}
           aria-describedby={max !== undefined ? `${id}-max` : undefined}
         />
         <span className="text-sm text-muted">{unit}</span>
       </div>
       {max !== undefined && (
-        <p id={`${id}-max`} className="mt-1 text-xs text-muted">
+        <p id={`${id}-max`} className="mt-1 text-[13px] text-muted">
           {capLabel}: <span className="tabular-nums">{max}</span>
         </p>
       )}
@@ -518,24 +519,26 @@ function FormFooter({
   onCancel,
   label,
   signer,
+  verify,
 }: {
   busy: boolean;
   valid: boolean;
   onCancel: () => void;
   label: string;
   signer?: string;
+  verify?: boolean;
 }) {
   const { t } = useI18n();
   return (
     <div className="flex flex-wrap items-center gap-2">
-      <Button type="submit" variant="primary" busy={busy} disabled={!valid}>
+      <Button type="submit" variant={verify ? "leaf" : "primary"} busy={busy} disabled={!valid}>
         {label}
       </Button>
       <Button type="button" variant="quiet" onClick={onCancel}>
         {t("common.cancel")}
       </Button>
       {signer && (
-        <span className="ml-auto text-xs text-muted">
+        <span className="ml-auto text-[13px] text-muted">
           {t("coord.youWillSign")} <strong className="text-foreground">{signer}</strong>
         </span>
       )}

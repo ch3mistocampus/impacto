@@ -76,8 +76,8 @@ export function StageStrip({ totals, className = "" }: { totals: StageTotals; cl
   const { t, locale } = useI18n();
   const nf = (n: number) => n.toLocaleString(intlLocale(locale));
   return (
-    <dl className={`flex items-stretch gap-4 max-w-lg ${className}`}>
-      <div className="flex shrink-0 flex-col-reverse justify-center border-r border-border pr-4">
+    <dl className={`flex items-stretch gap-3 sm:gap-4 max-w-lg ${className}`}>
+      <div className="flex shrink-0 flex-col-reverse justify-center border-r border-border pr-3 sm:pr-4">
         <dt className="mt-1 flex items-center gap-1.5 text-[13px] font-semibold text-emerald">
           <span className="size-2.5" style={stageSwatch("verified")} aria-hidden />
           {t("stage.verified")}
@@ -86,7 +86,7 @@ export function StageStrip({ totals, className = "" }: { totals: StageTotals; cl
           {nf(totals.verified)}
         </dd>
       </div>
-      <div className="grid min-w-0 flex-1 grid-cols-[repeat(auto-fill,minmax(7.75rem,1fr))] content-center gap-x-4 gap-y-1 text-[13px]">
+      <div className="grid min-w-0 flex-1 grid-cols-[repeat(auto-fill,minmax(7.25rem,1fr))] content-center gap-x-2.5 gap-y-1 text-[13px]">
         {OTHERS.map((k) => (
           <div key={k} className="flex min-w-0 items-center gap-1.5">
             <span className="size-2.5 shrink-0" style={stageSwatch(k)} aria-hidden />

@@ -7,17 +7,20 @@ import { useI18n } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
 import type { DictKey } from "@/lib/dict";
 import { AiNever, Button, Chip, Label, Section, VerifiedBy, formatDate, inputCls, useAction } from "./ui";
+import { StageSwatch, type Stage } from "@/components/ui/tricolor";
 import { containsPrivate, type ReviewData, type ReviewReport } from "./types";
 
-const TYPE_TONE: Record<string, "amber" | "sky" | "leaf" | "clay" | "neutral" | "brick"> = {
-  pledge: "amber",
-  received: "sky",
-  used: "leaf",
-  outcome: "leaf",
-  paused: "brick",
-  approved: "clay",
-  published: "clay",
+/** Pledges are gold (a promise); everything else is ink. Esmeralda is reserved for the verified mark. */
+const TYPE_TONE: Record<string, "gold" | "navy" | "neutral"> = {
+  pledge: "gold",
+  received: "navy",
+  used: "navy",
+  outcome: "navy",
+  paused: "navy",
+  approved: "neutral",
+  published: "neutral",
 };
+const TYPE_STAGE: Record<string, Stage> = { pledge: "pledged", received: "received", used: "used", outcome: "used" };
 
 export function MilestonePanel({ data }: { data: ReviewData }) {
   const { t, pick, locale } = useI18n();
@@ -75,7 +78,7 @@ export function MilestonePanel({ data }: { data: ReviewData }) {
             <textarea id="ms-en" lang="en" rows={2} value={en} onChange={(e) => setEn(e.target.value)} className={inputCls} />
           </div>
           {leak && (
-            <p role="alert" className="rounded-md bg-brick-soft px-2.5 py-1.5 text-xs font-medium text-brick">
+            <p role="alert" className="rounded-[2px] border-l-2 border-red bg-red-soft px-2.5 py-1.5 text-[13px] font-semibold text-red">
               {t("coord.textWarnName")}
             </p>
           )}
@@ -84,7 +87,7 @@ export function MilestonePanel({ data }: { data: ReviewData }) {
               {t("coord.milestone.add")}
             </Button>
             {user && (
-              <span className="ml-auto text-xs text-muted">
+              <span className="ml-auto text-[13px] text-muted">
                 {t("coord.youWillSign")} <strong className="text-foreground">{user.name}</strong>
               </span>
             )}
@@ -96,32 +99,23 @@ export function MilestonePanel({ data }: { data: ReviewData }) {
         {timeline.length === 0 ? (
           <p className="text-sm text-muted">—</p>
         ) : (
-          <ol className="relative space-y-4 border-l-2 border-border pl-5">
+          <ol className="-my-2 divide-y divide-border">
             {timeline.map((m) => (
-              <li key={m.milestoneId} className="relative">
-                <span
-                  aria-hidden
-                  className={`absolute -left-[27px] top-1.5 h-3 w-3 rounded-full ring-4 ring-surface ${
-                    m.type === "used" || m.type === "outcome"
-                      ? "bg-leaf"
-                      : m.type === "received"
-                        ? "bg-sky"
-                        : m.type === "pledge"
-                          ? "bg-amber"
-                          : "bg-clay"
-                  }`}
-                />
+              <li key={m.milestoneId} className="grid gap-x-5 gap-y-1 py-3 sm:grid-cols-[9.5rem_minmax(0,1fr)]">
+                <span className="font-display text-[15px] italic text-muted sm:pt-0.5">{formatDate(m.occurredAt, locale)}</span>
+                <div className="min-w-0">
                 <div className="flex flex-wrap items-center gap-2">
+                  <StageSwatch stage={TYPE_STAGE[m.type] ?? "requested"} size={8} />
                   <Chip tone={TYPE_TONE[m.type] ?? "neutral"}>{t(`coord.ms.${m.type}` as DictKey)}</Chip>
-                  <span className="text-xs text-muted">{formatDate(m.occurredAt, locale)}</span>
                 </div>
-                <p className="mt-1 text-sm leading-relaxed">{pick(m.descriptionEs, m.descriptionEn)}</p>
+                <p className="mt-1 text-[15px] leading-relaxed">{pick(m.descriptionEs, m.descriptionEn)}</p>
                 {m.status === "verified" && m.type !== "pledge" && (
                   <div className="mt-1">
                     {/* TODO(lane A): milestones don't expose the verifier's name; show the org-level badge. */}
                     <VerifiedBy text={t("badge.verified")} />
                   </div>
                 )}
+                </div>
               </li>
             ))}
           </ol>
@@ -159,16 +153,24 @@ export function ProposedMilestones({ reports, onUse }: { reports: ReviewReport[]
   const items = proposedFrom(reports);
   if (items.length === 0) return null;
   return (
-    <Section title={t("coord.pm.title")} aside={<Chip tone="amber">{t("coord.aiDraft")}</Chip>}>
+    <Section
+      title={t("coord.pm.title")}
+      aside={
+        <Chip tone="navy">
+          <span aria-hidden className="font-display italic">IA</span>
+          {t("coord.aiDraft")}
+        </Chip>
+      }
+    >
       <p className="mb-3 text-sm text-muted">{t("coord.pm.note")}</p>
-      <ol className="space-y-2">
+      <ol className="divide-y divide-dotted divide-border border-y border-dashed border-rule/40">
         {items.map((m, i) => (
           <li
             key={i}
-            className="flex flex-wrap items-center gap-3 rounded-md border border-dashed border-amber/60 bg-amber-soft/30 px-3 py-2"
+            className="flex flex-wrap items-center gap-3 py-2.5"
           >
-            <span className="w-5 text-right text-xs tabular-nums text-muted">{i + 1}.</span>
-            <span className="min-w-0 flex-1 text-sm">{pick(m.es, m.en)}</span>
+            <span className="w-6 text-right font-display text-lg tabular-nums text-muted">{i + 1}</span>
+            <span className="min-w-0 flex-1 text-[15px]">{pick(m.es, m.en)}</span>
             {onUse && (
               <Button size="sm" variant="ghost" onClick={() => onUse(m)}>
                 {t("coord.pm.use")}

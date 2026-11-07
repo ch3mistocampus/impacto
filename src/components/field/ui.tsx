@@ -123,7 +123,7 @@ export const fieldLabel = "text-sm font-semibold text-foreground";
 export const noticeCls = "border-l-2 border-gold bg-gold-soft px-4 py-3 text-[15px] text-gold-ink";
 
 /** Field inputs: kit input, ≥16px text, ≥48px tall for outdoor use. */
-export const inputCls = `${kitInputCls} min-h-12`;
+export const inputCls = `${kitInputCls} min-h-12 font-normal`;
 export const btnPrimary = btn("primary", "lg", "min-h-12");
 export const btnSecondary = btn("secondary", "lg", "min-h-12");
 /** Square segmented option (aria-pressed). */

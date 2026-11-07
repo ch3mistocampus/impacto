@@ -7,6 +7,7 @@ import type { Id } from "../../../convex/_generated/dataModel";
 import { useI18n } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
 import type { DictKey } from "@/lib/dict";
+import { intlLocale } from "@/components/ui/tricolor";
 import { Button, Chip, Label, Section, Skeleton, formatDate, inputCls, useAction } from "./ui";
 import { uploadEvidenceFile, EVIDENCE_ACCEPT } from "./upload";
 import type { FinancialsData } from "./types";
@@ -17,7 +18,7 @@ const EXPENSE_CATS = ["materials", "labor", "transport", "tools", "other"] as co
 
 export function formatMoney(amount: number, currency: string, locale: string) {
   try {
-    return new Intl.NumberFormat(locale === "es" ? "es-PR" : "en-US", {
+    return new Intl.NumberFormat(intlLocale(locale), {
       style: "currency",
       currency,
       currencyDisplay: "code",
@@ -25,7 +26,7 @@ export function formatMoney(amount: number, currency: string, locale: string) {
     }).format(amount);
   } catch {
     // Non-ISO free-text currency: show as recorded.
-    return `${amount.toLocaleString(locale === "es" ? "es-PR" : "en-US")} ${currency}`;
+    return `${amount.toLocaleString(intlLocale(locale))} ${currency}`;
   }
 }
 
@@ -41,7 +42,7 @@ export function FinancialsPanel({ projectId }: { projectId?: Id<"projects"> }) {
         <p className="mb-4 max-w-prose text-sm text-muted">{t("coord.fin.note")}</p>
         {data === undefined ? <Skeleton rows={1} /> : <Totals data={data} />}
       </Section>
-      <div className="grid gap-5 lg:grid-cols-2">
+      <div className={projectId ? "grid gap-5 lg:grid-cols-2" : "grid gap-5"}>
         <ContributionForm projectId={projectId} />
         {projectId && <ExpenseForm projectId={projectId} />}
       </div>
@@ -55,26 +56,26 @@ function Totals({ data }: { data: FinancialsData }) {
   if (data.totals.length === 0) return <p className="text-sm text-muted">{t("coord.fin.empty")}</p>;
   return (
     <div className="overflow-x-auto">
-      <table className="w-full min-w-[30rem] text-sm">
+      <table className="w-full min-w-[34rem] border-y border-rule text-sm">
         <thead>
-          <tr className="border-b border-border text-left text-xs text-muted">
-            <th className="py-2 pr-3 font-medium">{t("coord.fin.currency")}</th>
-            <th className="py-2 pr-3 text-right font-medium">{t("coord.fin.received")}</th>
-            <th className="py-2 pr-3 text-right font-medium">{t("coord.fin.allocated")}</th>
-            <th className="py-2 pr-3 text-right font-medium">{t("coord.fin.spent")}</th>
-            <th className="py-2 text-right font-medium text-amber">{t("coord.fin.committed")}</th>
+          <tr className="border-b border-border text-left text-[13px] text-muted">
+            <th className="py-2 pr-3 font-semibold">{t("coord.fin.currency")}</th>
+            <th className="py-2 pr-3 text-right font-semibold">{t("coord.fin.received")}</th>
+            <th className="py-2 pr-3 text-right font-semibold">{t("coord.fin.allocated")}</th>
+            <th className="py-2 pr-3 text-right font-semibold">{t("coord.fin.spent")}</th>
+            <th className="py-2 text-right font-semibold text-gold-ink">{t("coord.fin.committed")}</th>
           </tr>
         </thead>
-        <tbody>
+        <tbody className="font-display text-lg tabular-nums">
           {data.totals.map((r) => (
-            <tr key={r.currency} className="border-b border-border/60 last:border-0">
-              <th scope="row" className="py-3 pr-3 text-left font-display text-lg font-semibold">
+            <tr key={r.currency} className="border-b border-border last:border-0">
+              <th scope="row" className="py-3 pr-3 text-left text-xl font-normal">
                 {r.currency}
               </th>
-              <td className="py-3 pr-3 text-right tabular-nums text-sky">{formatMoney(r.received, r.currency, locale)}</td>
-              <td className="py-3 pr-3 text-right tabular-nums text-clay">{formatMoney(r.allocated, r.currency, locale)}</td>
-              <td className="py-3 pr-3 text-right font-semibold tabular-nums text-leaf">{formatMoney(r.spent, r.currency, locale)}</td>
-              <td className="py-3 text-right tabular-nums text-muted">{formatMoney(r.committed, r.currency, locale)}</td>
+              <td className="py-3 pr-3 text-right">{formatMoney(r.received, r.currency, locale)}</td>
+              <td className="py-3 pr-3 text-right">{formatMoney(r.allocated, r.currency, locale)}</td>
+              <td className="py-3 pr-3 text-right">{formatMoney(r.spent, r.currency, locale)}</td>
+              <td className="py-3 text-right text-gold-ink">{formatMoney(r.committed, r.currency, locale)}</td>
             </tr>
           ))}
         </tbody>
@@ -183,13 +184,13 @@ function ContributionForm({ projectId }: { projectId?: Id<"projects"> }) {
               inputMode="decimal"
               value={amount}
               onChange={(e) => setAmount(e.target.value.replace(/[^\d.,]/g, ""))}
-              className={`${inputCls} w-36! text-right tabular-nums`}
+              className={`${inputCls} w-36! text-right font-display text-lg! tabular-nums`}
             />
           </div>
           <CurrencyPicker id={`${id}-cur`} value={currency} onChange={setCurrency} />
         </div>
         <div>
-          <span className="mb-1 block text-xs font-medium text-muted">{t("coord.fin.status")}</span>
+          <span className="mb-1.5 block text-sm font-semibold text-foreground">{t("coord.fin.status")}</span>
           <div className="flex flex-wrap gap-1.5" role="radiogroup" aria-label={t("coord.fin.status")}>
             {/* Server rule: "allocated" requires a project. */}
             {CONTRIB_STATUS.filter((s) => projectId || s !== "allocated").map((s) => (
@@ -199,8 +200,10 @@ function ContributionForm({ projectId }: { projectId?: Id<"projects"> }) {
                 role="radio"
                 aria-checked={status === s}
                 onClick={() => setStatus(s)}
-                className={`rounded-full px-3 py-1.5 text-xs font-medium ring-1 transition ${
-                  status === s ? "bg-foreground text-background ring-foreground" : "bg-surface text-muted ring-border hover:text-foreground"
+                className={`min-h-9 rounded-[2px] px-3 text-[13px] font-semibold transition-colors ${
+                  status === s
+                    ? "bg-navy text-on-navy"
+                    : "bg-surface text-muted shadow-[inset_0_0_0_1px_var(--border)] hover:text-foreground hover:shadow-[inset_0_0_0_1px_var(--rule)]"
                 }`}
               >
                 {t(`coord.fin.status.${s}` as DictKey)}
@@ -285,7 +288,7 @@ function ExpenseForm({ projectId }: { projectId: Id<"projects"> }) {
               inputMode="decimal"
               value={amount}
               onChange={(e) => setAmount(e.target.value.replace(/[^\d.,]/g, ""))}
-              className={`${inputCls} w-36! text-right tabular-nums`}
+              className={`${inputCls} w-36! text-right font-display text-lg! tabular-nums`}
             />
           </div>
           <CurrencyPicker id={`${id}-cur`} value={currency} onChange={setCurrency} />
@@ -307,7 +310,7 @@ function ExpenseForm({ projectId }: { projectId: Id<"projects"> }) {
           </div>
         </div>
         <label className="flex min-h-10 cursor-pointer items-center gap-2 text-sm">
-          <input type="checkbox" className="h-4 w-4 accent-[var(--leaf)]" checked={localLabor} onChange={(e) => setLocalLabor(e.target.checked)} />
+          <input type="checkbox" className="size-4 accent-[var(--navy)]" checked={localLabor} onChange={(e) => setLocalLabor(e.target.checked)} />
           {t("coord.fin.localLabor")}
         </label>
         <div>
@@ -318,9 +321,9 @@ function ExpenseForm({ projectId }: { projectId: Id<"projects"> }) {
             type="file"
             accept={EVIDENCE_ACCEPT}
             onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-            className="block w-full text-sm text-muted file:mr-3 file:rounded-md file:border-0 file:bg-background file:px-3 file:py-2 file:text-sm file:font-medium file:text-foreground file:ring-1 file:ring-border"
+            className="block w-full text-sm text-muted file:mr-3 file:min-h-9 file:rounded-[2px] file:border file:border-rule file:bg-surface file:px-3 file:text-sm file:font-semibold file:text-foreground"
           />
-          <p className="mt-1 text-xs text-muted">{t("coord.ev.fileHint")}</p>
+          <p className="mt-1 text-[13px] text-muted">{t("coord.ev.fileHint")}</p>
         </div>
         <Button type="submit" variant="primary" busy={busy === "x"} disabled={!valid}>
           {t("coord.fin.expense")}
@@ -344,16 +347,19 @@ function Records({ data, showProject }: { data: FinancialsData; showProject: boo
         {contribs.length === 0 ? (
           <p className="text-sm text-muted">{t("coord.fin.empty")}</p>
         ) : (
-          <ul className="divide-y divide-border">
+          <ul className="-my-2 divide-y divide-border">
             {contribs.map((c) => (
-              <li key={c.contributionId} className="flex flex-wrap items-baseline gap-x-3 gap-y-1 py-2.5 text-sm">
-                <strong className="tabular-nums">{formatMoney(c.amount, c.currency, locale)}</strong>
-                <Chip tone={c.status === "committed" ? "amber" : c.status === "received" ? "sky" : "clay"}>
-                  {t(`coord.fin.status.${c.status}` as DictKey)}
-                </Chip>
-                {c.donorName && <span>{c.donorName}</span>}
-                {c.externalReference && <span className="text-xs text-muted">#{c.externalReference}</span>}
-                <span className="w-full text-xs text-muted">
+              <li key={c.contributionId} className="py-2.5 text-sm">
+                <div className="flex items-baseline gap-2">
+                  <span className="min-w-0 truncate text-[15px] font-semibold">{c.donorName || "—"}</span>
+                  <Chip tone={c.status === "committed" ? "gold" : "navy"}>{t(`coord.fin.status.${c.status}` as DictKey)}</Chip>
+                  <span aria-hidden className="min-w-4 flex-1 translate-y-[-4px] border-b border-dotted border-muted/60" />
+                  <span className={`shrink-0 font-display text-lg tabular-nums ${c.status === "committed" ? "text-gold-ink" : ""}`}>
+                    {formatMoney(c.amount, c.currency, locale)}
+                  </span>
+                </div>
+                <span className="block text-[13px] text-muted">
+                  {c.externalReference && <>#{c.externalReference} — </>}
                   {showProject && <>{c.publicAlias ?? t("coord.fin.unassigned")} — </>}
                   {c.recordedByName ?? "—"}, {formatDate(c.createdAt, locale)}
                 </span>
@@ -366,12 +372,17 @@ function Records({ data, showProject }: { data: FinancialsData; showProject: boo
         {expenses.length === 0 ? (
           <p className="text-sm text-muted">{t("coord.fin.empty")}</p>
         ) : (
-          <ul className="divide-y divide-border">
+          <ul className="-my-2 divide-y divide-border">
             {expenses.map((x) => (
               <li key={x.expenseId} className="flex flex-wrap items-center gap-x-3 gap-y-1.5 py-2.5 text-sm">
-                <strong className="tabular-nums">{formatMoney(x.amount, x.currency, locale)}</strong>
-                <span>{EXPENSE_CATS.includes(x.category as never) ? t(`coord.fin.cat.${x.category}` as DictKey) : x.category}</span>
-                <Chip tone={x.reviewStatus === "approved" ? "leaf" : x.reviewStatus === "rejected" ? "brick" : "amber"}>
+                <div className="flex w-full items-baseline gap-2">
+                  <span className="min-w-0 truncate text-[15px] font-semibold">
+                    {EXPENSE_CATS.includes(x.category as never) ? t(`coord.fin.cat.${x.category}` as DictKey) : x.category}
+                  </span>
+                  <span aria-hidden className="min-w-4 flex-1 translate-y-[-4px] border-b border-dotted border-muted/60" />
+                  <span className="shrink-0 font-display text-lg tabular-nums">{formatMoney(x.amount, x.currency, locale)}</span>
+                </div>
+                <Chip tone={x.reviewStatus === "approved" ? "emerald" : x.reviewStatus === "rejected" ? "neutral" : "gold"}>
                   {t(
                     x.reviewStatus === "approved"
                       ? "coord.fin.approvedState"
@@ -380,15 +391,15 @@ function Records({ data, showProject }: { data: FinancialsData; showProject: boo
                         : "coord.fin.pending",
                   )}
                 </Chip>
-                {x.localLabor && <Chip tone="leaf">{t("coord.fin.localLabor")}</Chip>}
+                {x.localLabor && <Chip tone="navy">{t("coord.fin.localLabor")}</Chip>}
                 {x.receiptUrl ? (
-                  <a href={x.receiptUrl} target="_blank" rel="noreferrer" className="text-xs font-medium text-sky underline-offset-4 hover:underline">
+                  <a href={x.receiptUrl} target="_blank" rel="noreferrer" className="text-[13px] font-semibold text-foreground underline decoration-1 underline-offset-4">
                     {t("coord.fin.receiptOk")} ↗
                   </a>
                 ) : (
-                  <span className="text-xs text-muted">{t("coord.fin.noReceipt")}</span>
+                  <span className="text-[13px] text-muted">{t("coord.fin.noReceipt")}</span>
                 )}
-                <span className="w-full text-xs text-muted">
+                <span className="w-full text-[13px] text-muted">
                   {showProject && x.publicAlias && <>{x.publicAlias} — </>}
                   {x.supplierRegion && <>{x.supplierRegion} — </>}
                   {x.approvedByName && (

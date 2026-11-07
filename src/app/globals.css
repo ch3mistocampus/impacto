@@ -12,6 +12,8 @@
  *   red       → errors and destructive actions only (a safety pause is calm navy, not red)
  */
 :root {
+  /* Always the light (white paper) theme, even when the OS is in dark mode. */
+  color-scheme: light;
   --background: #ffffff;
   --foreground: #0b2a5b; /* navy ink */
   --surface: #ffffff;
@@ -24,6 +26,8 @@
   --navy-hover: #14387a;
   --navy-soft: #e9eef7;
   --on-navy: #ffffff; /* text on a navy fill */
+  --on-emerald: #ffffff;
+  --flag-blue: #0b2a5b; /* flag band middle stripe */
   --gold: #e8b70b; /* flag + seal fill — never text on white */
   --gold-ink: #7a5d00; /* pledged / pending text, 6.2:1 on white */
   --gold-soft: #fbf4d9;
@@ -52,35 +56,6 @@
   --amber-soft: var(--gold-soft);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #081530;
-    --foreground: #eef2f9;
-    --surface: #0d1d3d;
-    --paper: #102347;
-    --muted: #a8b5cf;
-    --border: #22365e;
-    --rule: #c9d4ea;
-
-    --navy: #c9d7f5; /* primary action flips to light-on-dark */
-    --navy-hover: #e0e8fa;
-    --navy-soft: #172c55;
-    --on-navy: #081530;
-    --gold: #f0c534;
-    --gold-ink: #f0c534;
-    --gold-soft: #2e2a14;
-    --red: #ff8a9a;
-    --red-soft: #3a1620;
-    --emerald: #6fd3a0;
-    --emerald-soft: #12352a;
-
-    --stage-received: #4a5f8c;
-    --stage-delivered: #7b93c4;
-    --stage-used: #c9d7f5;
-    --stage-verified: #6fd3a0;
-    --stage-track: #1a2d55;
-  }
-}
 
 @theme inline {
   --color-background: var(--background);
@@ -94,6 +69,7 @@
   --color-navy-hover: var(--navy-hover);
   --color-navy-soft: var(--navy-soft);
   --color-on-navy: var(--on-navy);
+  --color-on-emerald: var(--on-emerald);
   --color-gold: var(--gold);
   --color-gold-ink: var(--gold-ink);
   --color-gold-soft: var(--gold-soft);
@@ -136,4 +112,214 @@ body {
 ::selection {
   background: var(--gold-soft);
   color: var(--foreground);
+}
+
+/* ================================================================== */
+/* Motion                                                              */
+/* Calm and quick, like paper being set down: short fades + small     */
+/* rises, no bounce. Everything collapses under reduced motion.       */
+/* ================================================================== */
+:root {
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1); /* settle */
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --ease-spring: cubic-bezier(0.2, 0.9, 0.25, 1.08); /* tiny overshoot for snap-backs */
+  --dur-fast: 140ms;
+  --dur-base: 240ms;
+  --dur-slow: 420ms;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+/* -- Page transitions (React <ViewTransition> in app/template.tsx) -- */
+::view-transition {
+  pointer-events: none; /* clicks during a transition reach the live page */
+}
+::view-transition-old(.page-out) {
+  animation: var(--dur-fast) ease-in both vt-fade-out;
+}
+::view-transition-new(.page-in) {
+  animation:
+    var(--dur-base) var(--ease-out) 60ms both vt-fade-in,
+    var(--dur-slow) var(--ease-out) both vt-rise;
+}
+/* The header is an anchor: it never fades or slides between pages. */
+::view-transition-group(site-header) {
+  animation: none;
+  z-index: 100;
+}
+::view-transition-old(site-header) {
+  display: none;
+}
+::view-transition-new(site-header) {
+  animation: none;
+}
+@keyframes vt-fade-out {
+  to { opacity: 0; }
+}
+@keyframes vt-fade-in {
+  from { opacity: 0; }
+}
+@keyframes vt-rise {
+  from { translate: 0 10px; }
+}
+
+/* -- Entrances ------------------------------------------------------ */
+@keyframes rise-in {
+  from { opacity: 0; translate: 0 8px; }
+}
+@keyframes fade-in {
+  from { opacity: 0; }
+}
+@keyframes grow-x {
+  from { transform: scaleX(0); }
+}
+@keyframes stamp-in {
+  0% { opacity: 0; transform: scale(1.35) rotate(var(--stamp-rot, -2deg)); }
+  60% { opacity: 1; transform: scale(0.97) rotate(var(--stamp-rot, -2deg)); }
+  100% { opacity: 1; transform: scale(1) rotate(var(--stamp-rot, -2deg)); }
+}
+@keyframes count-pop {
+  from { opacity: 0; transform: translateY(6px) scale(0.96); }
+}
+
+.motion-rise {
+  animation: rise-in var(--dur-slow) var(--ease-out) both;
+}
+.motion-fade {
+  animation: fade-in var(--dur-base) var(--ease-out) both;
+}
+/* Siblings rise one after another (caps at 8 so long lists don't drag). */
+.motion-stagger:nth-child(2) { animation-delay: 40ms; }
+.motion-stagger:nth-child(3) { animation-delay: 80ms; }
+.motion-stagger:nth-child(4) { animation-delay: 120ms; }
+.motion-stagger:nth-child(5) { animation-delay: 160ms; }
+.motion-stagger:nth-child(6) { animation-delay: 200ms; }
+.motion-stagger:nth-child(7) { animation-delay: 240ms; }
+.motion-stagger:nth-child(n + 8) { animation-delay: 280ms; }
+
+.motion-bar {
+  transform-origin: left center;
+  animation: grow-x 700ms var(--ease-out) both;
+}
+.motion-stamp {
+  animation: stamp-in 380ms var(--ease-out) 120ms both;
+}
+.motion-count {
+  animation: count-pop var(--dur-slow) var(--ease-out) both;
+}
+
+/* -- Press feedback on every button-styled control ------------------ */
+.press {
+  transition-property: color, background-color, border-color, box-shadow, text-decoration-color, filter, transform;
+  transition-duration: var(--dur-fast);
+  transition-timing-function: var(--ease-out);
+}
+.press:not(:disabled):active {
+  transform: scale(0.98);
+}
+
+/* -- Native <dialog>: sheet on phones, lifted card on desktop ------- */
+dialog.motion-dialog {
+  opacity: 0;
+  transform: translateY(24px) scale(0.985);
+  transition:
+    opacity var(--dur-base) var(--ease-out),
+    transform var(--dur-slow) var(--ease-out),
+    overlay var(--dur-base) allow-discrete,
+    display var(--dur-base) allow-discrete;
+}
+dialog.motion-dialog[open] {
+  opacity: 1;
+  transform: none;
+}
+@starting-style {
+  dialog.motion-dialog[open] {
+    opacity: 0;
+    transform: translateY(24px) scale(0.985);
+  }
+}
+dialog.motion-dialog::backdrop {
+  opacity: 0;
+  transition:
+    opacity var(--dur-base) var(--ease-out),
+    overlay var(--dur-base) allow-discrete,
+    display var(--dur-base) allow-discrete;
+}
+dialog.motion-dialog[open]::backdrop {
+  opacity: 1;
+}
+@starting-style {
+  dialog.motion-dialog[open]::backdrop {
+    opacity: 0;
+  }
+}
+/* Bottom sheet: slides the full way up from the edge on small screens. */
+@media (max-width: 639px) {
+  dialog.motion-sheet {
+    transform: translateY(100%);
+  }
+  dialog.motion-sheet[open] {
+    transform: none;
+  }
+  @starting-style {
+    dialog.motion-sheet[open] {
+      transform: translateY(100%);
+    }
+  }
+}
+
+/* -- Popovers / menus toggled with the `hidden` attribute ----------- */
+.motion-pop {
+  transition:
+    opacity var(--dur-fast) var(--ease-out),
+    transform var(--dur-base) var(--ease-out),
+    display var(--dur-fast) allow-discrete;
+  transform-origin: top right;
+}
+.motion-pop[hidden] {
+  display: none;
+  opacity: 0;
+  transform: translateY(-4px) scale(0.98);
+}
+@starting-style {
+  .motion-pop:not([hidden]) {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.98);
+  }
+}
+
+/* -- <details>: content eases open ---------------------------------- */
+details[open] > :not(summary) {
+  animation: rise-in var(--dur-base) var(--ease-out) both;
+}
+
+/* -- Reduced motion: keep state changes, drop movement -------------- */
+@media (prefers-reduced-motion: reduce) {
+  .motion-rise,
+  .motion-fade,
+  .motion-bar,
+  .motion-stamp,
+  .motion-count,
+  details[open] > :not(summary) {
+    animation: none;
+  }
+  .press:not(:disabled):active {
+    transform: none;
+  }
+  dialog.motion-dialog,
+  dialog.motion-dialog[open],
+  .motion-pop,
+  .motion-pop[hidden] {
+    transform: none !important;
+  }
+  ::view-transition-old(*),
+  ::view-transition-new(*),
+  ::view-transition-group(*) {
+    animation-duration: 0s !important;
+    animation-delay: 0s !important;
+  }
 }

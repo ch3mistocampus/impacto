@@ -20,7 +20,7 @@ import { CATEGORY_STYLE } from "./types";
 export function ProjectDetail({ backHref = "/#proyectos" }: { backHref?: string }) {
   const params = useParams<{ projectId?: string; id?: string }>();
   const projectId = params.projectId ?? params.id ?? "";
-  const { t, pick } = useI18n();
+  const { t, pick, u } = useI18n();
   const fmt = useReportFmt();
   const data = useQuery(api.public.getProject, { projectId });
 
@@ -186,7 +186,7 @@ export function ProjectDetail({ backHref = "/#proyectos" }: { backHref?: string 
                   <div className="min-w-0 flex-1">
                     <h3 className="font-display text-[1.4rem] font-normal leading-tight">{pick(n.nameEs, n.nameEn)}</h3>
                     <p className="mt-0.5 text-[13px] text-muted">
-                      {t("report.unit")}: {n.unit}
+                      {t("report.unit")}: {u(n.unit)}
                     </p>
                   </div>
                   {n.verified && <VerifiedBadge compact />}

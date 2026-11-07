@@ -26,7 +26,7 @@ export function FlagBand({ className = "", thickness = 4 }: { className?: string
       className={`w-full ${className}`}
       style={{
         height: thickness,
-        background: "linear-gradient(90deg, var(--gold) 0 50%, #0b2a5b 50% 75%, var(--red) 75%)",
+        background: "linear-gradient(90deg, var(--gold) 0 50%, var(--flag-blue) 50% 75%, var(--red) 75%)",
       }}
     />
   );
@@ -167,7 +167,7 @@ const BTN_VARIANT: Record<BtnVariant, string> = {
   secondary: "bg-surface text-foreground shadow-[inset_0_0_0_1px_var(--rule)] hover:bg-paper",
   quiet: "text-foreground underline decoration-1 underline-offset-[5px] hover:decoration-2",
   danger: "bg-surface text-red shadow-[inset_0_0_0_1px_var(--red)] hover:bg-red-soft",
-  verify: "bg-emerald text-white hover:brightness-110",
+  verify: "bg-emerald text-on-emerald hover:brightness-110",
 };
 const BTN_SIZE: Record<BtnSize, string> = {
   sm: "min-h-9 px-3 text-sm",

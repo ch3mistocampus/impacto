@@ -342,7 +342,8 @@ export const donorDeck = query({
   },
 });
 
-const followPledgeResult = v.object({
+/** Exported for donor.myPledges (same per-pledge shape). */
+export const followPledgeResult = v.object({
       pledgeId: v.id("pledges"),
       followToken: v.string(), // the caller's own token (echoed back)
       status: pledgeStatusValidator,
@@ -381,7 +382,7 @@ const followPledgeResult = v.object({
       timeline: v.array(publicMilestoneValidator),
     });
 
-async function followPledgeData(ctx: QueryCtx, followToken: string) {
+export async function followPledgeData(ctx: QueryCtx, followToken: string) {
     if (!followToken) return null;
     const pledge = await ctx.db
       .query("pledges")

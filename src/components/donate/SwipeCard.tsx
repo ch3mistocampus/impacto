@@ -39,7 +39,7 @@ export function SwipeCard({
   onPass: () => void;
   onHelp: () => void;
 }) {
-  const { t, pick, locale } = useI18n();
+  const { t, pick, locale, u } = useI18n();
   const [dx, setDx] = useState(0);
   const [dragging, setDragging] = useState(false);
   const start = useRef<{ x: number; y: number; id: number } | null>(null);
@@ -128,17 +128,19 @@ export function SwipeCard({
               sizes="(min-width: 640px) 128px, 112px"
               loading="eager"
             />
-            <h2 className="text-center font-display text-[2.1rem] sm:text-[2.5rem] font-normal leading-none">{name}</h2>
+            <h2 className={`text-center font-display font-normal leading-[1.05] text-balance ${name.length > 18 ? "text-[1.75rem] sm:text-[2rem]" : "text-[2.1rem] sm:text-[2.5rem]"}`}>
+              {name}
+            </h2>
           </div>
 
           {/* the figure */}
           {confirmed ? (
             <p className="mt-4 text-center leading-none">
-              <span className="font-display text-[4.25rem] sm:text-[5rem] font-normal tabular-nums">
+              <span className="font-display text-[4rem] sm:text-[4.5rem] font-normal tabular-nums">
                 {nf.format(L.availableToPledge)}
               </span>{" "}
               <span className="block sm:inline mt-1 sm:mt-0 text-base text-muted">
-                {t("donate.card.of")} {nf.format(L.requested ?? 0)} {card.unit} {t("donate.card.unpledged")}
+                {t("donate.card.of")} {nf.format(L.requested ?? 0)} {u(card.unit)} {t("donate.card.unpledged")}
               </span>
             </p>
           ) : (

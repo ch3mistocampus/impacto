@@ -25,15 +25,15 @@ export function EvidenceReviewPanel({ data }: { data: ReviewData }) {
     <div className="space-y-5">
       <Section title={t("coord.evr.title")}>
         <p className="mb-4 flex max-w-prose items-start gap-2 text-sm text-muted">
-          <LockGlyph className="mt-0.5 h-4 w-4 shrink-0" />
+          <LockGlyph className="mt-0.5 size-4" />
           {t("coord.evr.note")}
         </p>
         {list === undefined ? (
           <Skeleton rows={2} />
         ) : list.length === 0 ? (
-          <p className="rounded-md border border-dashed border-border px-4 py-8 text-center text-sm text-muted">{t("coord.evr.empty")}</p>
+          <p className="border-y border-border px-4 py-10 text-center font-display text-lg italic text-muted">{t("coord.evr.empty")}</p>
         ) : (
-          <ul className="grid gap-4 md:grid-cols-2">
+          <ul className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             {[...list]
               .sort((a, b) => b.createdAt - a.createdAt)
               .map((e) => (
@@ -60,41 +60,41 @@ function EvidenceCard({ e, needLabel }: { e: EvidenceRow; needLabel?: ReviewData
   const status = e.reviewStatus;
 
   return (
-    <li className="overflow-hidden rounded-lg border border-border bg-background">
-      <div className={url ? "relative aspect-[4/3] bg-border/40" : "relative border-b border-border bg-border/25"}>
+    <li className="flex flex-col rounded-[2px] border border-border bg-surface">
+      <div className={url ? "relative aspect-square border-b border-border bg-paper" : "relative border-b border-border bg-paper"}>
         {url && !isPdf ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={url} alt={t(`coord.ev.type.${e.type}` as DictKey)} className="h-full w-full object-cover" />
         ) : (
           <div className={`flex h-full items-center p-4 text-sm text-muted ${url ? "justify-center text-center" : ""}`}>
             {url ? (
-              <a href={url} target="_blank" rel="noreferrer" className="font-medium text-sky underline-offset-4 hover:underline">
+              <a href={url} target="_blank" rel="noreferrer" className="font-semibold text-foreground underline underline-offset-4">
                 PDF · {t("coord.evr.open")} ↗
               </a>
             ) : (
-              <span className="font-display text-[15px] italic leading-relaxed text-foreground/85">“{note || t("coord.evr.noFile")}”</span>
+              <span className="font-display text-lg italic leading-relaxed text-foreground">“{note || t("coord.evr.noFile")}”</span>
             )}
           </div>
         )}
         {/* Private originals are always labeled as such. */}
         {url && (
-          <span className="absolute left-2 top-2 inline-flex items-center gap-1 rounded-full bg-foreground/85 px-2 py-0.5 text-[11px] font-medium text-background">
-            <LockGlyph className="h-3 w-3 text-background" />
+          <span className="absolute left-2 top-2 inline-flex items-center gap-1 rounded-[2px] bg-navy px-2 py-0.5 text-xs font-semibold text-on-navy">
+            <LockGlyph className="size-3" />
             {t("coord.evr.private")}
           </span>
         )}
       </div>
 
-      <div className="space-y-2 p-3">
+      <div className="flex flex-1 flex-col gap-2 p-3">
         <div className="flex flex-wrap items-center gap-1.5">
-          <Chip tone="sky">{t(`coord.ev.type.${e.type}` as DictKey)}</Chip>
-          <Chip tone={status === "approved" ? "leaf" : status === "rejected" ? "brick" : "amber"}>
+          <Chip tone="navy">{t(`coord.ev.type.${e.type}` as DictKey)}</Chip>
+          <Chip tone={status === "approved" ? "emerald" : status === "rejected" ? "neutral" : "gold"}>
             {t(`coord.ev.${status}` as DictKey)}
           </Chip>
-          {needLabel && <span className="text-xs text-muted">{pick(needLabel.nameEs, needLabel.nameEn)}</span>}
+          {needLabel && <span className="text-[13px] text-muted">{pick(needLabel.nameEs, needLabel.nameEn)}</span>}
         </div>
-        {note && url && <p className="text-sm leading-relaxed">{note}</p>}
-        <p className="text-xs text-muted">
+        {note && url && <p className="text-[15px] leading-relaxed">{note}</p>}
+        <p className="text-[13px] text-muted">
           {t("coord.evr.uploadedBy")} <span className="text-foreground">{e.uploadedByName ?? "—"}</span>, {formatDate(e.createdAt, locale)}
           {e.reviewedByName && (
             <>
@@ -106,14 +106,14 @@ function EvidenceCard({ e, needLabel }: { e: EvidenceRow; needLabel?: ReviewData
         </p>
 
         {status !== "approved" && (
-          <fieldset className="rounded-md border border-amber/50 bg-amber-soft/50 p-2.5">
-            <legend className="px-1 text-xs font-semibold text-amber">{t("coord.evr.checklist")}</legend>
+          <fieldset className="rounded-[2px] border border-gold bg-gold-soft p-2.5">
+            <legend className="px-1 text-[13px] font-semibold text-gold-ink">{t("coord.evr.checklist")}</legend>
             <div className="grid gap-1 sm:grid-cols-2">
               {CHECKS.map((c) => (
                 <label key={c} className="flex min-h-9 cursor-pointer items-center gap-2 text-sm">
                   <input
                     type="checkbox"
-                    className="h-4 w-4 accent-[var(--leaf)]"
+                    className="size-4 accent-[var(--emerald)]"
                     checked={!!checked[c]}
                     onChange={(ev) => setChecked((s) => ({ ...s, [c]: ev.target.checked }))}
                   />
@@ -124,7 +124,7 @@ function EvidenceCard({ e, needLabel }: { e: EvidenceRow; needLabel?: ReviewData
           </fieldset>
         )}
 
-        <div className="flex flex-wrap gap-2 pt-1">
+        <div className="mt-auto flex flex-wrap gap-2 pt-1">
           {status !== "approved" && (
             <Button
               size="sm"

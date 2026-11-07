@@ -166,7 +166,7 @@ const SNAP_STAGES = ["pledged", "received", "delivered", "used", "verified"] as 
 const SNAP_COUNTS = ["pledgesCreated", "milestonesVerified", "evidenceApproved", "projectsPublished", "projectsPaused"] as const;
 
 function ReportItem({ r, summary }: { r: WeeklyReport; summary: string }) {
-  const { t, tn, pick } = useI18n();
+  const { t, tn, pick, u } = useI18n();
   const fmt = useReportFmt();
   const snap = r.snapshot;
   return (
@@ -180,7 +180,7 @@ function ReportItem({ r, summary }: { r: WeeklyReport; summary: string }) {
           </h3>
         </div>
 
-        <p className="mt-5 max-w-prose whitespace-pre-line text-[15px] leading-relaxed sm:text-base">{summary}</p>
+        <p className="mx-auto mt-5 max-w-prose whitespace-pre-line text-[15px] leading-relaxed sm:text-base">{summary}</p>
 
         <dl className="mt-6 grid grid-cols-2 border-y border-rule text-center sm:grid-cols-5">
           {SNAP_COUNTS.map((k, i) => (
@@ -224,7 +224,7 @@ function ReportItem({ r, summary }: { r: WeeklyReport; summary: string }) {
                     {snap.materials.map((m) => (
                       <tr key={m.itemKey} className="border-b border-border last:border-b-0">
                         <th scope="row" className="py-2 pr-3 text-left font-normal">
-                          {pick(m.nameEs, m.nameEn)} <span className="text-muted">({m.unit})</span>
+                          {pick(m.nameEs, m.nameEn)} <span className="text-muted">({u(m.unit)})</span>
                         </th>
                         {SNAP_STAGES.map((k) => (
                           <td key={k} className={`px-2 py-2 text-right font-display text-[15px] tabular-nums ${STAGE_TEXT[k]}`}>

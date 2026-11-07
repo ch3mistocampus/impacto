@@ -31,6 +31,7 @@ import { ReviewForm } from "./ReviewForm";
 import { LedgerPanel } from "./Ledger";
 import { MilestonePanel, ProposedMilestones } from "./Milestones";
 import { EvidenceReviewPanel } from "./EvidenceReview";
+import { FollowUpReviewPanel } from "./FollowUpReview";
 import { FinancialsPanel } from "./Financials";
 import { containsPrivate, type ReviewData } from "./types";
 
@@ -113,13 +114,13 @@ function ReviewBody({ data }: { data: ReviewData }) {
 
 function ReviewLayout({ data }: { data: ReviewData }) {
   return (
-    <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)]">
-      <div className="space-y-5">
+    <div className="mt-6 grid grid-cols-[minmax(0,1fr)] gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)]">
+      <div className="min-w-0 space-y-5">
         <AiNever />
         <EvidencePanel reports={data.fieldReports} photos={data.photos} />
         <ProposedMilestones reports={data.fieldReports} />
       </div>
-      <div className="space-y-5">
+      <div className="min-w-0 space-y-5">
         <PrivatePanel priv={data.private} />
         <ReviewForm data={data} />
       </div>
@@ -155,8 +156,9 @@ function ManageLayout({ data }: { data: ReviewData }) {
         )}
         {tab === "financials" && <FinancialsPanel projectId={data.project.projectId} />}
         {tab === "timeline" && <MilestonePanel data={data} />}
+        {tab === "field" && <FollowUpReviewPanel projectId={data.project.projectId} />}
         {tab === "field" && (
-          <div className="grid gap-5 lg:grid-cols-2">
+          <div className="mt-5 grid grid-cols-[minmax(0,1fr)] gap-5 lg:grid-cols-2">
             <div className="space-y-5">
               <AiNever />
               <EvidencePanel reports={data.fieldReports} photos={[]} />

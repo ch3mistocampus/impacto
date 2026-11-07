@@ -15,6 +15,36 @@ Legend: **[S]** ≤ 2h · **[M]** half day · **[L]** 1–3 days
 5. **Copy polish** [S] — Spanish gender agreement ("10 bolsas de cemento verificados" → neutral wording); plural handling ("1 resultados verificados"); replace browser `confirm()` on pledge cancel with an accessible dialog.
 6. **Rehearse on a phone** [S] — mic permissions on iOS Safari, swipe gestures, camera capture, the venue Wi-Fi DNS issue (`*.vercel.app` fails on this network — use cellular or a custom domain).
 
+## Demo build-out — next to-dos (added 2026-11-07, after the role review)
+
+Done this round: Colombian seed (17 projects, 8 municipalities, every status, full transcripts/AI drafts, 29 pledges, COP financials, evidence queue, weekly reports, community feedback, follow-ups); field progress page + follow-ups; donor account home; community home + moderation. Remaining, in priority order:
+
+**Blocked on OpenRouter credit (~$5)**
+- D1. Generate the 21 image assets (`scripts/gen-images.mjs`) and seed before/after + approved demo photos onto projects (seed currently has no public photos). [S]
+- D2. Live-test voice transcription with the prepared clips (wav/m4a/webm), then on iPhone Safari + Android Chrome. [S]
+
+**Make the 3-minute demo bulletproof**
+- D3. Presenter mode: a `/demo` page with the judging script's 6 steps, one-click role switch per step, and a split view (donor deck · coordinator ledger · public timeline) so live updates are visible at once. [M]
+- D4. "Demo reset" also resets the live demo project to its pre-review state and clears pledges on Ladrillos — verify the canonical flow end to end on prod (h4h.casa) after each reset. [S]
+- D5. Coordinator home overview: counts that link to work queues (reviews, evidence pending, follow-ups, community feedback, active pledges awaiting delivery). [S]
+- D6. Short plain-language weekly summaries for `/community` (currently long auto text); auto-draft both a short and a detailed version. [S]
+
+**Data realism**
+- D7. Real event timestamps: add `occurredAt` to materialEvents/pledges and `reportedAt` to projects so seeded history, timelines and regenerated weekly reports agree (today `_creationTime` = reset time). [M]
+- D8. Colombian Spanish copy pass by a native speaker (units: bultos, tejas; tone for community pages); check English mirrors. [S]
+- D9. Update GOAL.md/BRIEF context to Colombia (currency COP default in forms, regions list, phone/address redaction patterns for Colombia already in community; add to field redaction). [S]
+
+**Role gaps found in review**
+- D10. Coordinator: "add / split need" UI (backend `coordinator.addNeed` exists), pledge void/extend, walk-in materials. [M]
+- D11. Field: resume a draft across devices, delete an empty draft, see coordinator edits as a diff on submit-again for changes-requested drafts. [S]
+- D12. Donor: downloadable pledge receipt / "certificado de donación" (PDF, verified items only); "request instructions" content from the nonprofit. [M]
+- D13. Community: per-category Q&A filter, "was this answered?" state, notify when answered (needs contact consent). [S]
+
+**Quality**
+- D14. Merge the Tricolor redesign (another session, uncommitted changes in coordinator/donate/public components) and re-run a full visual pass on mobile + dark mode. [S]
+- D15. Playwright smoke test of the judging script (field → coordinator publish → donor pledge 50 → coordinator received/delivered/used/verified → public shows verified) run against prod after deploy. [M]
+- D16. Accessibility pass on new screens (stepper, moderation tab, follow-up composer). [S]
+
 ## Tier 1 — Required before any real use (security & privacy)
 
 7. **Real authentication** [L] — today `sessions.signInAsDemo` lets *anyone* become a coordinator or field worker. Replace with Convex Auth or Clerk (Vercel Marketplace): email/OTP login, nonprofit-scoped invites, role assignment by an org admin, session expiry/refresh, sign-out everywhere. Keep demo personas behind a `DEMO_MODE` env flag only.

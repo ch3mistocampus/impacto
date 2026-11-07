@@ -4,6 +4,7 @@ import { useI18n } from "@/lib/i18n";
 import type { DictKey } from "@/lib/dict";
 import type { FollowPledgeData } from "./publicApi";
 import { CheckIcon } from "./VerifiedBadge";
+import { intlLocale } from "@/components/ui/tricolor";
 
 export const PLEDGE_STEPS = ["pledged", "received", "delivered", "used", "verified"] as const;
 export type PledgeStep = (typeof PLEDGE_STEPS)[number];
@@ -26,39 +27,63 @@ export function pledgeStageQty(d: FollowPledgeData & PerPledge): Record<PledgeSt
 }
 
 export function PledgeProgress({ data, compact = false }: { data: FollowPledgeData; compact?: boolean }) {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const q = pledgeStageQty(data);
+  const nf = new Intl.NumberFormat(intlLocale(locale));
   return (
-    <ol className="grid grid-cols-5 gap-1" aria-label={t("project.follow.status")}>
+    <ol className="grid grid-cols-1 sm:grid-cols-5" aria-label={t("project.follow.status")}>
       {PLEDGE_STEPS.map((k, i) => {
         const done = q[k] > 0;
         const nextDone = i < PLEDGE_STEPS.length - 1 && q[PLEDGE_STEPS[i + 1]] > 0;
-        const color =
-          k === "pledged" ? "bg-amber text-white" : k === "verified" ? "bg-leaf text-white" : "bg-sky text-white";
+        // pledged = gold-ink outline (a promise); custody = navy; verified = esmeralda.
+        const mark =
+          k === "pledged"
+            ? "bg-gold-soft text-gold-ink shadow-[inset_0_0_0_1.5px_var(--gold-ink)]"
+            : k === "verified"
+              ? "bg-emerald text-surface"
+              : "bg-navy text-on-navy";
+        const label = k === "pledged" ? "text-gold-ink" : k === "verified" ? "text-emerald" : "text-foreground";
         return (
-          <li key={k} className="relative min-w-0">
+          <li key={k} className="relative min-w-0 flex gap-3 pb-4 last:pb-0 sm:block sm:pb-0">
+            {/* vertical connector on phones, horizontal from sm up */}
+            {i < PLEDGE_STEPS.length - 1 && (
+              <span
+                aria-hidden
+                className={`sm:hidden absolute top-0 bottom-0 w-px ${compact ? "left-3.5" : "left-[18px]"} ${nextDone ? "bg-rule" : "bg-border"}`}
+              />
+            )}
             <div className="flex items-center">
               <span
                 className={`relative z-10 grid place-items-center ${compact ? "size-7" : "size-9"} shrink-0 rounded-full ${
-                  done ? color : "border-2 border-border bg-surface text-muted"
+                  done ? mark : "bg-surface text-muted shadow-[inset_0_0_0_1px_var(--border)]"
                 }`}
                 aria-hidden
               >
-                {done ? <CheckIcon className="size-4" /> : <span className="text-xs font-semibold">{i + 1}</span>}
+                {done ? (
+                  <CheckIcon className={compact ? "size-3.5" : "size-4"} />
+                ) : (
+                  <span className="font-display text-sm tabular-nums">{i + 1}</span>
+                )}
               </span>
               {i < PLEDGE_STEPS.length - 1 && (
-                <span className={`h-1 flex-1 ${nextDone ? "bg-sky" : "bg-border"}`} aria-hidden />
+                <span className={`hidden sm:block h-px flex-1 ${nextDone ? "bg-rule" : "bg-border"}`} aria-hidden />
               )}
             </div>
-            <p className={`mt-1.5 ${compact ? "text-[11px]" : "text-xs sm:text-sm"} leading-tight ${done ? "font-semibold" : "text-muted"}`}>
-              {t(`project.follow.step.${k}` as DictKey)}
-              <span className="sr-only">{done ? " ✓" : ""}</span>
-            </p>
-            {k !== "pledged" && done && (
-              <p className="text-[11px] text-muted tabular-nums">
-                {q[k]} {t("project.follow.qtyOf")} {data.qty}
+            <div className="min-w-0 flex flex-1 items-baseline justify-between gap-3 self-center sm:block">
+              <p
+                className={`sm:mt-2 sm:pr-1 text-sm sm:text-xs ${compact ? "" : "sm:text-sm"} leading-tight ${
+                  done ? `font-semibold ${label}` : "text-muted"
+                }`}
+              >
+                {t(`project.follow.step.${k}` as DictKey)}
+                <span className="sr-only">{done ? " ✓" : ""}</span>
               </p>
-            )}
+              {k !== "pledged" && done && (
+                <p className="sm:mt-0.5 text-xs text-muted tabular-nums">
+                  {nf.format(q[k])} {t("project.follow.qtyOf")} {nf.format(data.qty)}
+                </p>
+              )}
+            </div>
           </li>
         );
       })}
@@ -73,8 +98,9 @@ export function VerifiedHeadline({ data, className = "" }: { data: FollowPledgeD
   if (n <= 0) return null;
   const name = pick(data.need.nameEs, data.need.nameEn).toLocaleLowerCase(locale);
   return (
-    <p className={`font-display font-semibold text-leaf ${className}`}>
-      {t("donations.verifiedAsUsed")}: <span className="tabular-nums">{n.toLocaleString()}</span> {name}
+    <p className={`font-display font-normal leading-snug text-emerald ${className}`}>
+      {t("donations.verifiedAsUsed")}:{" "}
+      <span className="tabular-nums">{new Intl.NumberFormat(intlLocale(locale)).format(n)}</span> {name}
     </p>
   );
 }

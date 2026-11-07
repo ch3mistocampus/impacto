@@ -80,8 +80,8 @@ export function EvidenceAttach({
   const state = evidenceState(value);
 
   return (
-    <fieldset className="rounded-md border border-border bg-surface/70 p-3">
-      <legend className="px-1 text-xs font-medium text-muted">{t("coord.ev.attach")}</legend>
+    <fieldset className="rounded-[2px] border border-border bg-surface p-3">
+      <legend className="px-1 font-display text-[15px] italic text-muted">{t("coord.ev.attach")}</legend>
       <div className="flex flex-wrap gap-1.5" role="radiogroup" aria-label={t("coord.ev.type")}>
         {[...(allowNone ? (["" ] as const) : []), ...(allTypes ? EVIDENCE_TYPES : EVIDENCE_TYPES.slice(0, 4))].map((k) => {
           const on = value.type === k;
@@ -92,8 +92,10 @@ export function EvidenceAttach({
               role="radio"
               aria-checked={on}
               onClick={() => set({ type: k })}
-              className={`rounded-full px-3 py-1.5 text-xs font-medium ring-1 transition ${
-                on ? "bg-foreground text-background ring-foreground" : "bg-surface text-muted ring-border hover:text-foreground"
+              className={`min-h-9 rounded-[2px] px-3 text-[13px] font-semibold transition-colors ${
+                on
+                  ? "bg-navy text-on-navy"
+                  : "bg-surface text-muted shadow-[inset_0_0_0_1px_var(--border)] hover:text-foreground hover:shadow-[inset_0_0_0_1px_var(--rule)]"
               }`}
             >
               {k ? t(`coord.ev.type.${k}` as DictKey) : t("coord.ev.none")}
@@ -104,7 +106,7 @@ export function EvidenceAttach({
           <button
             type="button"
             onClick={() => onChange({ ...syntheticEvidence(syntheticPreset), file: value.file })}
-            className="rounded-full px-3 py-1.5 text-xs font-medium text-sky ring-1 ring-sky/40 hover:bg-sky-soft"
+            className="min-h-9 rounded-[2px] px-3 text-[13px] font-semibold text-foreground underline decoration-dotted underline-offset-4 hover:decoration-solid"
           >
             {t(syntheticPreset === "delivered" ? "coord.ev.synthetic" : "coord.ev.syntheticVerify")}
           </button>
@@ -121,9 +123,9 @@ export function EvidenceAttach({
                 type="file"
                 accept={EVIDENCE_ACCEPT}
                 onChange={(e) => set({ file: e.target.files?.[0] ?? null })}
-                className="block w-full text-sm text-muted file:mr-3 file:rounded-md file:border-0 file:bg-background file:px-3 file:py-2 file:text-sm file:font-medium file:text-foreground file:ring-1 file:ring-border"
+                className="block w-full text-sm text-muted file:mr-3 file:min-h-9 file:rounded-[2px] file:border file:border-rule file:bg-surface file:px-3 file:text-sm file:font-semibold file:text-foreground"
               />
-              <p className="mt-1 text-xs text-muted">{t("coord.ev.fileHint")}</p>
+              <p className="mt-1 text-[13px] text-muted">{t("coord.ev.fileHint")}</p>
             </div>
           )}
           <div>
@@ -134,7 +136,7 @@ export function EvidenceAttach({
             <Label htmlFor={`${id}-en`}>{t("coord.ev.noteEn")}</Label>
             <input id={`${id}-en`} lang="en" value={value.noteEn} onChange={(e) => set({ noteEn: e.target.value })} className={inputCls} />
           </div>
-          {state === "incomplete" && <p className="text-xs text-amber sm:col-span-2">{t("coord.ev.needNoteOrFile")}</p>}
+          {state === "incomplete" && <p className="text-[13px] font-semibold text-gold-ink sm:col-span-2">{t("coord.ev.needNoteOrFile")}</p>}
         </div>
       )}
     </fieldset>

@@ -21,17 +21,14 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#ffffff" },
-    { media: "(prefers-color-scheme: dark)", color: "#081530" },
-  ],
+  themeColor: "#ffffff",
   width: "device-width",
   initialScale: 1,
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="es" className={`${sans.variable} ${display.variable} h-full antialiased`}>
+    <html lang="en" className={`${sans.variable} ${display.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col bg-background text-foreground">
         <Providers>
           <Suspense fallback={<div aria-hidden className="h-[8.75rem] sm:h-28" />}>
