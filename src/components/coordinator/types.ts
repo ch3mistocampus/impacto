@@ -11,6 +11,9 @@ export type ReviewReport = ReviewData["fieldReports"][number];
 export type ReviewMilestone = ReviewData["milestones"][number];
 export type InboxData = FunctionReturnType<typeof api.coordinator.inbox>;
 export type InboxItem = InboxData["inReview"][number];
+export type EvidenceRow = FunctionReturnType<typeof api.coordinator.listEvidence>[number];
+export type FinancialsData = FunctionReturnType<typeof api.coordinator.financials>;
+export type WeeklyReport = FunctionReturnType<typeof api.coordinator.listWeeklyReports>[number];
 
 const STOP = new Set([
   "familia", "family", "señor", "señora", "senor", "senora", "sr", "sra", "don", "doña", "dona",

@@ -5,9 +5,10 @@ import { useI18n } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
 import type { DictKey } from "@/lib/dict";
 
+// Keep in sync with DEMO_TRANSCRIPT_ES/EN in convex/ai.ts
 export const DEMO_TRANSCRIPT = {
-  es: "La casa necesita unos doscientos ladrillos, quince bolsas de cemento y reparación del techo.",
-  en: "The house needs about two hundred bricks, fifteen bags of cement, and roof repair.",
+  es: "Estamos ayudando a una familia cuya casa sufrió daños. Necesitamos aproximadamente 200 ladrillos, 15 bolsas de cemento y materiales para reparar el techo.",
+  en: "We are helping a family whose house was damaged. We need about 200 bricks, 15 bags of cement and materials to fix the roof.",
 } as const;
 
 export const ITEM_KEYS = [

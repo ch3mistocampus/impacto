@@ -6,15 +6,21 @@ import { useQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import { useI18n } from "@/lib/i18n";
 import { CategoryBadge } from "./CategoryBadge";
-import { LedgerBar } from "./LedgerBar";
+import { EvidenceList } from "./EvidenceList";
+import { FinancialsTable } from "./Financials";
+import { LedgerBar, StageLegend } from "./LedgerBar";
 import { MaterialImage } from "./MaterialImage";
+import { DemoStamp, PausedNotice, StatusBadge, useDateFmt } from "./PublicMeta";
+import { StageStrip } from "./ProjectCard";
 import { Timeline, toTimelineItems } from "./Timeline";
 import { VerifiedBadge } from "./VerifiedBadge";
 import { CATEGORY_STYLE } from "./types";
 
-export function ProjectDetail() {
-  const { projectId } = useParams<{ projectId: string }>();
+export function ProjectDetail({ backHref = "/#proyectos" }: { backHref?: string }) {
+  const params = useParams<{ projectId?: string; id?: string }>();
+  const projectId = params.projectId ?? params.id ?? "";
   const { t, pick } = useI18n();
+  const fmt = useDateFmt();
   const data = useQuery(api.public.getProject, { projectId });
 
   if (data === undefined) return <p className="py-16 text-muted">{t("common.loading")}</p>;
@@ -29,35 +35,46 @@ export function ProjectDetail() {
     );
   }
 
-  const { project: p, needs, timeline, photos } = data;
+  const { project: p, needs, timeline, photos, evidence, financials, approvedAt, asOf } = data;
   const s = CATEGORY_STYLE[p.category];
   const canPledge = p.status === "published" && needs.some((n) => n.ledger.availableToPledge > 0);
+  const outcomes = timeline.filter((m) => m.type === "outcome");
+  const before = evidence.filter((e) => e.type === "before_photo" && e.url);
+  const after = evidence.filter((e) => e.type === "after_photo" && e.url);
+  const otherEvidence = evidence.filter((e) => e.type !== "before_photo" && e.type !== "after_photo");
 
   return (
     <div className="pt-6 sm:pt-10">
-      <Link href="/#proyectos" className="text-sm text-muted underline underline-offset-4">
-        {t("common.back")}
-      </Link>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <Link href={backHref} className="text-sm text-muted underline underline-offset-4">
+          {t("common.back")}
+        </Link>
+        <DemoStamp asOf={asOf} />
+      </div>
 
       <header className="mt-4 grid gap-6 md:grid-cols-[1fr_18rem] md:items-end">
         <div>
           <div className="flex flex-wrap items-center gap-2">
             <CategoryBadge category={p.category} />
-            {p.status === "completed" && (
-              <span className="rounded-full bg-leaf-soft text-leaf px-2.5 py-1 text-xs font-semibold">
-                {t("project.completed")}
-              </span>
-            )}
+            <StatusBadge status={p.status} />
           </div>
           <h1 className={`mt-3 font-display text-4xl sm:text-5xl font-semibold leading-[1.05] ${s.text}`}>
             {p.publicAlias}
           </h1>
           <p className="mt-2 font-display text-xl sm:text-2xl">{pick(p.titleEs, p.titleEn)}</p>
-          {p.region && (
-            <p className="mt-2 text-sm text-muted">
-              {t("project.region")}: <span className="text-foreground font-semibold">{p.region}</span>
-            </p>
-          )}
+          <div className="mt-2 flex flex-wrap gap-x-5 gap-y-1 text-sm text-muted">
+            {p.region && (
+              <p>
+                {t("project.region")}: <span className="text-foreground font-semibold">{p.region}</span>
+              </p>
+            )}
+            {approvedAt && (
+              <p>
+                {t("project.approvedOn")}{" "}
+                <span className="text-foreground font-semibold">{fmt.date(approvedAt)}</span>
+              </p>
+            )}
+          </div>
         </div>
         <div className={`hidden md:block aspect-square rounded-3xl overflow-hidden ${s.soft}`}>
           <MaterialImage
@@ -70,9 +87,8 @@ export function ProjectDetail() {
       </header>
 
       {p.status === "paused" && (
-        <div role="status" className="mt-6 rounded-2xl border-2 border-amber bg-amber-soft px-5 py-4">
-          <p className="font-display text-xl font-semibold text-amber">{t("project.paused")}</p>
-          <p className="mt-1 text-sm">{p.safetyPauseReasonPublic || t("project.pausedDefault")}</p>
+        <div className="mt-6">
+          <PausedNotice reason={p.safetyPauseReasonPublic} />
         </div>
       )}
 
@@ -88,11 +104,61 @@ export function ProjectDetail() {
         </Link>
       )}
 
+      {/* How things changed — verified outcome milestones only */}
+      <section className="mt-12 rounded-3xl bg-leaf-soft/60 border border-leaf/25 p-5 sm:p-7" aria-labelledby="changed-title">
+        <h2 id="changed-title" className="font-display text-2xl sm:text-3xl font-semibold text-leaf">
+          {t("project.howChanged")}
+        </h2>
+        <p className="mt-1 text-sm text-muted">{t("project.howChangedLead")}</p>
+        {outcomes.length === 0 ? (
+          <p className="mt-4 text-sm">{t("project.howChangedEmpty")}</p>
+        ) : (
+          <ul className="mt-4 space-y-3">
+            {outcomes.map((m) => (
+              <li key={m.milestoneId} className="grid grid-cols-[auto_1fr] gap-3 items-start">
+                <VerifiedBadge compact label={t("project.verifiedByOrg")} className="mt-0.5" />
+                <div>
+                  <p className="leading-relaxed">{pick(m.descriptionEs, m.descriptionEn)}</p>
+                  <p className="text-xs text-muted">{fmt.date(m.occurredAt)}</p>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+        {(before.length > 0 || after.length > 0) && (
+          <div className="mt-6">
+            <h3 className="font-semibold">{t("project.beforeAfter")}</h3>
+            <div className="mt-3 grid grid-cols-2 gap-3">
+              {[
+                { label: t("evidence.before_photo"), list: before },
+                { label: t("evidence.after_photo"), list: after },
+              ].map((col) => (
+                <figure key={col.label}>
+                  {col.list[0]?.url ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={col.list[0].url}
+                      alt={`${col.label}: ${p.publicAlias}`}
+                      className="aspect-[4/3] w-full rounded-xl object-cover border border-border"
+                    />
+                  ) : (
+                    <div className="aspect-[4/3] w-full rounded-xl border-2 border-dashed border-border" />
+                  )}
+                  <figcaption className="mt-1 text-xs font-semibold">{col.label}</figcaption>
+                </figure>
+              ))}
+            </div>
+          </div>
+        )}
+      </section>
+
       <div className="mt-12 grid gap-12 lg:grid-cols-[1.15fr_1fr]">
         <section aria-labelledby="materials-title">
           <h2 id="materials-title" className="font-display text-2xl sm:text-3xl font-semibold">
             {t("project.materials")}
           </h2>
+          <p className="mt-1 text-sm text-muted">{t("project.materialsLead")}</p>
+          <StageStrip totals={p.totals} className="mt-4 rounded-xl border border-border bg-surface p-3" />
           <ul className="mt-4 space-y-4">
             {needs.map((n) => (
               <li key={n.needId} className="rounded-2xl border border-border bg-surface p-4 sm:p-5">
@@ -110,6 +176,12 @@ export function ProjectDetail() {
               </li>
             ))}
           </ul>
+          <details className="mt-4 text-sm">
+            <summary className="cursor-pointer font-semibold underline underline-offset-4 decoration-dotted">
+              {t("stage.legendTitle")}
+            </summary>
+            <StageLegend className="mt-3" />
+          </details>
         </section>
 
         <section aria-labelledby="timeline-title">
@@ -121,6 +193,26 @@ export function ProjectDetail() {
           </div>
         </section>
       </div>
+
+      {financials.length > 0 && (
+        <section className="mt-12" aria-labelledby="fin-title">
+          <h2 id="fin-title" className="font-display text-2xl sm:text-3xl font-semibold">
+            {t("project.financials")}
+          </h2>
+          <p className="mt-1 text-sm text-muted">{t("project.financialsLead")}</p>
+          <FinancialsTable rows={financials} className="mt-4 max-w-xl" />
+        </section>
+      )}
+
+      <section className="mt-12" aria-labelledby="evidence-title">
+        <h2 id="evidence-title" className="font-display text-2xl sm:text-3xl font-semibold">
+          {t("project.evidence")}
+        </h2>
+        <p className="mt-1 text-sm text-muted">{t("project.evidenceLead")}</p>
+        <div className="mt-4">
+          <EvidenceList items={otherEvidence} />
+        </div>
+      </section>
 
       <section className="mt-12" aria-labelledby="photos-title">
         <h2 id="photos-title" className="font-display text-2xl sm:text-3xl font-semibold">
@@ -149,6 +241,12 @@ export function ProjectDetail() {
           </ul>
         )}
       </section>
+
+      <p className="mt-12">
+        <Link href="/transparency" className="font-semibold underline underline-offset-4 decoration-2">
+          {t("project.transparencyLink")}
+        </Link>
+      </p>
     </div>
   );
 }

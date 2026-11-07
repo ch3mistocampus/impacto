@@ -34,9 +34,9 @@ export const dict = d({
   "role.donor": { es: "Donante", en: "Donor" },
   "role.community": { es: "Comunidad", en: "Community viewer" },
 
-  "category.roof_shelter": { es: "Techo y Refugio", en: "Roof and Shelter" },
+  "category.roof_shelter": { es: "Techo y abrigo", en: "Roof and Shelter" },
   "category.reconstruction": { es: "Reconstrucción", en: "Reconstruction" },
-  "category.heal_sow": { es: "Sanar y Sembrar", en: "Heal and Sow" },
+  "category.heal_sow": { es: "Sanar y sembrar", en: "Heal and Sow" },
 
   "ledger.requested": { es: "Solicitado", en: "Requested" },
   "ledger.pledged": { es: "Comprometido", en: "Pledged" },

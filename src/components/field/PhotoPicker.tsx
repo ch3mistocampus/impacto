@@ -1,12 +1,17 @@
 "use client";
 
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { useI18n } from "@/lib/i18n";
-import { LockIcon } from "./ui";
+import { prepareImageFile } from "@/lib/image";
+import { LockIcon, Spinner } from "./ui";
 
 export type PhotoItem = { key: string; url: string | null; onRemove?: () => void };
 
-/** Mobile camera capture + gallery picker. Parent owns the list (local files or uploaded photos). */
+/**
+ * Mobile camera capture + gallery picker. Parent owns the list (local files or uploaded photos).
+ * Every picked file is re-encoded via `prepareImageForUpload` (EXIF/GPS stripped, max 1600px)
+ * BEFORE `onAdd` — originals never leave the device. Geolocation is never requested.
+ */
 export function PhotoPicker({
   items,
   onAdd,
@@ -18,6 +23,28 @@ export function PhotoPicker({
 }) {
   const { t } = useI18n();
   const inputRef = useRef<HTMLInputElement>(null);
+  const [processing, setProcessing] = useState(false);
+  const [failed, setFailed] = useState(0);
+
+  const handle = async (files: File[]) => {
+    setProcessing(true);
+    setFailed(0);
+    const ok: File[] = [];
+    let bad = 0;
+    for (const f of files) {
+      try {
+        ok.push(await prepareImageFile(f));
+      } catch (e) {
+        console.error("image prepare failed", e);
+        bad++;
+      }
+    }
+    setProcessing(false);
+    setFailed(bad);
+    if (ok.length) onAdd(ok);
+  };
+  const busy = disabled || processing;
+
   return (
     <div>
       <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
@@ -45,15 +72,19 @@ export function PhotoPicker({
         ))}
         <button
           type="button"
-          disabled={disabled}
+          disabled={busy}
           onClick={() => inputRef.current?.click()}
           className="flex aspect-square flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed border-border text-center text-xs font-medium text-muted"
         >
-          <svg aria-hidden viewBox="0 0 24 24" className="h-7 w-7" fill="none" stroke="currentColor" strokeWidth={2}>
-            <path d="M4 8h3l2-3h6l2 3h3v11H4z" strokeLinejoin="round" />
-            <circle cx="12" cy="13" r="3.5" />
-          </svg>
-          <span className="px-1">{t("field.photos.add")}</span>
+          {processing ? (
+            <Spinner className="h-7 w-7" />
+          ) : (
+            <svg aria-hidden viewBox="0 0 24 24" className="h-7 w-7" fill="none" stroke="currentColor" strokeWidth={2}>
+              <path d="M4 8h3l2-3h6l2 3h3v11H4z" strokeLinejoin="round" />
+              <circle cx="12" cy="13" r="3.5" />
+            </svg>
+          )}
+          <span className="px-1">{t(processing ? "field.photos.processing" : "field.photos.add")}</span>
         </button>
       </div>
       <input
@@ -65,7 +96,7 @@ export function PhotoPicker({
         className="hidden"
         onChange={(e) => {
           const files = Array.from(e.target.files ?? []);
-          if (files.length) onAdd(files);
+          if (files.length) void handle(files);
           e.target.value = "";
         }}
       />
@@ -73,6 +104,18 @@ export function PhotoPicker({
         <LockIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
         {t("field.photos.private")}
       </p>
+      <p className="mt-1 flex items-start gap-1.5 text-xs font-medium text-leaf">
+        <svg aria-hidden viewBox="0 0 24 24" className="mt-0.5 h-3.5 w-3.5 shrink-0" fill="none" stroke="currentColor" strokeWidth={2.5}>
+          <path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z" />
+          <path d="M4 4l16 16" strokeLinecap="round" />
+        </svg>
+        {t("field.photos.metaStripped")}
+      </p>
+      {failed > 0 && (
+        <p role="alert" className="mt-1 rounded-xl bg-amber-soft px-3 py-2 text-xs text-amber">
+          {t("field.photos.failed")}
+        </p>
+      )}
     </div>
   );
 }

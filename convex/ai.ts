@@ -29,8 +29,11 @@ type Material = {
   quantity: number | null;
   unit: string;
   confidence: Confidence;
+  /** quantity was stated with a qualifier ("aproximadamente", "unos", "about") */
+  approximate: boolean;
   sourceQuote: string;
 };
+type Milestone = { es: string; en: string };
 type Extraction = {
   source: "openai" | "fallback";
   model?: string;
@@ -41,9 +44,13 @@ type Extraction = {
   category: Category;
   summaryEs: string;
   summaryEn: string;
+  /** AI *suggestion* only — the field worker confirms it. */
   urgency: Urgency;
+  damageDescriptionEs: string;
+  damageDescriptionEn: string;
   materials: Material[];
   missingQuestions: { es: string; en: string }[];
+  proposedMilestones: Milestone[];
   transcriptTranslated: string | null;
 };
 
@@ -62,10 +69,11 @@ const ITEM_KEYS = [
   "tools",
 ] as const;
 
+// Keep in sync with DEMO_TRANSCRIPT in src/components/field/ui.tsx
 export const DEMO_TRANSCRIPT_ES =
-  "La casa necesita unos doscientos ladrillos, quince bolsas de cemento y reparación del techo.";
-const DEMO_TRANSLATION_EN =
-  "The house needs about two hundred bricks, fifteen bags of cement, and roof repair.";
+  "Estamos ayudando a una familia cuya casa sufrió daños. Necesitamos aproximadamente 200 ladrillos, 15 bolsas de cemento y materiales para reparar el techo.";
+export const DEMO_TRANSCRIPT_EN =
+  "We are helping a family whose house was damaged. We need about 200 bricks, 15 bags of cement and materials to fix the roof.";
 
 // ---------------- redaction ----------------
 
@@ -113,7 +121,12 @@ const NUM: Record<string, number> = {
 };
 const MULT: Record<string, number> = { mil: 1000, thousand: 1000, hundred: 100 };
 const NUM_JOINERS = new Set(["y", "and"]);
-const VAGUE = new Set(["unos", "unas", "aproximadamente", "about", "around", "approximately", "some", "como"]);
+// Qualifiers that make a stated quantity approximate (kept, but flagged + lower confidence).
+const VAGUE = new Set([
+  "unos", "unas", "aproximadamente", "aprox", "aprox.", "alrededor", "cerca", "casi", "como", "menos", // "más o menos"
+  "about", "around", "approximately", "approx", "approx.", "roughly", "nearly", "almost", "some", "estimated",
+]);
+const CLAUSE_JOINERS = new Set(["y", "e", "and", "con", "with", "ademas", "also", "tambien"]);
 
 const UNIT_WORDS: Record<string, string> = {
   bolsa: "bolsas", bolsas: "bolsas", saco: "sacos", sacos: "sacos", bags: "bolsas", bag: "bolsas",
@@ -132,7 +145,7 @@ type Catalog = { key: string; stems: string[]; nameEs: string; nameEn: string; u
 const CATALOG: Catalog[] = [
   { key: "bricks", stems: ["ladrillo", "bloque", "brick", "block"], nameEs: "Ladrillos", nameEn: "Bricks", unit: "unidades" },
   { key: "cement_bag", stems: ["cemento", "cement"], nameEs: "Bolsas de cemento", nameEn: "Cement bags", unit: "bolsas" },
-  { key: "zinc_sheet", stems: ["zinc", "techo", "roof", "tejado", "plancha"], nameEs: "Planchas de zinc (techo)", nameEn: "Zinc roof sheets", unit: "planchas" },
+  { key: "zinc_sheet", stems: ["zinc", "techo", "roof", "tejado", "plancha"], nameEs: "Materiales de techo (planchas de zinc)", nameEn: "Roofing materials (zinc sheets)", unit: "planchas" },
   { key: "wood_beam", stems: ["madera", "viga", "tabla", "wood", "beam", "lumber", "plywood"], nameEs: "Madera / vigas", nameEn: "Wood beams", unit: "piezas" },
   { key: "nails", stems: ["clavo", "nail", "tornillo", "screw"], nameEs: "Clavos", nameEn: "Nails", unit: "libras" },
   { key: "tarp", stems: ["lona", "toldo", "tarp", "plastico"], nameEs: "Lonas", nameEn: "Tarps", unit: "unidades" },
@@ -200,9 +213,27 @@ export function fallbackExtract(transcript: string, language: "es" | "en", redac
     let quantity = numToks.length ? parseNumberTokens(numToks) : null;
     if (quantity !== null && numToks.length === 1 && ["un", "una", "uno"].includes(numToks[0])) quantity = null;
     if (quantity !== null && quantity <= 0) quantity = null;
-    const vague = j >= 0 && VAGUE.has(tokens[j]);
-    // quote: include the vague qualifier ("unos") or, when no number, the preceding word ("reparación del techo")
-    const start = Math.max(0, j + (vague || (quantity === null && j >= 0 && !boundary[j]) ? 0 : 1));
+    // look up to 3 tokens back (within the clause) for a qualifier: "aproximadamente 200", "alrededor de 200", "más o menos 200"
+    let vagueAt = -1;
+    if (quantity !== null) {
+      for (let k = j; k >= 0 && k >= j - 2 && !boundary[k]; k--) {
+        if (VAGUE.has(tokens[k])) {
+          vagueAt = k;
+          break;
+        }
+      }
+    }
+    const vague = vagueAt >= 0;
+    // quote: include the qualifier ("aproximadamente 200 ladrillos"); with no number, the words leading up to the
+    // item within the clause ("materiales para reparar el techo"), stopping at "y"/"and" or punctuation.
+    let start = j + 1;
+    if (vague) start = tokens[vagueAt] === "menos" && vagueAt >= 2 && tokens[vagueAt - 1] === "o" ? vagueAt - 2 : vagueAt;
+    else if (quantity === null) {
+      let k = j;
+      while (k >= 0 && k > j - 5 && !boundary[k] && !CLAUSE_JOINERS.has(tokens[k]) && !/^necesit|^need/.test(tokens[k])) k--;
+      start = k + 1;
+    }
+    start = Math.max(0, Math.min(start, i));
     const quote = rawTokens.slice(start, i + 1).join(" ").replace(/[,;.:!?]+$/, "");
     seen.add(item.key);
     materials.push({
@@ -212,6 +243,7 @@ export function fallbackExtract(transcript: string, language: "es" | "en", redac
       quantity,
       unit: unit ?? item.unit,
       confidence: quantity === null ? "low" : vague ? "medium" : "high",
+      approximate: quantity !== null && vague,
       sourceQuote: quote,
     });
   }
@@ -235,7 +267,8 @@ export function fallbackExtract(transcript: string, language: "es" | "en", redac
   const fmt = (m: Material, lang: "es" | "en") => {
     const name = lang === "es" ? m.nameEs.toLowerCase() : m.nameEn.toLowerCase();
     if (m.quantity === null) return lang === "es" ? `${name} (cantidad por confirmar)` : `${name} (quantity to be confirmed)`;
-    return lang === "es" ? `${name}: ${m.quantity} ${m.unit}` : `${name}: ${m.quantity}`;
+    const approx = m.approximate ? (lang === "es" ? "aprox. " : "approx. ") : "";
+    return lang === "es" ? `${name}: ${approx}${m.quantity} ${m.unit}` : `${name}: ${approx}${m.quantity}`;
   };
   const listEs = materials.map((m) => fmt(m, "es")).join("; ");
   const listEn = materials.map((m) => fmt(m, "en")).join("; ");
@@ -260,7 +293,49 @@ export function fallbackExtract(transcript: string, language: "es" | "en", redac
   if (!materials.length)
     missingQuestions.push({ es: "¿Qué materiales se necesitan y en qué cantidad?", en: "Which materials are needed, and how many?" });
 
-  const isDemo = norm(transcript).includes(norm("doscientos ladrillos")) && norm(transcript).includes(norm("quince bolsas"));
+  // Damage description: only from words actually present in the transcript (no invented details).
+  const dEs: string[] = [];
+  const dEn: string[] = [];
+  const home = /\b(casa|vivienda|hogar|house|home)\b/.test(lower);
+  const damaged = /dan(o|os|ad)|destru|afectad|damage|destroy|collaps|derrumb/.test(lower);
+  if (home && damaged) {
+    dEs.push("Vivienda con daños reportados");
+    dEn.push("Home with reported damage");
+  } else if (damaged) {
+    dEs.push("Daños reportados en el lugar");
+    dEn.push("Damage reported at the site");
+  }
+  if (has("zinc_sheet") || has("tarp") || /techo|roof|tejado/.test(lower)) {
+    dEs.push("el techo necesita reparación");
+    dEn.push("the roof needs repair");
+  }
+  if (/muro|pared|wall/.test(lower) || has("bricks") || has("cement_bag")) {
+    dEs.push("se requieren materiales de construcción para reparar la estructura (muros)");
+    dEn.push("building materials are needed to repair the structure (walls)");
+  }
+  if (/inund|flood/.test(lower)) {
+    dEs.push("hubo inundación");
+    dEn.push("there was flooding");
+  }
+  const sentence = (parts: string[], fallback: string) =>
+    parts.length ? `${parts[0].charAt(0).toUpperCase()}${parts.join("; ").slice(1)}.` : fallback;
+  const damageDescriptionEs = sentence(dEs, "Sin descripción del daño en el reporte; confirmar con el equipo de campo.");
+  const damageDescriptionEn = sentence(dEn, "No damage description in the report; confirm with the field team.");
+  if (!dEs.length)
+    missingQuestions.push({ es: "¿Qué daños tiene la vivienda o el lugar?", en: "What damage does the home or site have?" });
+
+  // Proposed milestones (editable suggestions, never verified).
+  const proposedMilestones: Milestone[] = [];
+  if (materials.length) proposedMilestones.push({ es: "Materiales recibidos", en: "Materials received" });
+  if (structural) proposedMilestones.push({ es: "Muro reconstruido", en: "Wall rebuilt" });
+  if (has("zinc_sheet") || has("tarp")) proposedMilestones.push({ es: "Techo reparado", en: "Roof repaired" });
+  if (has("seeds") || has("soil")) proposedMilestones.push({ es: "Huerto sembrado", en: "Garden planted" });
+  if (has("water_tank")) proposedMilestones.push({ es: "Tanque de agua instalado", en: "Water tank installed" });
+  if (proposedMilestones.length < 2) proposedMilestones.push({ es: "Trabajo completado", en: "Work completed" });
+
+  const n = norm(transcript.replace(/\s+/g, ""));
+  const isDemoEs = n === norm(DEMO_TRANSCRIPT_ES.replace(/\s+/g, ""));
+  const isDemoEn = n === norm(DEMO_TRANSCRIPT_EN.replace(/\s+/g, ""));
   return {
     source: "fallback",
     notice,
@@ -271,9 +346,12 @@ export function fallbackExtract(transcript: string, language: "es" | "en", redac
     summaryEs,
     summaryEn,
     urgency,
+    damageDescriptionEs,
+    damageDescriptionEn,
     materials,
     missingQuestions,
-    transcriptTranslated: isDemo && language === "es" ? DEMO_TRANSLATION_EN : null,
+    proposedMilestones,
+    transcriptTranslated: isDemoEs ? DEMO_TRANSCRIPT_EN : isDemoEn ? DEMO_TRANSCRIPT_ES : null,
   };
 }
 
@@ -281,15 +359,18 @@ export function fallbackExtract(transcript: string, language: "es" | "en", redac
 
 const SYSTEM_PROMPT = `You structure disaster-recovery field reports for a nonprofit in Puerto Rico / Latin America.
 The transcript may be in Spanish or English (or mixed). Keep meaning faithful to the transcript.
-Output BOTH Spanish and English for every human-readable field (titleEs/titleEn, summaryEs/summaryEn, material names, missing questions).
+Output BOTH Spanish and English for every human-readable field (titles, summaries, damage description, material names, missing questions, milestones).
 Rules:
 - NEVER invent or estimate quantities. "quantity" must be a number ONLY if the transcript explicitly states it (digits or words like "doscientos", "quince"). Otherwise null.
-  Approximations explicitly stated (e.g. "unos doscientos") may be used but set confidence "medium".
+  Approximations explicitly stated (e.g. "aproximadamente 200", "unos doscientos", "about 200") keep the number but set approximate=true and confidence "medium".
+  Vague requests with no number (e.g. "materiales para reparar el techo") => quantity null, confidence "low".
 - itemKey must be one of: ${ITEM_KEYS.join(", ")}, or "other". Roof repair with no specific material => "zinc_sheet" with quantity null.
 - unit: short Spanish unit word (e.g. "unidades", "bolsas", "planchas", "galones", "sacos").
 - sourceQuote: the exact words from the transcript supporting this material.
 - category: roof_shelter (roofs, tarps, shelter), reconstruction (walls, structure, bricks, cement), heal_sow (gardens, seeds, soil, community healing).
-- urgency: high only if the transcript indicates danger, exposure to rain, vulnerable people, or says urgent.
+- damageDescriptionEs/En: one or two short sentences describing ONLY the damage stated in the transcript. No names, no locations.
+- urgency is a SUGGESTION for the worker to confirm: high only if the transcript indicates danger, exposure to rain, vulnerable people, or says urgent.
+- proposedMilestones: 2-4 short, verifiable project milestones in order (e.g. "Materiales recibidos"/"Materials received", "Muro reconstruido"/"Wall rebuilt", "Techo reparado"/"Roof repaired"). Each has es and en.
 - missingQuestions: concrete follow-up questions the field worker should answer (especially unknown quantities). Bilingual.
 - transcriptTranslated: translate the full transcript into the OTHER language (Spanish->English or English->Spanish).
 - Do not include any personal names, phone numbers or addresses in any output. Text in [brackets] was redacted.
@@ -299,7 +380,8 @@ const JSON_SCHEMA = {
   type: "object",
   additionalProperties: false,
   required: [
-    "titleEs", "titleEn", "category", "summaryEs", "summaryEn", "urgency", "materials", "missingQuestions", "transcriptTranslated",
+    "titleEs", "titleEn", "category", "summaryEs", "summaryEn", "urgency", "damageDescriptionEs", "damageDescriptionEn",
+    "materials", "missingQuestions", "proposedMilestones", "transcriptTranslated",
   ],
   properties: {
     titleEs: { type: "string" },
@@ -308,12 +390,14 @@ const JSON_SCHEMA = {
     summaryEs: { type: "string" },
     summaryEn: { type: "string" },
     urgency: { type: "string", enum: ["low", "medium", "high"] },
+    damageDescriptionEs: { type: "string" },
+    damageDescriptionEn: { type: "string" },
     materials: {
       type: "array",
       items: {
         type: "object",
         additionalProperties: false,
-        required: ["itemKey", "nameEs", "nameEn", "quantity", "unit", "confidence", "sourceQuote"],
+        required: ["itemKey", "nameEs", "nameEn", "quantity", "unit", "confidence", "approximate", "sourceQuote"],
         properties: {
           itemKey: { type: "string", enum: [...ITEM_KEYS, "other"] },
           nameEs: { type: "string" },
@@ -321,11 +405,21 @@ const JSON_SCHEMA = {
           quantity: { type: ["number", "null"] },
           unit: { type: "string" },
           confidence: { type: "string", enum: ["high", "medium", "low"] },
+          approximate: { type: "boolean" },
           sourceQuote: { type: "string" },
         },
       },
     },
     missingQuestions: {
+      type: "array",
+      items: {
+        type: "object",
+        additionalProperties: false,
+        required: ["es", "en"],
+        properties: { es: { type: "string" }, en: { type: "string" } },
+      },
+    },
+    proposedMilestones: {
       type: "array",
       items: {
         type: "object",
@@ -375,6 +469,8 @@ async function openaiExtract(apiKey: string, transcript: string, language: "es" 
     summaryEs: str(p.summaryEs),
     summaryEn: str(p.summaryEn),
     urgency: urg.includes(p.urgency) ? p.urgency : "medium",
+    damageDescriptionEs: str(p.damageDescriptionEs),
+    damageDescriptionEn: str(p.damageDescriptionEn),
     materials: (Array.isArray(p.materials) ? p.materials : []).slice(0, 30).map((m) => ({
       itemKey: (ITEM_KEYS as readonly string[]).includes(m.itemKey) ? m.itemKey : "other",
       nameEs: str(m.nameEs),
@@ -382,11 +478,16 @@ async function openaiExtract(apiKey: string, transcript: string, language: "es" 
       quantity: typeof m.quantity === "number" && Number.isFinite(m.quantity) && m.quantity > 0 ? m.quantity : null,
       unit: str(m.unit, "unidades") || "unidades",
       confidence: conf.includes(m.confidence) ? m.confidence : "low",
+      approximate: m.approximate === true,
       sourceQuote: str(m.sourceQuote),
     })),
     missingQuestions: (Array.isArray(p.missingQuestions) ? p.missingQuestions : [])
       .slice(0, 10)
       .map((q) => ({ es: str(q.es), en: str(q.en) })),
+    proposedMilestones: (Array.isArray(p.proposedMilestones) ? p.proposedMilestones : [])
+      .slice(0, 8)
+      .map((q) => ({ es: str(q.es).slice(0, 200), en: str(q.en).slice(0, 200) }))
+      .filter((q) => q.es || q.en),
     transcriptTranslated: typeof p.transcriptTranslated === "string" ? p.transcriptTranslated : null,
   };
 }
@@ -479,12 +580,23 @@ export const transcribeAndExtract = action({
   },
 });
 
-/** Smoke test for the offline extractor: `npx convex run ai:testFallback '{"transcript":"..."}'` */
+/**
+ * Smoke test for the offline extractor:
+ *   npx convex run ai:testFallback '{"transcript":"..."}'
+ *   npx convex run ai:testFallback '{"demo":"en"}'
+ */
 export const testFallback = internalAction({
-  args: { transcript: v.optional(v.string()) },
+  args: {
+    transcript: v.optional(v.string()),
+    demo: v.optional(v.union(v.literal("es"), v.literal("en"))),
+    language: v.optional(v.union(v.literal("es"), v.literal("en"))),
+  },
   returns: v.any(),
   handler: async (_ctx, args) => {
-    const r = redact(args.transcript ?? DEMO_TRANSCRIPT_ES);
-    return { redacted: r.text, extraction: fallbackExtract(r.text, "es", r.count, "test") };
+    const text = args.transcript ?? (args.demo === "en" ? DEMO_TRANSCRIPT_EN : DEMO_TRANSCRIPT_ES);
+    const language =
+      args.language ?? (args.demo ?? (/\b(we|the|need|and|bags?|bricks?)\b/i.test(text) ? "en" : "es"));
+    const r = redact(text);
+    return { redacted: r.text, extraction: fallbackExtract(r.text, language, r.count, "test") };
   },
 });

@@ -4,8 +4,9 @@ import Link from "next/link";
 import { useI18n } from "@/lib/i18n";
 import { CategoryBadge } from "./CategoryBadge";
 import { MaterialImage } from "./MaterialImage";
-import { PendingBadge } from "./VerifiedBadge";
-import { CATEGORY_STYLE, type Category } from "./types";
+import { DemoTag, StatusBadge } from "./PublicMeta";
+import { STAGE_TEXT, stageSwatch } from "./ledgerStyles";
+import { CATEGORY_STYLE, STAGES, type Category, type PublicStatus, type StageTotals } from "./types";
 
 export type ProjectCardData = {
   projectId: string;
@@ -15,20 +16,21 @@ export type ProjectCardData = {
   titleEn: string;
   summaryEs: string;
   summaryEn: string;
-  status: "published" | "paused" | "completed";
+  status: PublicStatus;
   region: string | null;
   coverPhotoUrl: string | null;
   needsCount: number;
-  totals: { requested: number; pledged: number; received: number; used: number };
+  isDemo?: boolean;
+  safetyPauseReasonPublic?: string | null;
+  totals: StageTotals;
 };
 
-export function ProjectCard({ p }: { p: ProjectCardData }) {
+export function ProjectCard({ p, hrefBase = "/p" }: { p: ProjectCardData; hrefBase?: string }) {
   const { t, pick } = useI18n();
   const s = CATEGORY_STYLE[p.category];
-  const usedPct = p.totals.requested > 0 ? Math.min(100, (p.totals.used / p.totals.requested) * 100) : 0;
   return (
     <Link
-      href={`/p/${p.projectId}`}
+      href={`${hrefBase}/${p.projectId}`}
       className="group grid grid-cols-[5.5rem_1fr] sm:grid-cols-[7rem_1fr] gap-4 py-4 border-b border-border last:border-b-0"
     >
       <div className={`aspect-square rounded-xl overflow-hidden ${s.soft}`}>
@@ -42,10 +44,8 @@ export function ProjectCard({ p }: { p: ProjectCardData }) {
       <div className="min-w-0">
         <div className="flex flex-wrap items-center gap-2">
           <CategoryBadge category={p.category} />
-          {p.status === "paused" && <PendingBadge label={t("project.paused")} />}
-          {p.status === "completed" && (
-            <span className="text-xs font-semibold text-leaf">{t("project.completed")}</span>
-          )}
+          <StatusBadge status={p.status} />
+          {p.isDemo !== false && <DemoTag />}
         </div>
         <h3 className="mt-1.5 font-display text-lg font-semibold leading-snug group-hover:underline underline-offset-4 decoration-2">
           {p.publicAlias}
@@ -56,15 +56,27 @@ export function ProjectCard({ p }: { p: ProjectCardData }) {
             {t("project.region")}: {p.region}
           </p>
         )}
-        <div className="mt-2 flex items-center gap-2 text-xs">
-          <span className="h-1.5 flex-1 max-w-40 rounded-full bg-border overflow-hidden" aria-hidden>
-            <span className="block h-full bg-sky" style={{ width: `${usedPct}%` }} />
-          </span>
-          <span className="text-muted tabular-nums">
-            {t("ledger.used")}: {p.totals.used.toLocaleString()} / {p.totals.requested.toLocaleString()}
-          </span>
-        </div>
+        <StageStrip totals={p.totals} className="mt-2" />
       </div>
     </Link>
+  );
+}
+
+/** Six tiny separate counters — never a single merged progress bar. */
+export function StageStrip({ totals, className = "" }: { totals: StageTotals; className?: string }) {
+  const { t } = useI18n();
+  return (
+    <dl className={`grid grid-cols-3 gap-x-3 gap-y-1 text-xs max-w-md ${className}`}>
+      {STAGES.map((k) => (
+        <div key={k} className="flex items-center gap-1.5 min-w-0">
+          <span className="size-2.5 shrink-0 rounded-[2px]" style={stageSwatch(k)} aria-hidden />
+          <dt className="sr-only">{t(`stage.${k}`)}</dt>
+          <dd className={`font-semibold tabular-nums ${STAGE_TEXT[k]}`}>{totals[k].toLocaleString()}</dd>
+          <span className="text-muted truncate" aria-hidden>
+            {t(`stage.${k}`)}
+          </span>
+        </div>
+      ))}
+    </dl>
   );
 }

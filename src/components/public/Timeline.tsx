@@ -10,7 +10,9 @@ export type MilestoneType =
   | "published"
   | "pledge"
   | "received"
+  | "delivered"
   | "used"
+  | "verified"
   | "expense"
   | "outcome"
   | "paused";
@@ -32,17 +34,19 @@ const KNOWN = new Set<string>([
   "published",
   "pledge",
   "received",
+  "delivered",
   "used",
+  "verified",
   "expense",
   "outcome",
   "paused",
 ]);
 
-/** Node colour per step: amber for promises, sky for confirmed, leaf for outcomes. */
+/** Node colour per step: amber for promises, sky for custody, leaf for verified impact. Paused is calm sky. */
 function nodeClass(type: string, verified: boolean) {
-  if (type === "paused") return "bg-amber text-white";
+  if (type === "paused") return "bg-sky-soft text-sky border-2 border-sky";
   if (type === "pledge") return "bg-amber-soft text-amber border-2 border-amber";
-  if (type === "outcome" && verified) return "bg-leaf text-white";
+  if ((type === "outcome" || type === "verified") && verified) return "bg-leaf text-white";
   if (verified) return "bg-sky text-white";
   return "bg-surface text-muted border-2 border-border";
 }
@@ -76,14 +80,20 @@ export function Timeline({ items, emptyLabel }: { items: TimelineItem[]; emptyLa
               className={`relative z-10 grid place-items-center size-8 rounded-full ${nodeClass(m.type, verified)}`}
               aria-hidden
             >
-              {verified && !isPledge ? <CheckIcon className="size-4" /> : <span className="size-2 rounded-full bg-current" />}
+              {verified && !isPledge && m.type !== "paused" ? <CheckIcon className="size-4" /> : <span className="size-2 rounded-full bg-current" />}
             </span>
             <div className="pt-0.5 min-w-0">
               <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
                 <h3 className="font-semibold">{title}</h3>
                 {/* Pledge milestones (incl. canceled/expired) are promises: no verified badge; the text says which. */}
-                {isPledge ? null : verified ? (
-                  <VerifiedBadge compact label={t("project.verified")} />
+                {isPledge || m.type === "paused" ? null : m.type === "used" ? (
+                  // Use is recorded by staff but is not impact until a separate "verified" event.
+                  <PendingBadge label={t("project.usedAwaiting")} className="!py-0.5 !text-[11px]" />
+                ) : verified ? (
+                  <VerifiedBadge
+                    compact={!["delivered", "verified", "outcome", "received"].includes(m.type)}
+                    label={t("project.verifiedByOrg")}
+                  />
                 ) : (
                   <PendingBadge label={t("project.pending")} className="!py-0.5 !text-[11px]" />
                 )}

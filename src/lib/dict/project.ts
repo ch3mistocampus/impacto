@@ -12,12 +12,12 @@ export const project = {
     es: "La organización aún no ha aprobado fotos para publicar.",
     en: "The nonprofit hasn't approved any photos to publish yet.",
   },
-  "project.paused": { es: "Proyecto en pausa", en: "Project paused" },
+  "project.paused": { es: "Pausado por seguridad", en: "Paused for safety" },
   "project.pausedDefault": {
-    es: "La organización pausó este proyecto mientras verifica información.",
-    en: "The nonprofit paused this project while it verifies information.",
+    es: "La organización pausó este proyecto por razones de seguridad o del entorno. Se reanudará cuando sea seguro.",
+    en: "The nonprofit paused this project for safety or environmental reasons. It will resume when it's safe.",
   },
-  "project.completed": { es: "Proyecto completado", en: "Project completed" },
+  "project.completed": { es: "Completado", en: "Completed" },
   "project.pledgeCta": { es: "Comprometer materiales", en: "Pledge materials" },
   "project.timelineEmpty": {
     es: "Todavía no hay eventos públicos.",
@@ -39,6 +39,118 @@ export const project = {
   "project.pending": { es: "Pendiente de verificar", en: "Pending verification" },
   "project.verified": { es: "Verificado", en: "Verified" },
 
+
+  // --- Update 2: shared public vocabulary (six-stage ledger, statuses, demo/as-of) ---
+  "stage.requested": { es: "Solicitado", en: "Requested" },
+  "stage.pledged": { es: "Comprometido", en: "Pledged" },
+  "stage.received": { es: "Recibido", en: "Received" },
+  "stage.delivered": { es: "Entregado", en: "Delivered" },
+  "stage.used": { es: "Usado", en: "Used" },
+  "stage.verified": { es: "Verificado", en: "Verified" },
+  "stage.def.requested": {
+    es: "Lo que el equipo de campo reportó y la organización aprobó.",
+    en: "What the field team reported and the nonprofit approved.",
+  },
+  "stage.def.pledged": {
+    es: "Promesas de donantes. Aún no han llegado.",
+    en: "Donor promises. Not yet arrived.",
+  },
+  "stage.def.received": {
+    es: "La organización confirmó que llegaron a sus manos.",
+    en: "The nonprofit confirmed they're in hand.",
+  },
+  "stage.def.delivered": {
+    es: "Llegaron al proyecto, confirmado por personal autorizado.",
+    en: "Reached the project, confirmed by authorized staff.",
+  },
+  "stage.def.used": {
+    es: "Se instalaron o se consumieron en la obra.",
+    en: "Installed or consumed on site.",
+  },
+  "stage.def.verified": {
+    es: "La organización lo confirmó con evidencia. Solo esto cuenta como impacto.",
+    en: "The nonprofit confirmed it with evidence. Only this counts as impact.",
+  },
+  "stage.legendTitle": { es: "Seis medidas, nunca sumadas", en: "Six measures, never merged" },
+  "stage.impactNote": {
+    es: "Impacto = solo lo verificado.",
+    en: "Impact = verified only.",
+  },
+  "stage.pledgeIsNot": {
+    es: "Comprometer no es entregar ni financiar.",
+    en: "Pledging is not delivering or funding.",
+  },
+  "stage.available": { es: "Disponible para comprometer", en: "Available to pledge" },
+  "stage.needsConfirmation": {
+    es: "Cantidad por confirmar — aún no se puede comprometer",
+    en: "Quantity to be confirmed — can't be pledged yet",
+  },
+
+  "status.published": { es: "Activo", en: "Active" },
+  "status.paused": { es: "Pausado por seguridad", en: "Paused for safety" },
+  "status.completed": { es: "Completado", en: "Completed" },
+  "status.pausedExplain": {
+    es: "Pausar es una decisión responsable de la organización, no un fracaso. Las cantidades se mantienen y el proyecto puede reanudarse.",
+    en: "Pausing is a responsible decision by the nonprofit, not a failure. Quantities are kept and the project can resume.",
+  },
+
+  "demo.label": { es: "Datos de demostración", en: "Demo data" },
+  "demo.explain": {
+    es: "Proyectos, cantidades y personas son ficticios. No representan operaciones reales de Espejo de Agua.",
+    en: "Projects, quantities and people are fictional. They don't represent real Espejo de Agua operations.",
+  },
+  "asOf.label": { es: "Actualizado", en: "As of" },
+
+  "project.approvedOn": { es: "Aprobado por la organización el", en: "Approved by the nonprofit on" },
+  "project.materialsLead": {
+    es: "Cada material se cuenta en seis medidas separadas. Una promesa no es una entrega.",
+    en: "Each material is counted in six separate measures. A promise is not a delivery.",
+  },
+  "project.financials": { es: "Dinero", en: "Money" },
+  "project.financialsLead": {
+    es: "Recibido, asignado y gastado son medidas separadas, en la moneda original.",
+    en: "Received, allocated and spent are separate measures, in the original currency.",
+  },
+  "fin.currency": { es: "Moneda", en: "Currency" },
+  "fin.received": { es: "Recibido", en: "Received" },
+  "fin.allocated": { es: "Asignado", en: "Allocated" },
+  "fin.spent": { es: "Gastado", en: "Spent" },
+  "fin.noFx": { es: "Sin conversión de moneda", en: "No currency conversion" },
+  "fin.none": {
+    es: "Aún no hay movimientos de dinero registrados.",
+    en: "No money movements recorded yet.",
+  },
+  "project.evidence": { es: "Evidencia aprobada", en: "Approved evidence" },
+  "project.evidenceLead": {
+    es: "Copias revisadas por la organización. Los originales quedan privados.",
+    en: "Copies reviewed by the nonprofit. Originals stay private.",
+  },
+  "project.noEvidence": {
+    es: "La organización aún no ha publicado evidencia.",
+    en: "The nonprofit hasn't published any evidence yet.",
+  },
+  "evidence.receipt": { es: "Recibo", en: "Receipt" },
+  "evidence.delivery_photo": { es: "Foto de entrega", en: "Delivery photo" },
+  "evidence.handover_doc": { es: "Acta de entrega firmada", en: "Signed handover" },
+  "evidence.staff_note": { es: "Nota del personal", en: "Staff note" },
+  "evidence.before_photo": { es: "Antes", en: "Before" },
+  "evidence.after_photo": { es: "Después", en: "After" },
+  "project.beforeAfter": { es: "Antes y después", en: "Before and after" },
+  "project.howChanged": { es: "Cómo cambió la situación", en: "How things changed" },
+  "project.howChangedLead": {
+    es: "Solo resultados que la organización verificó.",
+    en: "Only outcomes the nonprofit has verified.",
+  },
+  "project.howChangedEmpty": {
+    es: "Todavía no hay resultados verificados. Lo comprometido o recibido no se cuenta aquí.",
+    en: "No verified outcomes yet. Pledged or received materials aren't counted here.",
+  },
+  "project.usedAwaiting": { es: "Uso registrado, falta verificar", en: "Use recorded, awaiting verification" },
+  "project.verifiedByOrg": { es: "Verificado por la organización", en: "Verified by the nonprofit" },
+  "project.milestone.delivered": { es: "Materiales entregados al proyecto", en: "Materials delivered to project" },
+  "project.milestone.verified": { es: "Uso verificado", en: "Use verified" },
+  "project.transparencyLink": { es: "Ver panel de transparencia", en: "See transparency dashboard" },
+
   // follow page
   "project.follow.title": { es: "Tu compromiso", en: "Your pledge" },
   "project.follow.notFound": {
@@ -49,6 +161,8 @@ export const project = {
   "project.follow.step.pledged": { es: "Comprometido", en: "Pledged" },
   "project.follow.step.received": { es: "Recibido por la organización", en: "Received by nonprofit" },
   "project.follow.step.used": { es: "Usado en el proyecto", en: "Used in the project" },
+  "project.follow.step.delivered": { es: "Entregado al proyecto", en: "Delivered to project" },
+  "project.follow.step.verified": { es: "Verificado", en: "Verified" },
   "project.follow.status.active": { es: "Comprometido, no entregado", en: "Pledged, not delivered" },
   "project.follow.status.fulfilled": { es: "Recibido por la organización", en: "Received by nonprofit" },
   "project.follow.status.canceled": { es: "Cancelado", en: "Canceled" },

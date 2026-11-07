@@ -1,19 +1,21 @@
 "use client";
 
 import Link from "next/link";
-import { Component, useState, type ReactNode } from "react";
+import { Component, useState, type KeyboardEvent, type ReactNode } from "react";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import type { Id } from "../../../convex/_generated/dataModel";
 import { useI18n } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
 import type { DictKey } from "@/lib/dict";
-import { Button, Chip, Label, Skeleton, VerifiedBy, categoryTone, formatDate, inputCls, useAction } from "./ui";
+import { AiNever, Button, Chip, DemoLabel, Label, Skeleton, VerifiedBy, categoryTone, formatDate, inputCls, statusTone, useAction } from "./ui";
 import { EvidencePanel, PhotoReview } from "./Evidence";
 import { PrivatePanel } from "./PrivatePanel";
 import { ReviewForm } from "./ReviewForm";
 import { LedgerPanel } from "./Ledger";
-import { MilestonePanel } from "./Milestones";
+import { MilestonePanel, ProposedMilestones } from "./Milestones";
+import { EvidenceReviewPanel } from "./EvidenceReview";
+import { FinancialsPanel } from "./Financials";
 import { containsPrivate, type ReviewData } from "./types";
 
 export function ReviewScreen({ projectId }: { projectId: string }) {
@@ -57,14 +59,13 @@ function ReviewBody({ data }: { data: ReviewData }) {
           ← {t("coord.backToDesk")}
         </Link>
         <header className="mt-3 flex flex-wrap items-start gap-x-6 gap-y-3">
-          <div className="min-w-0 flex-1">
+          <div className="min-w-[min(100%,20rem)] flex-1">
             <div className="flex flex-wrap items-center gap-2">
               <Chip tone={categoryTone(p.category)}>{t(`category.${p.category}` as DictKey)}</Chip>
-              <Chip tone={p.status === "published" ? "leaf" : p.status === "paused" ? "amber" : "neutral"}>
-                {t(`coord.status.${p.status}` as DictKey)}
-              </Chip>
+              <Chip tone={statusTone(p.status)}>{t(`coord.status.${p.status}` as DictKey)}</Chip>
               <Chip tone={p.urgency === "high" ? "brick" : "neutral"}>{t(`coord.urgency.${p.urgency}` as DictKey)}</Chip>
               {p.region && <span className="text-xs text-muted">{p.region}</span>}
+              {p.isDemo && <DemoLabel />}
             </div>
             <h1 className="mt-2 font-display text-3xl font-semibold leading-tight sm:text-4xl">
               {reviewing ? pick(p.titleEs, p.titleEn) : p.publicAlias}
@@ -100,7 +101,9 @@ function ReviewLayout({ data }: { data: ReviewData }) {
   return (
     <div className="mt-6 grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)]">
       <div className="space-y-5">
+        <AiNever />
         <EvidencePanel reports={data.fieldReports} photos={data.photos} />
+        <ProposedMilestones reports={data.fieldReports} />
       </div>
       <div className="space-y-5">
         <PrivatePanel priv={data.private} />
@@ -110,30 +113,65 @@ function ReviewLayout({ data }: { data: ReviewData }) {
   );
 }
 
+type ManageTab = "materials" | "evidence" | "financials" | "timeline" | "field";
+const MANAGE_TABS: ManageTab[] = ["materials", "evidence", "financials", "timeline", "field"];
+
 function ManageLayout({ data }: { data: ReviewData }) {
   const { t } = useI18n();
+  const [tab, setTab] = useState<ManageTab>("materials");
+  const onKey = (e: KeyboardEvent<HTMLButtonElement>) => {
+    if (e.key !== "ArrowRight" && e.key !== "ArrowLeft") return;
+    e.preventDefault();
+    const i = MANAGE_TABS.indexOf(tab);
+    const next = MANAGE_TABS[(i + (e.key === "ArrowRight" ? 1 : MANAGE_TABS.length - 1)) % MANAGE_TABS.length];
+    setTab(next);
+    document.getElementById(`mtab-${next}`)?.focus();
+  };
   return (
     <div className="mt-6 space-y-5">
       <StatusControls data={data} />
-      <div className="grid gap-5 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
-        <LedgerPanel data={data} />
-        <MilestonePanel data={data} />
+      <div role="tablist" aria-label={t("coord.manage")} className="-mx-1 flex gap-1 overflow-x-auto border-b border-border px-1">
+        {MANAGE_TABS.map((k) => {
+          const active = tab === k;
+          return (
+            <button
+              key={k}
+              id={`mtab-${k}`}
+              role="tab"
+              aria-selected={active}
+              aria-controls={`mpanel-${k}`}
+              tabIndex={active ? 0 : -1}
+              onKeyDown={onKey}
+              onClick={() => setTab(k)}
+              className={`-mb-px shrink-0 whitespace-nowrap border-b-2 px-3 py-2.5 text-sm font-medium transition sm:px-4 ${
+                active ? "border-clay text-foreground" : "border-transparent text-muted hover:text-foreground"
+              }`}
+            >
+              {t(`coord.mtab.${k}` as DictKey)}
+            </button>
+          );
+        })}
       </div>
-      <details className="group rounded-lg border border-border bg-surface">
-        <summary className="cursor-pointer list-none px-4 py-3 font-display text-lg font-semibold">
-          <span className="mr-2 inline-block transition group-open:rotate-90">›</span>
-          {t("coord.evidence")} · {t("coord.photos")} · {t("coord.private")}
-        </summary>
-        <div className="grid gap-5 border-t border-border p-4 lg:grid-cols-2">
+      <div id={`mpanel-${tab}`} role="tabpanel" aria-labelledby={`mtab-${tab}`}>
+        {tab === "materials" && <LedgerPanel data={data} />}
+        {tab === "evidence" && (
           <div className="space-y-5">
-            <EvidencePanel reports={data.fieldReports} photos={[]} />
-          </div>
-          <div className="space-y-5">
-            <PrivatePanel priv={data.private} />
+            <EvidenceReviewPanel data={data} />
             <PhotoReview photos={data.photos} />
           </div>
-        </div>
-      </details>
+        )}
+        {tab === "financials" && <FinancialsPanel projectId={data.project.projectId} />}
+        {tab === "timeline" && <MilestonePanel data={data} />}
+        {tab === "field" && (
+          <div className="grid gap-5 lg:grid-cols-2">
+            <div className="space-y-5">
+              <AiNever />
+              <EvidencePanel reports={data.fieldReports} photos={[]} />
+            </div>
+            <PrivatePanel priv={data.private} />
+          </div>
+        )}
+      </div>
     </div>
   );
 }
@@ -154,10 +192,11 @@ function StatusControls({ data }: { data: ReviewData }) {
 
   if (p.status === "paused") {
     return (
-      <div className="flex flex-wrap items-center gap-3 rounded-lg border border-amber/50 bg-amber-soft px-4 py-3">
+      <div className="flex flex-wrap items-center gap-3 rounded-lg border border-sky/40 bg-sky-soft px-4 py-3">
         <div className="min-w-0 flex-1">
-          <p className="text-sm font-semibold text-amber">{t("coord.status.paused")}</p>
+          <p className="text-sm font-semibold text-sky">{t("coord.status.paused")}</p>
           {p.safetyPauseReasonPublic && <p className="text-sm">{p.safetyPauseReasonPublic}</p>}
+          <p className="mt-1 text-xs text-muted">{t("coord.paused.calm")}</p>
         </div>
         <Button
           variant="leaf"
@@ -178,7 +217,7 @@ function StatusControls({ data }: { data: ReviewData }) {
       {!open ? (
         <div className="flex flex-wrap items-center gap-3">
           <p className="flex-1 text-sm text-muted">{t("coord.pause.hint")}</p>
-          <Button variant="danger" onClick={() => setOpen(true)}>
+          <Button variant="ghost" onClick={() => setOpen(true)}>
             {t("coord.pause")}
           </Button>
         </div>
@@ -205,6 +244,7 @@ function StatusControls({ data }: { data: ReviewData }) {
         >
           <p className="text-sm font-semibold">{t("coord.pause.reason")}</p>
           <p className="text-xs text-muted">{t("coord.pause.reasonNote")}</p>
+          <p className="text-xs text-muted">{t("coord.paused.calm")}</p>
           <div className="grid gap-3 sm:grid-cols-2">
             <div>
               <Label htmlFor="pause-es">{t("coord.noteEs")}</Label>
@@ -229,7 +269,7 @@ function StatusControls({ data }: { data: ReviewData }) {
             </p>
           )}
           <div className="flex gap-2">
-            <Button type="submit" variant="danger" busy={busy === "pause"} disabled={!es.trim() || leak}>
+            <Button type="submit" variant="primary" busy={busy === "pause"} disabled={!es.trim() || leak}>
               {t("coord.pause")}
             </Button>
             <Button type="button" variant="quiet" onClick={() => setOpen(false)}>

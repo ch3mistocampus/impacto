@@ -2,7 +2,7 @@ import { mutation, query } from "./_generated/server";
 import type { QueryCtx } from "./_generated/server";
 import { v, ConvexError } from "convex/values";
 import type { Doc, Id } from "./_generated/dataModel";
-import { category, urgency, projectStatus } from "./schema";
+import { category, urgency, projectStatus, materialEventType } from "./schema";
 import { audit, requireRole } from "./lib/auth";
 import { computeLedger } from "./lib/ledger";
 import {
@@ -120,6 +120,18 @@ export const inbox = query({
   },
 });
 
+const needEventLog = v.object({
+  eventId: v.id("materialEvents"),
+  eventType: materialEventType,
+  qty: v.number(),
+  createdAt: v.number(),
+  actorName: v.union(v.string(), v.null()),
+  noteEs: v.union(v.string(), v.null()),
+  noteEn: v.union(v.string(), v.null()),
+  evidenceId: v.union(v.id("evidence"), v.null()),
+  pledgeId: v.union(v.id("pledges"), v.null()),
+});
+
 const reviewNeed = v.object({
   needId: v.id("materialNeeds"),
   itemKey: v.string(),
@@ -132,6 +144,8 @@ const reviewNeed = v.object({
   status: v.union(v.literal("draft"), v.literal("approved"), v.literal("fulfilled"), v.literal("rejected")),
   verified: v.boolean(),
   ledger: ledgerValidator,
+  /** Material event log for this need, newest first. */
+  events: v.array(needEventLog),
 });
 
 const reviewPledge = v.object({
@@ -213,6 +227,7 @@ export const getProjectForReview = query({
       safetyPauseReasonPublic: v.union(v.string(), v.null()),
       coverPhotoId: v.union(v.id("photos"), v.null()),
       isDemo: v.boolean(),
+      approvedAt: v.union(v.number(), v.null()),
     }),
     private: v.union(
       v.null(),
@@ -263,6 +278,7 @@ export const getProjectForReview = query({
         descriptionEs: v.string(),
         descriptionEn: v.string(),
         photoId: v.union(v.id("photos"), v.null()),
+        evidenceId: v.union(v.id("evidence"), v.null()),
       }),
     ),
   }),
@@ -296,6 +312,29 @@ export const getProjectForReview = query({
       .query("materialNeeds")
       .withIndex("by_project", (q) => q.eq("projectId", p._id))
       .take(100);
+    const allEvents = await ctx.db
+      .query("materialEvents")
+      .withIndex("by_project", (q) => q.eq("projectId", p._id))
+      .order("desc")
+      .take(2000);
+    const actorNames = new Map<Id<"users">, string | null>();
+    const eventsByNeed = new Map<Id<"materialNeeds">, (typeof needEventLog.type)[]>();
+    for (const e of allEvents) {
+      if (!actorNames.has(e.verifiedBy)) actorNames.set(e.verifiedBy, (await ctx.db.get(e.verifiedBy))?.name ?? null);
+      const list = eventsByNeed.get(e.needId) ?? [];
+      list.push({
+        eventId: e._id,
+        eventType: e.eventType,
+        qty: e.qty,
+        createdAt: e._creationTime,
+        actorName: actorNames.get(e.verifiedBy) ?? null,
+        noteEs: e.noteEs ?? null,
+        noteEn: e.noteEn ?? null,
+        evidenceId: e.evidenceId ?? null,
+        pledgeId: e.pledgeId ?? null,
+      });
+      eventsByNeed.set(e.needId, list);
+    }
     const needs = [];
     for (const n of needRows) {
       needs.push({
@@ -310,6 +349,7 @@ export const getProjectForReview = query({
         status: n.status,
         verified: n.verifiedBy !== undefined,
         ledger: await computeLedger(ctx, n._id),
+        events: eventsByNeed.get(n._id) ?? [],
       });
     }
     const photoRows = await ctx.db
@@ -349,6 +389,7 @@ export const getProjectForReview = query({
         safetyPauseReasonPublic: p.safetyPauseReasonPublic ?? null,
         coverPhotoId: p.coverPhotoId ?? null,
         isDemo: p.isDemo,
+        approvedAt: p.approvedAt ?? (p.approvedBy ? (p.publishedAt ?? null) : null),
       },
       private: priv
         ? {
@@ -370,6 +411,7 @@ export const getProjectForReview = query({
         descriptionEs: m.publicDescriptionEs,
         descriptionEn: m.publicDescriptionEn,
         photoId: m.photoId ?? null,
+        evidenceId: m.evidenceId ?? null,
       })),
     };
   },
@@ -509,6 +551,7 @@ export const approveAndPublish = mutation({
       ...fields,
       status: "published",
       approvedBy: user._id,
+      approvedAt: now,
       publishedAt: now,
       safetyPauseReasonPublic: undefined,
     });
@@ -651,11 +694,13 @@ export const recordMaterialEvent = mutation({
     ...tokenArg,
     needId: v.id("materialNeeds"),
     pledgeId: v.optional(v.id("pledges")),
-    eventType: v.union(v.literal("received"), v.literal("used"), v.literal("returned")),
+    /** received → delivered → used → verified (order enforced); returned = back out of stock. */
+    eventType: materialEventType,
     qty: v.number(),
     noteEs: v.optional(v.string()),
     noteEn: v.optional(v.string()),
     evidencePhotoId: v.optional(v.id("photos")),
+    evidenceId: v.optional(v.id("evidence")),
   },
   returns: v.object({ eventId: v.id("materialEvents"), ledger: ledgerValidator, pledgeFulfilled: v.boolean() }),
   handler: async (ctx, args) => {
@@ -670,6 +715,12 @@ export const recordMaterialEvent = mutation({
       const ph = await ctx.db.get(args.evidencePhotoId);
       if (!ph || ph.projectId !== need.projectId) throw new ConvexError({ code: "INVALID_PHOTO" });
     }
+    let evidence: Doc<"evidence"> | null = null;
+    if (args.evidenceId) {
+      evidence = await ctx.db.get(args.evidenceId);
+      if (!evidence || evidence.projectId !== need.projectId) throw new ConvexError({ code: "INVALID_EVIDENCE" });
+      if (evidence.needId && evidence.needId !== need._id) throw new ConvexError({ code: "INVALID_EVIDENCE" });
+    }
     const before = await computeLedger(ctx, need._id);
 
     let pledge: Doc<"pledges"> | null = null;
@@ -679,11 +730,19 @@ export const recordMaterialEvent = mutation({
       if (!pledge || pledge.needId !== need._id) throw new ConvexError({ code: "INVALID_PLEDGE" });
       if (pledge.status !== "active") throw new ConvexError({ code: "PLEDGE_NOT_ACTIVE", status: pledge.status });
     }
-    if (args.eventType === "used" && before.used + args.qty > before.received) {
-      throw new ConvexError({ code: "USED_EXCEEDS_RECEIVED", available: Math.max(0, before.received - before.used) });
+    // Stage order: delivered <= received, used <= delivered, verified <= used.
+    if (args.eventType === "delivered" && before.delivered + args.qty > before.received) {
+      throw new ConvexError({ code: "DELIVERED_EXCEEDS_RECEIVED", available: Math.max(0, before.received - before.delivered) });
     }
-    if (args.eventType === "returned" && args.qty > before.received - before.used) {
-      throw new ConvexError({ code: "RETURN_EXCEEDS_STOCK", available: Math.max(0, before.received - before.used) });
+    if (args.eventType === "used" && before.used + args.qty > before.delivered) {
+      throw new ConvexError({ code: "USED_EXCEEDS_DELIVERED", available: Math.max(0, before.delivered - before.used) });
+    }
+    if (args.eventType === "verified" && before.verified + args.qty > before.used) {
+      throw new ConvexError({ code: "VERIFIED_EXCEEDS_USED", available: Math.max(0, before.used - before.verified) });
+    }
+    // Only stock still at the nonprofit (received, not yet delivered) can be returned.
+    if (args.eventType === "returned" && args.qty > before.received - before.delivered) {
+      throw new ConvexError({ code: "RETURN_EXCEEDS_STOCK", available: Math.max(0, before.received - before.delivered) });
     }
 
     let pledgeFulfilled = false;
@@ -708,10 +767,14 @@ export const recordMaterialEvent = mutation({
       eventType: args.eventType,
       qty: args.qty,
       evidencePhotoId: args.evidencePhotoId,
+      evidenceId: args.evidenceId,
       noteEs: args.noteEs?.trim() || undefined,
       noteEn: args.noteEn?.trim() || undefined,
       verifiedBy: user._id,
     });
+    if (evidence && !evidence.materialEventId) {
+      await ctx.db.patch("evidence", evidence._id, { materialEventId: eventId, needId: need._id });
+    }
     if (pledge && pledgeReceived + args.qty >= pledge.qty) {
       await ctx.db.patch("pledges", pledge._id, { status: "fulfilled" });
       pledgeFulfilled = true;
@@ -730,13 +793,21 @@ export const recordMaterialEvent = mutation({
       publicDescriptionEs: es,
       publicDescriptionEn: en,
       photoId: args.evidencePhotoId,
+      evidenceId: args.evidenceId,
     });
 
     const after = await computeLedger(ctx, need._id);
     if (after.requested !== null && after.used >= after.requested && need.status === "approved") {
       await ctx.db.patch("materialNeeds", need._id, { status: "fulfilled" });
     }
-    await audit(ctx, user._id, "materialEvent", eventId, args.eventType, `need=${need._id} qty=${args.qty} pledge=${args.pledgeId ?? "-"}`);
+    await audit(
+      ctx,
+      user._id,
+      "materialEvent",
+      eventId,
+      args.eventType,
+      `need=${need._id} qty=${args.qty} pledge=${args.pledgeId ?? "-"} evidence=${args.evidenceId ?? "-"}`,
+    );
     return { eventId, ledger: after, pledgeFulfilled };
   },
 });
@@ -841,3 +912,14 @@ export const addMilestone = mutation({
     return id;
   },
 });
+
+// ---- Update 2: evidence, financials, weekly reports (implemented in sibling modules) ----
+export { generateEvidenceUploadUrl, addEvidence, reviewEvidence, listEvidence } from "./evidence";
+export {
+  recordContribution,
+  updateContributionStatus,
+  recordExpense,
+  approveExpense,
+  financials,
+} from "./financials";
+export { generateWeeklyReport, updateWeeklyReport, publishWeeklyReport, listWeeklyReports } from "./weekly";

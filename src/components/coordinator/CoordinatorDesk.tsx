@@ -7,12 +7,14 @@ import { api } from "../../../convex/_generated/api";
 import { useI18n } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
 import type { DictKey } from "@/lib/dict";
-import { Chip, Skeleton, categoryTone, formatDate } from "./ui";
+import { AiNever, Chip, DemoLabel, Skeleton, categoryTone, formatDate, statusTone } from "./ui";
+import { FinancialsPanel } from "./Financials";
+import { WeeklyReportsPanel } from "./WeeklyReports";
 import type { InboxItem } from "./types";
 import { MaterialIcon } from "./MaterialIcon";
 
-type Tab = "inbox" | "published" | "pledges";
-const TABS: Tab[] = ["inbox", "published", "pledges"];
+type Tab = "inbox" | "published" | "pledges" | "financials" | "reports";
+const TABS: Tab[] = ["inbox", "published", "pledges", "financials", "reports"];
 
 export function CoordinatorDesk() {
   const { t } = useI18n();
@@ -24,6 +26,8 @@ export function CoordinatorDesk() {
     inbox: inbox?.counts.inReview,
     published: inbox ? inbox.active.length + inbox.completed.length : undefined,
     pledges: inbox?.counts.activePledges,
+    financials: undefined,
+    reports: undefined,
   };
 
   const onKey = (e: KeyboardEvent<HTMLButtonElement>) => {
@@ -45,9 +49,11 @@ export function CoordinatorDesk() {
             {t("coord.signedInAs")} <strong className="text-foreground">{user.name}</strong>
           </p>
         )}
+        <DemoLabel className="sm:ml-auto" />
       </div>
+      <AiNever className="mt-4 max-w-3xl" />
 
-      <div role="tablist" aria-label={t("coord.gate.title")} className="mt-6 flex gap-1 border-b border-border">
+      <div role="tablist" aria-label={t("coord.gate.title")} className="-mx-1 mt-6 flex gap-1 overflow-x-auto border-b border-border px-1">
         {TABS.map((k) => {
           const active = tab === k;
           return (
@@ -60,7 +66,7 @@ export function CoordinatorDesk() {
               tabIndex={active ? 0 : -1}
               onKeyDown={onKey}
               onClick={() => setTab(k)}
-              className={`-mb-px flex items-center gap-2 border-b-2 px-3 py-2.5 text-sm font-medium transition sm:px-4 ${
+              className={`-mb-px flex shrink-0 items-center gap-2 whitespace-nowrap border-b-2 px-3 py-2.5 text-sm font-medium transition sm:px-4 ${
                 active ? "border-clay text-foreground" : "border-transparent text-muted hover:text-foreground"
               }`}
             >
@@ -84,6 +90,10 @@ export function CoordinatorDesk() {
           <Skeleton rows={3} />
         ) : tab === "inbox" ? (
           <ProjectList items={inbox.inReview} empty={t("coord.inbox.empty")} mode="review" />
+        ) : tab === "financials" ? (
+          <FinancialsPanel />
+        ) : tab === "reports" ? (
+          <WeeklyReportsPanel />
         ) : tab === "published" ? (
           <ProjectList items={[...inbox.active, ...inbox.completed]} empty={t("coord.published.empty")} mode="manage" />
         ) : (
@@ -109,9 +119,7 @@ function ProjectList({ items, empty, mode }: { items: InboxItem[]; empty: string
               <div className="flex flex-wrap items-center gap-2">
                 <Chip tone={categoryTone(p.category)}>{t(`category.${p.category}` as DictKey)}</Chip>
                 {p.status !== "in_review" && (
-                  <Chip tone={p.status === "paused" ? "amber" : p.status === "published" ? "leaf" : "neutral"}>
-                    {t(`coord.status.${p.status}` as DictKey)}
-                  </Chip>
+                  <Chip tone={statusTone(p.status)}>{t(`coord.status.${p.status}` as DictKey)}</Chip>
                 )}
                 {p.urgency === "high" && <Chip tone="brick">{t("coord.urgency.high")}</Chip>}
                 {p.needsConfirmationCount > 0 && (
@@ -131,7 +139,7 @@ function ProjectList({ items, empty, mode }: { items: InboxItem[]; empty: string
                     : ""}
               </p>
               {p.status === "paused" && p.safetyPauseReasonPublic && (
-                <p className="mt-1 text-sm text-amber">{p.safetyPauseReasonPublic}</p>
+                <p className="mt-1 text-sm text-sky">{p.safetyPauseReasonPublic}</p>
               )}
             </div>
             <div className="flex items-center gap-3">

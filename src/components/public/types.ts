@@ -6,9 +6,19 @@ export type Ledger = {
   requested: number | null;
   pledged: number;
   received: number;
+  delivered: number;
   used: number;
+  verified: number;
   availableToPledge: number;
 };
+
+/** The six separate measures, in order. Never merge them; public "impact" = verified only. */
+export type Stage = "requested" | "pledged" | "received" | "delivered" | "used" | "verified";
+export const STAGES: Stage[] = ["requested", "pledged", "received", "delivered", "used", "verified"];
+export type StageTotals = Record<Stage, number>;
+
+/** Public project statuses (DB values) — labels are mapped in the UI only. */
+export type PublicStatus = "published" | "paused" | "completed";
 
 /** Category → token classes. Kept as literal strings so Tailwind picks them up. */
 export const CATEGORY_STYLE: Record<

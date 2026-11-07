@@ -30,8 +30,11 @@ export const extractionMaterialValidator = v.object({
   quantity: v.union(v.number(), v.null()), // null => not explicitly stated, needs confirmation
   unit: v.string(),
   confidence: v.union(v.literal("high"), v.literal("medium"), v.literal("low")),
+  approximate: v.optional(v.boolean()), // stated with "aproximadamente/unos/about"
   sourceQuote: v.string(),
 });
+
+export const bilingualText = v.object({ es: v.string(), en: v.string() });
 
 export const extractionValidator = v.object({
   source: v.union(v.literal("openai"), v.literal("fallback")),
@@ -43,10 +46,16 @@ export const extractionValidator = v.object({
   category,
   summaryEs: v.string(),
   summaryEn: v.string(),
-  urgency,
+  urgency, // AI *suggestion*; the worker confirms it in review
+  damageDescriptionEs: v.optional(v.string()),
+  damageDescriptionEn: v.optional(v.string()),
   materials: v.array(extractionMaterialValidator),
-  missingQuestions: v.array(v.object({ es: v.string(), en: v.string() })),
+  missingQuestions: v.array(bilingualText),
+  // Proposed (unverified) milestones. Worker edits are written back here (see updateDraft) so
+  // coordinators read them from fieldReports.draftExtraction.proposedMilestones.
+  proposedMilestones: v.optional(v.array(bilingualText)),
   transcriptTranslated: v.union(v.string(), v.null()),
+  editedByWorker: v.optional(v.boolean()),
 });
 
 const needInput = v.object({
@@ -229,6 +238,10 @@ export const updateDraft = mutation({
     summaryEn: v.string(),
     urgency,
     needs: v.array(needInput),
+    // Optional review extras, stored on fieldReports.draftExtraction (no schema change).
+    proposedMilestones: v.optional(v.array(bilingualText)),
+    damageDescriptionEs: v.optional(v.string()),
+    damageDescriptionEn: v.optional(v.string()),
   },
   returns: v.null(),
   handler: async (ctx, args) => {
@@ -267,6 +280,33 @@ export const updateDraft = mutation({
       const prev = n.needId ? existing.find((e) => e._id === n.needId) : undefined;
       if (prev) await ctx.db.patch("materialNeeds", prev._id, doc);
       else await ctx.db.insert("materialNeeds", { ...doc, projectId: project._id, status: "draft" });
+    }
+
+    if (
+      args.proposedMilestones !== undefined ||
+      args.damageDescriptionEs !== undefined ||
+      args.damageDescriptionEn !== undefined
+    ) {
+      const report = await reportForProject(ctx, project._id);
+      if (report?.draftExtraction) {
+        const ex = report.draftExtraction as typeof extractionValidator.type;
+        await ctx.db.patch("fieldReports", report._id, {
+          draftExtraction: {
+            ...ex,
+            ...(args.proposedMilestones !== undefined
+              ? {
+                  proposedMilestones: args.proposedMilestones
+                    .map((m) => ({ es: m.es.trim().slice(0, 200), en: m.en.trim().slice(0, 200) }))
+                    .filter((m) => m.es || m.en)
+                    .slice(0, 12),
+                }
+              : {}),
+            ...(args.damageDescriptionEs !== undefined ? { damageDescriptionEs: args.damageDescriptionEs.trim().slice(0, 2000) } : {}),
+            ...(args.damageDescriptionEn !== undefined ? { damageDescriptionEn: args.damageDescriptionEn.trim().slice(0, 2000) } : {}),
+            editedByWorker: true,
+          },
+        });
+      }
     }
     await audit(ctx, user._id, "projects", project._id, "field.updateDraft");
     return null;

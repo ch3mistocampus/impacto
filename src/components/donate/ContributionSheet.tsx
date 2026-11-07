@@ -9,9 +9,11 @@ import { useI18n } from "@/lib/i18n";
 import type { DictKey } from "@/lib/dict";
 import { MaterialImage } from "@/components/public/MaterialImage";
 import { savePledge } from "./followTokens";
-import type { DeckCard } from "./types";
+import { PledgeIsNotNote } from "@/components/public/LedgerBar";
+import { DemoTag } from "@/components/public/PublicMeta";
+import type { DeckCard, PledgeMode } from "./types";
 
-type Mode = "have_materials" | "will_buy" | "request_instructions";
+type Mode = PledgeMode;
 const MODES: Mode[] = ["have_materials", "will_buy", "request_instructions"];
 const QUICK = [10, 25, 50];
 
@@ -23,9 +25,11 @@ type Done = { followToken: string; qty: number; saved: boolean };
  */
 export function ContributionSheet({
   card,
+  initialMode = "have_materials",
   onClose,
 }: {
   card: DeckCard | null;
+  initialMode?: Mode;
   onClose: (pledged: boolean) => void;
 }) {
   const { t, pick } = useI18n();
@@ -45,12 +49,12 @@ export function ContributionSheet({
   const [openFor, setOpenFor] = useState<string | null>(null);
 
   // Reset the form whenever a different need is opened (state update during render, React-sanctioned).
-  const cardId = card?.needId ?? null;
+  const cardId = card ? `${card.needId}:${initialMode}` : null;
   if (cardId !== openFor) {
     setOpenFor(cardId);
     if (cardId) {
       setQty(Math.max(1, Math.min(10, available)));
-      setMode("have_materials");
+      setMode(initialMode);
       setError(null);
       setLiveAvail(null);
       setDone(null);
@@ -95,6 +99,7 @@ export function ContributionSheet({
       });
       const saved = savePledge({
         token: res.followToken,
+        pledgeId: res.pledgeId,
         qty,
         nameEs: card.nameEs,
         nameEn: card.nameEn,
@@ -164,6 +169,10 @@ export function ContributionSheet({
           <Success done={done} unit={unit} itemName={itemName} onContinue={close} />
         ) : (
           <form onSubmit={submit} noValidate className="space-y-6">
+            <div className="flex flex-wrap items-center gap-2">
+              <PledgeIsNotNote className="flex-1" />
+              <DemoTag />
+            </div>
             {/* Quantity */}
             <fieldset>
               <legend className="font-semibold">{t("donate.qty")}</legend>
@@ -339,13 +348,20 @@ function Success({
         <span className="size-3 rounded-full border-[3px] border-amber" aria-hidden />
         {t("ledger.pledgedNotDelivered")}
       </p>
-      <p className="mt-5 text-left text-sm leading-relaxed max-w-prose mx-auto">{t("donate.successExplain")}</p>
+      <p className="mt-4 text-left text-sm font-semibold text-amber max-w-prose mx-auto">{t("donate.successPledgeNot")}</p>
+      <p className="mt-3 text-left text-sm leading-relaxed max-w-prose mx-auto">{t("donate.successExplain")}</p>
       <div className="mt-6 grid gap-3">
         <Link
           href={`/follow/${done.followToken}`}
           className="h-14 rounded-full bg-sky text-white text-lg font-semibold grid place-items-center"
         >
           {t("donate.follow")}
+        </Link>
+        <Link
+          href="/donations"
+          className="h-12 rounded-full border-2 border-sky text-sky font-semibold grid place-items-center"
+        >
+          {t("donate.successDonations")}
         </Link>
         <button type="button" onClick={onContinue} className="h-12 rounded-full border-2 border-border font-semibold">
           {t("donate.keepSwiping")}

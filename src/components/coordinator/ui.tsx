@@ -241,3 +241,36 @@ export function Skeleton({ rows = 3 }: { rows?: number }) {
     </div>
   );
 }
+
+/** UI label tone for a DB project status (labels live in coord.status.*). Paused is calm, never alarming. */
+export function statusTone(s: string): ChipTone {
+  return s === "published" ? "leaf" : s === "paused" ? "sky" : s === "in_review" ? "amber" : "neutral";
+}
+
+/** Conspicuous "Demo data" marker for screens showing the synthetic scenario. */
+export function DemoLabel({ className = "" }: { className?: string }) {
+  const { t } = useI18n();
+  return (
+    <span
+      title={t("coord.demoData.note")}
+      className={`inline-flex items-center gap-1.5 rounded-full border border-dashed border-amber/70 bg-amber-soft px-2.5 py-0.5 text-xs font-semibold text-amber ${className}`}
+    >
+      <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-amber" />
+      {t("coord.demoData")}
+    </span>
+  );
+}
+
+/** The standing rule, shown wherever AI output is on screen. */
+export function AiNever({ className = "" }: { className?: string }) {
+  const { t } = useI18n();
+  return (
+    <p className={`flex gap-2 rounded-md border border-border bg-background px-3 py-2 text-xs leading-relaxed text-muted ${className}`}>
+      <svg aria-hidden viewBox="0 0 16 16" className="mt-0.5 h-3.5 w-3.5 shrink-0 fill-none stroke-current" strokeWidth="1.6">
+        <circle cx="8" cy="8" r="6.5" />
+        <path d="M8 4.5v4M8 11v.5" strokeLinecap="round" />
+      </svg>
+      <span>{t("coord.aiNever")}</span>
+    </p>
+  );
+}

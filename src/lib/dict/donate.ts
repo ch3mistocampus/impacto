@@ -1,8 +1,8 @@
 export const donate = {
   "donate.title": { es: "Elige qué materiales aportar", en: "Choose materials to give" },
   "donate.lead": {
-    es: "Desliza a la derecha o toca «Quiero ayudar» para comprometer materiales. No se procesan pagos.",
-    en: "Swipe right or tap “I want to help” to pledge materials. No payments are processed.",
+    es: "Desliza a la derecha para comprometer una cantidad, o di si ya tienes los materiales o puedes comprarlos. No se procesan pagos.",
+    en: "Swipe right to pledge a quantity, or say whether you have the materials or can buy them. No payments are processed.",
   },
   "donate.filterCategory": { es: "Filtrar por categoría", en: "Filter by category" },
   "donate.filterMaterial": { es: "Material", en: "Material" },
@@ -88,4 +88,47 @@ export const donate = {
   "donate.keepSwiping": { es: "Seguir viendo necesidades", en: "Keep browsing needs" },
   "donate.myPledges": { es: "Mis compromisos", en: "My pledges" },
   "donate.swipeHelp": { es: "Desliza la tarjeta", en: "Swipe the card" },
+
+  // --- Update 2 ---
+  "donate.act.pass": { es: "Pasar", en: "Pass" },
+  "donate.act.have": { es: "Tengo estos materiales", en: "I have these materials" },
+  "donate.act.buy": { es: "Puedo comprarlos", en: "I can buy these" },
+  "donate.act.pledge": { es: "Comprometer cantidad", en: "Pledge quantity" },
+  "donate.keyboardHint2": {
+    es: "Teclado: ← pasar, → comprometer cantidad, 1 tengo los materiales, 2 puedo comprarlos.",
+    en: "Keyboard: ← pass, → pledge quantity, 1 I have them, 2 I can buy them.",
+  },
+  "donate.successDonations": { es: "Ver mis donaciones", en: "See my pledges" },
+  "donate.successPledgeNot": {
+    es: "Esto es un compromiso: aún no se ha entregado ni financiado nada. La organización confirmará cada paso.",
+    en: "This is a pledge: nothing has been delivered or funded yet. The nonprofit will confirm each step.",
+  },
+
+  // --- /donations ---
+  "donations.title": { es: "Mis donaciones", en: "My pledges" },
+  "donations.lead": {
+    es: "Compromisos guardados en este navegador. Cada paso lo confirma la organización; solo lo verificado cuenta como impacto.",
+    en: "Pledges saved in this browser. The nonprofit confirms each step; only verified counts as impact.",
+  },
+  "donations.empty": {
+    es: "Aún no tienes compromisos en este navegador.",
+    en: "You have no pledges saved in this browser yet.",
+  },
+  "donations.emptyCta": { es: "Elegir materiales", en: "Choose materials" },
+  "donations.verifiedAsUsed": { es: "verificados como usados", en: "verified as used" },
+  "donations.notYetVerified": {
+    es: "Aún no verificado. Comprometido no es entregado.",
+    en: "Not verified yet. Pledged is not delivered.",
+  },
+  "donations.follow": { es: "Ver detalle", en: "See details" },
+  "donations.totalVerified": { es: "Unidades verificadas como usadas", en: "Units verified as used" },
+  "donations.totalPledged": { es: "Unidades comprometidas", en: "Units pledged" },
+  "donations.missing": {
+    es: "No encontramos este compromiso (pudo haberse eliminado).",
+    en: "We couldn't find this pledge (it may have been removed).",
+  },
+  "donations.localOnly": {
+    es: "Los enlaces se guardan solo en este dispositivo. Guarda el enlace de seguimiento si cambias de navegador.",
+    en: "Links are stored only on this device. Keep the follow link if you switch browsers.",
+  },
 } satisfies Record<string, { es: string; en: string }>;

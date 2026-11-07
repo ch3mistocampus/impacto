@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAction, useMutation } from "convex/react";
@@ -8,7 +8,7 @@ import { api } from "../../../convex/_generated/api";
 import type { Id } from "../../../convex/_generated/dataModel";
 import { useI18n, type Locale } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
-import { AudioRecorder } from "./AudioRecorder";
+import { AudioRecorder, type MicIssue } from "./AudioRecorder";
 import { PhotoPicker } from "./PhotoPicker";
 import { AnalyzingPanel } from "./AnalyzingPanel";
 import { Card, DEMO_TRANSCRIPT, btnPrimary, btnSecondary, inputCls, uploadFile } from "./ui";
@@ -32,6 +32,13 @@ export function CaptureStep() {
   const [photos, setPhotos] = useState<LocalPhoto[]>([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [micIssue, setMicIssue] = useState<MicIssue | null>(null);
+  const textRef = useRef<HTMLTextAreaElement>(null);
+
+  // Mic denied/unsupported → switch to typing and focus the text box.
+  useEffect(() => {
+    if (micIssue && mode === "text") textRef.current?.focus();
+  }, [micIssue, mode]);
 
   const hasInput = (mode === "voice" && !!audio) || (mode === "text" && text.trim().length > 0);
 
@@ -127,16 +134,30 @@ export function CaptureStep() {
 
         <div className="mt-4">
           {mode === "voice" ? (
-            <AudioRecorder onChange={setAudio} />
-          ) : (
-            <textarea
-              value={text}
-              onChange={(e) => setText(e.target.value)}
-              rows={6}
-              lang={language}
-              placeholder={t("field.text.placeholder")}
-              className={inputCls}
+            <AudioRecorder
+              onChange={setAudio}
+              onUnavailable={(issue) => {
+                setMicIssue(issue);
+                setMode("text");
+              }}
             />
+          ) : (
+            <>
+              {micIssue && (
+                <p role="alert" className="mb-2 rounded-xl bg-amber-soft px-3 py-2 text-sm text-amber">
+                  {t(micIssue === "denied" ? "field.mic.denied" : "field.mic.unsupported")}
+                </p>
+              )}
+              <textarea
+                ref={textRef}
+                value={text}
+                onChange={(e) => setText(e.target.value)}
+                rows={6}
+                lang={language}
+                placeholder={t("field.text.placeholder")}
+                className={inputCls}
+              />
+            </>
           )}
         </div>
 

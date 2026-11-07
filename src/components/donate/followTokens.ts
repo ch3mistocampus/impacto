@@ -1,5 +1,7 @@
 export type SavedPledge = {
   token: string;
+  /** Added in Update 2 so /donations can match public.myPledges results (which omit tokens). */
+  pledgeId?: string;
   qty: number;
   nameEs: string;
   nameEn: string;

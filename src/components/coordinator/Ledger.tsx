@@ -9,7 +9,36 @@ import { useSession } from "@/lib/session";
 import type { DictKey } from "@/lib/dict";
 import { Button, Chip, Label, Section, formatDate, inputCls, useAction } from "./ui";
 import { MaterialIcon } from "./MaterialIcon";
-import type { ReviewData, ReviewNeed, ReviewPhoto, ReviewPledge } from "./types";
+import { EvidenceAttach, emptyEvidence, evidenceState, syntheticEvidence, useCommitEvidence, type EvidenceDraft } from "./EvidenceAttach";
+import type { ReviewData, ReviewNeed, ReviewPledge } from "./types";
+
+type Stage = "requested" | "pledged" | "received" | "delivered" | "used" | "verified";
+type Step = "received" | "delivered" | "used" | "verified";
+const STAGES: Stage[] = ["requested", "pledged", "received", "delivered", "used", "verified"];
+const STEPS: Step[] = ["received", "delivered", "used", "verified"];
+
+/** One colour per stage, used for the number, the bar and the step button dot. */
+const STAGE_TONE: Record<Stage, { text: string; bg: string }> = {
+  requested: { text: "text-foreground", bg: "bg-foreground/70" },
+  pledged: { text: "text-amber", bg: "bg-amber" },
+  received: { text: "text-sky", bg: "bg-sky" },
+  delivered: { text: "text-clay", bg: "bg-clay" },
+  used: { text: "text-leaf", bg: "bg-leaf/70" },
+  verified: { text: "text-leaf", bg: "bg-leaf" },
+};
+
+const STEP_LABEL: Record<Step, DictKey> = {
+  received: "coord.markReceived",
+  delivered: "coord.markDelivered",
+  used: "coord.markUsed2",
+  verified: "coord.markVerified",
+};
+const STEP_TOAST: Record<Step, DictKey> = {
+  received: "coord.received.toast",
+  delivered: "coord.delivered.toast",
+  used: "coord.used.toast",
+  verified: "coord.verified.toast",
+};
 
 export function LedgerPanel({ data }: { data: ReviewData }) {
   const { t } = useI18n();
@@ -22,7 +51,7 @@ export function LedgerPanel({ data }: { data: ReviewData }) {
   }
   return (
     <Section title={t("coord.ledger")}>
-      <p className="mb-4 text-sm text-muted">{t("coord.ledger.note")}</p>
+      <p className="mb-4 max-w-prose text-sm text-muted">{t("coord.ledger6.note")}</p>
       <style>{`
         @keyframes coord-num { from { transform: translateY(-4px); opacity: .2 } to { transform: none; opacity: 1 } }
         .coord-num { animation: coord-num 320ms ease-out }
@@ -32,9 +61,15 @@ export function LedgerPanel({ data }: { data: ReviewData }) {
       {needs.length === 0 ? (
         <p className="text-sm text-muted">{t("coord.need.noneApproved")}</p>
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-5">
           {needs.map((n) => (
-            <NeedLedger key={n.needId} need={n} pledges={byNeed.get(n.needId) ?? []} photos={data.photos} />
+            <NeedLedger
+              key={n.needId}
+              need={n}
+              projectId={data.project.projectId}
+              isDemo={data.project.isDemo}
+              pledges={byNeed.get(n.needId) ?? []}
+            />
           ))}
         </div>
       )}
@@ -42,42 +77,69 @@ export function LedgerPanel({ data }: { data: ReviewData }) {
   );
 }
 
-function NeedLedger({ need, pledges, photos }: { need: ReviewNeed; pledges: ReviewPledge[]; photos: ReviewPhoto[] }) {
+function NeedLedger({
+  need,
+  projectId,
+  isDemo,
+  pledges,
+}: {
+  need: ReviewNeed;
+  projectId: Id<"projects">;
+  isDemo: boolean;
+  pledges: ReviewPledge[];
+}) {
   const { t, pick } = useI18n();
   const { sessionToken, user } = useSession();
   const record = useMutation(api.coordinator.recordMaterialEvent);
+  const commitEvidence = useCommitEvidence();
   const { busy, run } = useAction();
-  const [open, setOpen] = useState<null | "received" | "used">(null);
+  const [open, setOpen] = useState<Step | null>(null);
   const name = pick(need.nameEs, need.nameEn);
   const L = need.ledger;
-  const onHand = Math.max(0, L.received - L.used);
   const activePledges = pledges.filter((p) => p.status === "active");
   const signed = user ? `${t("coord.verifiedBy")} ${user.name}` : undefined;
 
+  // Each step is capped by the previous stage.
+  const caps: Record<Exclude<Step, "received">, number> = {
+    delivered: Math.max(0, L.received - L.delivered),
+    used: Math.max(0, L.delivered - L.used),
+    verified: Math.max(0, L.used - L.verified),
+  };
+  const openPledgeQty = activePledges.reduce((s, p) => s + Math.max(0, p.qty - p.receivedQty), 0);
+  // The step the demo should click next: the furthest-along stage with something waiting.
+  const next: Step | null =
+    caps.verified > 0 ? "verified" : caps.used > 0 ? "used" : caps.delivered > 0 ? "delivered" : openPledgeQty > 0 ? "received" : null;
+
   const doRecord = async (
     key: string,
-    args: {
-      eventType: "received" | "used";
-      qty: number;
-      pledgeId?: Id<"pledges">;
-      noteEs?: string;
-      noteEn?: string;
-      evidencePhotoId?: Id<"photos">;
-    },
+    args: { eventType: Step; qty: number; pledgeId?: Id<"pledges">; noteEs?: string; noteEn?: string },
+    evidence?: EvidenceDraft,
   ) => {
     if (!sessionToken) return false;
     const ok = await run(
       key,
-      () => record({ sessionToken, needId: need.needId, ...args }),
-      `${args.eventType === "received" ? t("coord.received.toast") : t("coord.used.toast")}: ${args.qty} ${name}`,
+      async () => {
+        const evidenceId = evidence ? await commitEvidence(evidence, { projectId, needId: need.needId }) : undefined;
+        await record({ sessionToken, needId: need.needId, ...args, evidenceId });
+      },
+      `${t(STEP_TOAST[args.eventType])}: ${args.qty} ${name}`,
       signed,
     );
     if (ok) setOpen(null);
     return ok;
   };
 
+  const values: Record<Stage, number | null> = {
+    requested: L.requested,
+    pledged: L.pledged,
+    received: L.received,
+    delivered: L.delivered,
+    used: L.used,
+    verified: L.verified,
+  };
+
   return (
-    <article id={`need-${need.needId}`} className="scroll-mt-24 rounded-lg border border-border bg-background/60">
+    <article id={`need-${need.needId}`} className="scroll-mt-24 overflow-hidden rounded-lg border border-border bg-background/60">
       <header className="flex flex-wrap items-center gap-3 px-4 pt-4">
         <MaterialIcon itemKey={need.itemKey} label={name} size={44} />
         <div className="min-w-0 flex-1">
@@ -88,109 +150,88 @@ function NeedLedger({ need, pledges, photos }: { need: ReviewNeed; pledges: Revi
         {need.needsConfirmation && <Chip tone="amber">{t("ledger.needsConfirmation")}</Chip>}
       </header>
 
-      {/* The four numbers — always separate. */}
-      <dl className="mt-3 grid grid-cols-4 border-y border-border bg-surface">
-        <Num label={t("ledger.requested")} value={L.requested} tone="text-foreground" />
-        <Num label={t("ledger.pledged")} value={L.pledged} tone="text-amber" />
-        <Num label={t("ledger.received")} value={L.received} tone="text-sky" />
-        <Num label={t("ledger.used")} value={L.used} tone="text-leaf" last />
+      {/* Six separate numbers — never summed into each other. */}
+      <dl className="mt-3 grid grid-cols-3 border-y border-border bg-surface sm:grid-cols-6">
+        {STAGES.map((s, i) => (
+          <Num
+            key={s}
+            stage={s}
+            label={t(`coord.stage.${s}` as DictKey)}
+            value={values[s]}
+            className={`${i % 3 !== 2 ? "border-r" : "sm:border-r"} ${i < 3 ? "border-b sm:border-b-0" : ""} ${i === 5 ? "sm:border-r-0" : ""}`}
+          />
+        ))}
       </dl>
-      <FlowBar requested={L.requested} pledged={L.pledged} received={L.received} used={L.used} />
+      <FlowBar values={values} />
 
-      <div className="flex flex-wrap items-center gap-2 px-4 pb-1 pt-3">
-        <Button
-          variant={open === "received" ? "primary" : "ghost"}
-          aria-expanded={open === "received"}
-          onClick={() => setOpen(open === "received" ? null : "received")}
-        >
-          <Dot className="bg-sky" /> {t("coord.markReceived")}
-        </Button>
-        <Button
-          variant={open === "used" ? "leaf" : "ghost"}
-          aria-expanded={open === "used"}
-          disabled={onHand === 0}
-          title={onHand === 0 ? t("coord.used.nothing") : undefined}
-          onClick={() => setOpen(open === "used" ? null : "used")}
-        >
-          <Dot className="bg-leaf" /> {t("coord.markUsed")}
-        </Button>
-        <span className="ml-auto text-xs text-muted">
-          {t("coord.ledger.inHand")}: <strong className="tabular-nums text-foreground">{onHand}</strong>
-        </span>
+      {/* The four staff steps, in order. */}
+      <div className="grid grid-cols-2 gap-2 px-4 pt-3 sm:grid-cols-4">
+        {STEPS.map((s) => {
+          const cap = s === "received" ? null : caps[s];
+          const disabled = cap === 0;
+          const isNext = next === s;
+          const isOpen = open === s;
+          return (
+            <Button
+              key={s}
+              size="sm"
+              variant={isOpen || isNext ? "primary" : "ghost"}
+              aria-expanded={isOpen}
+              disabled={disabled}
+              title={disabled ? t(`coord.cap.none.${s}` as DictKey) : undefined}
+              onClick={() => setOpen(isOpen ? null : s)}
+              className="justify-start! text-left"
+            >
+              <span aria-hidden className={`inline-block h-2 w-2 shrink-0 rounded-full ${STAGE_TONE[s].bg}`} />
+              <span className="min-w-0 flex-1 leading-tight">{t(STEP_LABEL[s])}</span>
+              {cap !== null && cap > 0 && <span className="tabular-nums opacity-80">{cap}</span>}
+            </Button>
+          );
+        })}
       </div>
+      {next === null && L.received > 0 && <p className="px-4 pt-2 text-xs text-leaf">{t("coord.allVerified")}</p>}
 
       {open === "received" && (
         <ReceiveForm
           pledges={activePledges}
           unit={need.unit}
-          busy={busy === "receive"}
-          onSubmit={(qty, pledgeId) => doRecord("receive", { eventType: "received", qty, pledgeId })}
+          busy={busy === "received"}
+          onSubmit={(qty, pledgeId, ev) => doRecord("received", { eventType: "received", qty, pledgeId }, ev)}
           onCancel={() => setOpen(null)}
         />
       )}
-      {open === "used" && (
-        <UseForm
-          max={onHand}
+      {open && open !== "received" && (
+        <StepForm
+          key={open}
+          step={open}
+          max={caps[open]}
           unit={need.unit}
-          photos={photos}
-          busy={busy === "use"}
-          onSubmit={(a) => doRecord("use", { eventType: "used", ...a })}
+          needId={need.needId}
+          isDemo={isDemo}
+          busy={busy === open}
+          onSubmit={(a, ev) => doRecord(open, { eventType: open, ...a }, ev)}
           onCancel={() => setOpen(null)}
         />
       )}
 
-      <div className="px-4 pb-4 pt-3">
-        <p className="mb-1.5 text-xs font-medium text-muted">
-          {t("coord.pledgesForNeed")} · <span className="font-normal">{t("coord.contactPrivate")}</span>
-        </p>
-        {pledges.length === 0 ? (
-          <p className="text-sm text-muted">{t("coord.noPledges")}</p>
-        ) : (
-          <ul className="divide-y divide-border rounded-md border border-border bg-surface">
-            {pledges.map((pl) => {
-              const remaining = pl.qty - pl.receivedQty;
-              return (
-                <li key={pl.pledgeId} className="flex flex-col gap-2 px-3 py-2.5 sm:flex-row sm:items-center">
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm">
-                      <strong className="tabular-nums">{pl.qty}</strong> · {pl.donorName}{" "}
-                      <span className="text-muted">· {pl.donorContact}</span>
-                    </p>
-                    <div className="mt-1 flex flex-wrap gap-1.5">
-                      <Chip tone="sky">{t(`coord.mode.${pl.mode}` as DictKey)}</Chip>
-                      <Chip tone={pl.status === "active" ? "amber" : pl.status === "fulfilled" ? "leaf" : "neutral"}>
-                        {t(`coord.pledge.${pl.status}` as DictKey)}
-                      </Chip>
-                      <span className="text-xs text-muted tabular-nums">
-                        {t("ledger.received")} {pl.receivedQty}/{pl.qty}
-                      </span>
-                    </div>
-                  </div>
-                  {pl.status === "active" && remaining > 0 && (
-                    <Button
-                      size="sm"
-                      variant="primary"
-                      busy={busy === pl.pledgeId}
-                      onClick={() => doRecord(pl.pledgeId, { eventType: "received", qty: remaining, pledgeId: pl.pledgeId })}
-                    >
-                      {t("coord.markReceived")} · {remaining}
-                    </Button>
-                  )}
-                </li>
-              );
-            })}
-          </ul>
-        )}
-      </div>
+      <PledgeList pledges={pledges} busy={busy} onReceive={(pl, qty) => doRecord(pl.pledgeId, { eventType: "received", qty, pledgeId: pl.pledgeId })} />
+      <NeedLog need={need} />
     </article>
   );
 }
 
-function Num({ label, value, tone, last }: { label: string; value: number | null; tone: string; last?: boolean }) {
+function Num({ stage, label, value, className }: { stage: Stage; label: string; value: number | null; className: string }) {
   return (
-    <div className={`px-2 py-3 text-center sm:px-4 sm:text-left ${last ? "" : "border-r border-border"}`}>
-      <dt className="text-[11px] leading-tight text-muted sm:text-xs">{label}</dt>
-      <dd className={`mt-1 font-display text-2xl font-semibold tabular-nums leading-none sm:text-3xl ${tone}`}>
+    <div className={`border-border px-3 py-3 ${className}`}>
+      <dt className="flex items-center gap-1.5 text-[11px] leading-tight text-muted sm:text-xs">
+        {stage === "verified" && (
+          <svg aria-hidden viewBox="0 0 16 16" className="h-3 w-3 fill-leaf">
+            <path d="M8 0l2 2.2 2.9-.5.5 2.9L16 6l-1.3 2.6L16 11l-2.6 1.4-.5 2.9-2.9-.5L8 16l-2-2.2-2.9.5-.5-2.9L0 10l1.3-2.6L0 5l2.6-1.4.5-2.9 2.9.5z" />
+          </svg>
+        )}
+        {label}
+      </dt>
+      <dd className={`mt-1 font-display text-2xl font-semibold tabular-nums leading-none sm:text-[28px] ${value === 0 ? "text-muted/50" : STAGE_TONE[stage].text}`}>
         {/* key forces a re-mount so the number flashes when it changes */}
         <span key={value ?? "x"} className="coord-num inline-block">
           {value ?? "?"}
@@ -200,27 +241,117 @@ function Num({ label, value, tone, last }: { label: string; value: number | null
   );
 }
 
-/** Requested is the track; pledged, received and used are separate lanes on it (not stacked sums). */
-function FlowBar({ requested, pledged, received, used }: { requested: number | null; pledged: number; received: number; used: number }) {
-  const max = Math.max(requested ?? 0, pledged + received, 1);
+/** Requested is the track; every other stage is its own lane (not stacked sums). */
+function FlowBar({ values }: { values: Record<Stage, number | null> }) {
+  const max = Math.max(values.requested ?? 0, values.pledged ?? 0, values.received ?? 0, 1);
   const pct = (n: number) => `${Math.min(100, (n / max) * 100)}%`;
   return (
-    <div aria-hidden className="space-y-1 px-4 pt-3">
-      {[
-        ["bg-amber", pledged],
-        ["bg-sky", received],
-        ["bg-leaf", used],
-      ].map(([cls, n]) => (
-        <div key={cls as string} className="h-1.5 overflow-hidden rounded-full bg-border/60">
-          <div className={`h-full rounded-full ${cls} transition-[width] duration-500`} style={{ width: pct(n as number) }} />
+    <div aria-hidden className="grid grid-cols-5 gap-1.5 px-4 pt-3">
+      {STAGES.slice(1).map((s) => (
+        <div key={s} className="h-1.5 overflow-hidden rounded-full bg-border/60">
+          <div className={`h-full rounded-full ${STAGE_TONE[s].bg} transition-[width] duration-500`} style={{ width: pct(values[s] ?? 0) }} />
         </div>
       ))}
     </div>
   );
 }
 
-function Dot({ className }: { className: string }) {
-  return <span aria-hidden className={`inline-block h-2 w-2 rounded-full ${className}`} />;
+function PledgeList({
+  pledges,
+  busy,
+  onReceive,
+}: {
+  pledges: ReviewPledge[];
+  busy: string | null;
+  onReceive: (pl: ReviewPledge, qty: number) => void;
+}) {
+  const { t } = useI18n();
+  return (
+    <div className="px-4 pt-4">
+      <p className="mb-1.5 text-xs font-medium text-muted">
+        {t("coord.pledgesForNeed")} · <span className="font-normal">{t("coord.contactPrivate")}</span>
+      </p>
+      {pledges.length === 0 ? (
+        <p className="text-sm text-muted">{t("coord.noPledges")}</p>
+      ) : (
+        <ul className="divide-y divide-border rounded-md border border-border bg-surface">
+          {pledges.map((pl) => {
+            const remaining = pl.qty - pl.receivedQty;
+            return (
+              <li key={pl.pledgeId} className="flex flex-col gap-2 px-3 py-2.5 sm:flex-row sm:items-center">
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm">
+                    <strong className="tabular-nums">{pl.qty}</strong> · {pl.donorName} <span className="text-muted">· {pl.donorContact}</span>
+                  </p>
+                  <div className="mt-1 flex flex-wrap gap-1.5">
+                    <Chip tone="sky">{t(`coord.mode.${pl.mode}` as DictKey)}</Chip>
+                    <Chip tone={pl.status === "active" ? "amber" : pl.status === "fulfilled" ? "leaf" : "neutral"}>
+                      {t(`coord.pledge.${pl.status}` as DictKey)}
+                    </Chip>
+                    <span className="text-xs tabular-nums text-muted">
+                      {t("ledger.received")} {pl.receivedQty}/{pl.qty}
+                    </span>
+                  </div>
+                </div>
+                {pl.status === "active" && remaining > 0 && (
+                  <Button size="sm" variant="primary" busy={busy === pl.pledgeId} onClick={() => onReceive(pl, remaining)}>
+                    {t("coord.markReceived")} · {remaining}
+                  </Button>
+                )}
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+type LogEvent = {
+  eventId: string;
+  eventType: "received" | "delivered" | "used" | "verified" | "returned";
+  qty: number;
+  createdAt: number;
+  actorName: string | null;
+  noteEs?: string | null;
+  noteEn?: string | null;
+  evidenceId?: string | null;
+};
+
+/** Who changed what, and when. */
+function NeedLog({ need }: { need: ReviewNeed }) {
+  const { t, pick, locale } = useI18n();
+  const events = ((need as { events?: LogEvent[] }).events ?? []).slice().sort((a, b) => b.createdAt - a.createdAt);
+  return (
+    <details className="group mx-4 mb-4 mt-3 rounded-md border border-border bg-surface" open={events.length > 0 && events.length <= 4}>
+      <summary className="flex cursor-pointer list-none items-center gap-2 px-3 py-2 text-xs font-medium text-muted">
+        <span aria-hidden className="inline-block transition group-open:rotate-90">›</span>
+        {t("coord.log")} <span className="tabular-nums">({events.length})</span>
+      </summary>
+      {events.length === 0 ? (
+        <p className="border-t border-border px-3 py-2 text-xs text-muted">{t("coord.log.empty")}</p>
+      ) : (
+        <ol className="divide-y divide-border border-t border-border">
+          {events.map((e) => {
+            const tone = e.eventType === "returned" ? "bg-brick" : STAGE_TONE[e.eventType].bg;
+            const note = pick(e.noteEs ?? undefined, e.noteEn ?? undefined);
+            return (
+              <li key={e.eventId} className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5 px-3 py-2 text-sm">
+                <span aria-hidden className={`h-2 w-2 shrink-0 translate-y-[-1px] rounded-full ${tone}`} />
+                <strong className="font-medium">{t(`coord.event.${e.eventType}` as DictKey)}</strong>
+                <span className="tabular-nums">{e.qty}</span>
+                <span className="text-muted">
+                  {t("coord.log.by")} <span className="text-foreground">{e.actorName ?? "—"}</span>, {formatDate(e.createdAt, locale)}
+                </span>
+                {e.evidenceId && <Chip tone="sky">{t("coord.log.withEvidence")}</Chip>}
+                {note && <span className="w-full pl-4 text-xs text-muted">{note}</span>}
+              </li>
+            );
+          })}
+        </ol>
+      )}
+    </details>
+  );
 }
 
 function ReceiveForm({
@@ -233,7 +364,7 @@ function ReceiveForm({
   pledges: ReviewPledge[];
   unit: string;
   busy: boolean;
-  onSubmit: (qty: number, pledgeId?: Id<"pledges">) => void;
+  onSubmit: (qty: number, pledgeId: Id<"pledges"> | undefined, ev: EvidenceDraft) => void;
   onCancel: () => void;
 }) {
   const { t, locale } = useI18n();
@@ -242,16 +373,17 @@ function ReceiveForm({
   const [pledgeId, setPledgeId] = useState<string>(open[0]?.pledgeId ?? "");
   const sel = open.find((p) => p.pledgeId === pledgeId);
   const [qty, setQty] = useState<string>(sel ? String(sel.qty - sel.receivedQty) : "");
+  const [ev, setEv] = useState<EvidenceDraft>(emptyEvidence());
   const max = sel ? sel.qty - sel.receivedQty : undefined;
   const n = Number(qty);
-  const valid = Number.isInteger(n) && n > 0 && (max === undefined || n <= max);
+  const valid = Number.isInteger(n) && n > 0 && (max === undefined || n <= max) && evidenceState(ev) !== "incomplete";
 
   return (
     <form
-      className="mx-4 mt-3 rounded-md border border-sky/40 bg-sky-soft/50 p-3"
+      className="mx-4 mt-3 space-y-3 rounded-md border border-sky/40 bg-sky-soft/40 p-3"
       onSubmit={(e) => {
         e.preventDefault();
-        if (valid) onSubmit(n, sel?.pledgeId);
+        if (valid) onSubmit(n, sel?.pledgeId, ev);
       }}
     >
       <div className="grid gap-3 sm:grid-cols-[1fr_auto]">
@@ -275,106 +407,108 @@ function ReceiveForm({
             <option value="">{t("coord.unlinked")}</option>
           </select>
         </div>
-        <div>
-          <Label htmlFor="rcv-qty">{t("coord.qty")}</Label>
-          <div className="flex items-center gap-2">
-            <input
-              id="rcv-qty"
-              inputMode="numeric"
-              autoFocus
-              value={qty}
-              onChange={(e) => setQty(e.target.value.replace(/[^\d]/g, ""))}
-              className={`${inputCls} w-24! text-right tabular-nums`}
-            />
-            <span className="text-sm text-muted">{unit}</span>
-          </div>
-        </div>
+        <QtyField id="rcv-qty" qty={qty} setQty={setQty} unit={unit} max={max} capLabel={t("coord.cap.received")} />
       </div>
-      <FormFooter busy={busy} valid={valid} onCancel={onCancel} label={`${t("coord.markReceived")} · ${qty || 0}`} variant="primary" signer={user?.name} />
+      <EvidenceAttach id="rcv-ev" value={ev} onChange={setEv} />
+      <FormFooter busy={busy} valid={valid} onCancel={onCancel} label={`${t("coord.markReceived")} · ${qty || 0}`} signer={user?.name} />
     </form>
   );
 }
 
-function UseForm({
+function StepForm({
+  step,
   max,
   unit,
-  photos,
+  needId,
+  isDemo,
   busy,
   onSubmit,
   onCancel,
 }: {
+  step: Exclude<Step, "received">;
   max: number;
   unit: string;
-  photos: ReviewPhoto[];
+  needId: string;
+  isDemo: boolean;
   busy: boolean;
-  onSubmit: (a: { qty: number; noteEs?: string; noteEn?: string; evidencePhotoId?: Id<"photos"> }) => void;
+  onSubmit: (a: { qty: number; noteEs?: string; noteEn?: string }, ev: EvidenceDraft) => void;
   onCancel: () => void;
 }) {
-  const { t, pick } = useI18n();
+  const { t } = useI18n();
   const { user } = useSession();
   const [qty, setQty] = useState(String(max));
   const [noteEs, setNoteEs] = useState("");
   const [noteEn, setNoteEn] = useState("");
-  const [photoId, setPhotoId] = useState("");
+  // Demo projects start with a clearly-labeled synthetic proof (editable), so the climax is open → confirm.
+  const preset = step === "used" ? undefined : step;
+  const [ev, setEv] = useState<EvidenceDraft>(() => (isDemo && preset ? syntheticEvidence(preset) : emptyEvidence()));
   const n = Number(qty);
-  const valid = Number.isInteger(n) && n > 0 && n <= max;
+  const valid = Number.isInteger(n) && n > 0 && n <= max && evidenceState(ev) !== "incomplete";
+  const id = `${step}-${needId}`;
 
   return (
     <form
-      className="mx-4 mt-3 rounded-md border border-leaf/40 bg-leaf-soft/50 p-3"
+      className="mx-4 mt-3 space-y-3 rounded-md border border-clay/40 bg-clay-soft/30 p-3"
       onSubmit={(e) => {
         e.preventDefault();
         if (!valid) return;
-        onSubmit({
-          qty: n,
-          noteEs: noteEs.trim() || undefined,
-          noteEn: noteEn.trim() || undefined,
-          evidencePhotoId: (photoId || undefined) as Id<"photos"> | undefined,
-        });
+        onSubmit({ qty: n, noteEs: noteEs.trim() || undefined, noteEn: noteEn.trim() || undefined }, ev);
       }}
     >
-      <div className="grid gap-3 sm:grid-cols-[auto_1fr]">
+      <div className="grid gap-3 sm:grid-cols-[auto_1fr_1fr]">
+        <QtyField id={`${id}-qty`} qty={qty} setQty={setQty} unit={unit} max={max} capLabel={t(`coord.cap.${step}` as DictKey)} />
         <div>
-          <Label htmlFor="use-qty">{t("coord.qty")}</Label>
-          <div className="flex items-center gap-2">
-            <input
-              id="use-qty"
-              inputMode="numeric"
-              autoFocus
-              value={qty}
-              onChange={(e) => setQty(e.target.value.replace(/[^\d]/g, ""))}
-              className={`${inputCls} w-24! text-right tabular-nums`}
-              aria-describedby="use-max"
-            />
-            <span className="text-sm text-muted">{unit}</span>
-          </div>
-          <p id="use-max" className="mt-1 text-xs text-muted">
-            {t("coord.used.max")}: {max}
-          </p>
+          <Label htmlFor={`${id}-es`}>{t("coord.noteEs")}</Label>
+          <input id={`${id}-es`} lang="es" value={noteEs} onChange={(e) => setNoteEs(e.target.value)} className={inputCls} />
         </div>
         <div>
-          <Label htmlFor="use-photo">{t("coord.evidencePhoto")}</Label>
-          <select id="use-photo" value={photoId} onChange={(e) => setPhotoId(e.target.value)} className={inputCls}>
-            <option value="">{t("coord.noEvidence")}</option>
-            {photos.map((ph, i) => (
-              <option key={ph.photoId} value={ph.photoId}>
-                #{i + 1} {pick(ph.captionEs ?? undefined, ph.captionEn ?? undefined)} (
-                {ph.visibility === "publicApproved" ? t("coord.photo.public") : t("coord.photo.private")})
-              </option>
-            ))}
-          </select>
-        </div>
-        <div>
-          <Label htmlFor="use-es">{t("coord.noteEs")}</Label>
-          <input id="use-es" lang="es" value={noteEs} onChange={(e) => setNoteEs(e.target.value)} className={inputCls} />
-        </div>
-        <div>
-          <Label htmlFor="use-en">{t("coord.noteEn")}</Label>
-          <input id="use-en" lang="en" value={noteEn} onChange={(e) => setNoteEn(e.target.value)} className={inputCls} />
+          <Label htmlFor={`${id}-en`}>{t("coord.noteEn")}</Label>
+          <input id={`${id}-en`} lang="en" value={noteEn} onChange={(e) => setNoteEn(e.target.value)} className={inputCls} />
         </div>
       </div>
-      <FormFooter busy={busy} valid={valid} onCancel={onCancel} label={`${t("coord.markUsed")} · ${qty || 0}`} variant="leaf" signer={user?.name} />
+      <EvidenceAttach id={`${id}-ev`} value={ev} onChange={setEv} syntheticPreset={isDemo ? preset : undefined} />
+      <FormFooter busy={busy} valid={valid} onCancel={onCancel} label={`${t(STEP_LABEL[step])} · ${qty || 0}`} signer={user?.name} />
     </form>
+  );
+}
+
+function QtyField({
+  id,
+  qty,
+  setQty,
+  unit,
+  max,
+  capLabel,
+}: {
+  id: string;
+  qty: string;
+  setQty: (s: string) => void;
+  unit: string;
+  max: number | undefined;
+  capLabel: string;
+}) {
+  const { t } = useI18n();
+  return (
+    <div>
+      <Label htmlFor={id}>{t("coord.qty")}</Label>
+      <div className="flex items-center gap-2">
+        <input
+          id={id}
+          inputMode="numeric"
+          autoFocus
+          value={qty}
+          onChange={(e) => setQty(e.target.value.replace(/[^\d]/g, ""))}
+          className={`${inputCls} w-24! text-right tabular-nums`}
+          aria-describedby={max !== undefined ? `${id}-max` : undefined}
+        />
+        <span className="text-sm text-muted">{unit}</span>
+      </div>
+      {max !== undefined && (
+        <p id={`${id}-max`} className="mt-1 text-xs text-muted">
+          {capLabel}: <span className="tabular-nums">{max}</span>
+        </p>
+      )}
+    </div>
   );
 }
 
@@ -383,20 +517,18 @@ function FormFooter({
   valid,
   onCancel,
   label,
-  variant,
   signer,
 }: {
   busy: boolean;
   valid: boolean;
   onCancel: () => void;
   label: string;
-  variant: "primary" | "leaf";
   signer?: string;
 }) {
   const { t } = useI18n();
   return (
-    <div className="mt-3 flex flex-wrap items-center gap-2">
-      <Button type="submit" variant={variant} busy={busy} disabled={!valid}>
+    <div className="flex flex-wrap items-center gap-2">
+      <Button type="submit" variant="primary" busy={busy} disabled={!valid}>
         {label}
       </Button>
       <Button type="button" variant="quiet" onClick={onCancel}>

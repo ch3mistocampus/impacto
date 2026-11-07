@@ -15,6 +15,7 @@ export type NeedRow = {
   unit: string;
   aiSuggested: boolean;
   quote?: string;
+  approximate?: boolean; // AI saw "aproximadamente/unos/about" before the number
 };
 
 function MaterialIcon({ itemKey }: { itemKey: string }) {
@@ -57,10 +58,16 @@ export function MaterialsEditor({ rows, onChange }: { rows: NeedRow[]; onChange:
                   <span className="font-semibold">{r.nameEs || r.nameEn || `#${i + 1}`}</span>
                   {r.aiSuggested && <AiBadge />}
                   {unknown && <ConfirmChip />}
+                  {!unknown && r.approximate && (
+                    <span className="inline-flex items-center rounded-full bg-amber-soft px-2 py-0.5 text-[11px] font-semibold text-amber">
+                      ≈ {t("field.mat.approx")}
+                    </span>
+                  )}
                 </div>
                 {r.quote && (
                   <p className="text-xs text-muted">
-                    {t("field.mat.quote")}: <q className="italic">{r.quote}</q>
+                    {t("field.mat.quote")}:{" "}
+                    <q className="rounded bg-amber-soft/60 px-1 italic text-foreground">{r.quote}</q>
                   </p>
                 )}
               </div>
@@ -83,7 +90,7 @@ export function MaterialsEditor({ rows, onChange }: { rows: NeedRow[]; onChange:
                   value={r.qty}
                   placeholder="?"
                   aria-describedby={`${r.rowKey}-qtyhint`}
-                  onChange={(e) => update(r.rowKey, { qty: e.target.value })}
+                  onChange={(e) => update(r.rowKey, { qty: e.target.value, approximate: false })}
                   className={`${inputCls} mt-1 text-lg font-semibold ${unknown ? "border-amber" : ""}`}
                 />
               </label>

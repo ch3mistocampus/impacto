@@ -10,8 +10,10 @@ import { v } from "convex/values";
  * Quantity ledger per material need (never conflate):
  *   requested (materialNeeds.requestedQty)
  *   pledged   (sum of pledges with status "active")
- *   received  (sum of materialEvents eventType "received")
- *   used      (sum of materialEvents eventType "used")
+ *   received  (sum of materialEvents eventType "received" minus "returned")
+ *   delivered (sum of materialEvents eventType "delivered")  — delivered <= received
+ *   used      (sum of materialEvents eventType "used")       — used <= delivered
+ *   verified  (sum of materialEvents eventType "verified")   — verified <= used (public impact = verified only)
  *   availableToPledge = requested - activePledged - receivedNotFromPledge   (see convex/lib/ledger.ts)
  */
 
@@ -36,6 +38,23 @@ export const projectStatus = v.union(
   v.literal("rejected"),
 );
 export const urgency = v.union(v.literal("low"), v.literal("medium"), v.literal("high"));
+export const materialEventType = v.union(
+  v.literal("received"),
+  v.literal("delivered"),
+  v.literal("used"),
+  v.literal("verified"),
+  v.literal("returned"),
+);
+export const evidenceType = v.union(
+  v.literal("receipt"),
+  v.literal("delivery_photo"),
+  v.literal("handover_doc"),
+  v.literal("staff_note"),
+  v.literal("before_photo"),
+  v.literal("after_photo"),
+);
+export const contributionStatus = v.union(v.literal("committed"), v.literal("received"), v.literal("allocated"));
+export const reviewStatus = v.union(v.literal("pending"), v.literal("approved"), v.literal("rejected"));
 
 export default defineSchema({
   nonprofits: defineTable({
@@ -72,6 +91,7 @@ export default defineSchema({
     region: v.optional(v.string()), // coarse only, e.g. "Utuado" — never street-level
     createdBy: v.id("users"),
     approvedBy: v.optional(v.id("users")),
+    approvedAt: v.optional(v.number()),
     publishedAt: v.optional(v.number()),
     safetyPauseReasonPublic: v.optional(v.string()),
     coverPhotoId: v.optional(v.id("photos")), // must point at a publicApproved photo
@@ -175,9 +195,10 @@ export default defineSchema({
     needId: v.id("materialNeeds"),
     projectId: v.id("projects"),
     pledgeId: v.optional(v.id("pledges")),
-    eventType: v.union(v.literal("received"), v.literal("used"), v.literal("returned")),
+    eventType: materialEventType,
     qty: v.number(),
     evidencePhotoId: v.optional(v.id("photos")),
+    evidenceId: v.optional(v.id("evidence")),
     noteEs: v.optional(v.string()),
     noteEn: v.optional(v.string()),
     verifiedBy: v.id("users"),
@@ -185,11 +206,13 @@ export default defineSchema({
     .index("by_need", ["needId"])
     .index("by_project", ["projectId"]),
 
+  // = "contributions". Original currency only, never FX-converted.
   donations: defineTable({
     projectId: v.optional(v.id("projects")),
+    nonprofitId: v.optional(v.id("nonprofits")), // for general-fund (no project) contributions
     amount: v.number(),
     currency: v.string(),
-    status: v.union(v.literal("committed"), v.literal("received"), v.literal("allocated")),
+    status: contributionStatus,
     donorName: v.optional(v.string()),
     externalReference: v.optional(v.string()),
     recordedBy: v.id("users"),
@@ -201,9 +224,46 @@ export default defineSchema({
     currency: v.string(),
     category: v.string(),
     receiptStorageId: v.optional(v.id("_storage")),
-    reviewStatus: v.union(v.literal("pending"), v.literal("approved"), v.literal("rejected")),
+    reviewStatus,
     approvedBy: v.optional(v.id("users")),
+    approvedAt: v.optional(v.number()),
+    recordedBy: v.optional(v.id("users")),
+    supplierRegion: v.optional(v.string()), // coarse region of purchase (regional procurement)
+    localLabor: v.optional(v.boolean()), // paid local labor
   }).index("by_project", ["projectId"]),
+
+  // Evidence for material events / milestones. Originals (privateStorageId) are coordinator-only.
+  // Public sees ONLY reviewStatus "approved" && publicApproved, via publicStorageId.
+  evidence: defineTable({
+    projectId: v.id("projects"),
+    needId: v.optional(v.id("materialNeeds")),
+    materialEventId: v.optional(v.id("materialEvents")),
+    type: evidenceType,
+    privateStorageId: v.optional(v.id("_storage")),
+    publicStorageId: v.optional(v.id("_storage")),
+    noteEs: v.optional(v.string()),
+    noteEn: v.optional(v.string()),
+    reviewStatus,
+    publicApproved: v.boolean(),
+    uploadedBy: v.id("users"),
+    reviewedBy: v.optional(v.id("users")),
+    reviewedAt: v.optional(v.number()),
+  }).index("by_project", ["projectId"]),
+
+  // Weekly transparency report: snapshot computed ONLY from real records in the period.
+  weeklyReports: defineTable({
+    nonprofitId: v.optional(v.id("nonprofits")),
+    periodStart: v.number(),
+    periodEnd: v.number(),
+    snapshot: v.any(),
+    summaryEs: v.string(),
+    summaryEn: v.string(),
+    status: v.union(v.literal("draft"), v.literal("published")),
+    generatedBy: v.optional(v.id("users")),
+    reviewedBy: v.optional(v.id("users")),
+    publishedAt: v.optional(v.number()),
+    isDemo: v.optional(v.boolean()),
+  }).index("by_status", ["status"]),
 
   milestones: defineTable({
     projectId: v.id("projects"),
@@ -213,7 +273,9 @@ export default defineSchema({
       v.literal("published"),
       v.literal("pledge"),
       v.literal("received"),
+      v.literal("delivered"),
       v.literal("used"),
+      v.literal("verified"),
       v.literal("expense"),
       v.literal("outcome"),
       v.literal("paused"),
@@ -224,6 +286,7 @@ export default defineSchema({
     publicDescriptionEs: v.string(),
     publicDescriptionEn: v.string(),
     photoId: v.optional(v.id("photos")),
+    evidenceId: v.optional(v.id("evidence")), // shown publicly only if evidence is approved+publicApproved
   }).index("by_project_time", ["projectId", "occurredAt"]),
 
   auditEvents: defineTable({

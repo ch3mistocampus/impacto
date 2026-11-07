@@ -19,6 +19,8 @@ export function AppHeader() {
         </Link>
         <nav className="hidden sm:flex gap-4 text-sm ml-4">
           <Link href="/donate">{t("nav.donate")}</Link>
+          <Link href="/transparency">{t("nav.transparency")}</Link>
+          <Link href="/donations">{t("nav.donations")}</Link>
           {user?.role === "field_worker" && <Link href="/field">{t("nav.field")}</Link>}
           {user?.role === "coordinator" && <Link href="/coordinator">{t("nav.coordinator")}</Link>}
         </nav>
@@ -51,6 +53,16 @@ export function AppHeader() {
           </button>
         </div>
       </div>
+      {/* Mobile nav: same links, horizontally scrollable, large touch targets */}
+      <nav className="sm:hidden border-t border-border flex gap-1 overflow-x-auto px-2 text-sm font-medium">
+        <Link href="/donate" className="shrink-0 px-3 py-2.5">{t("nav.donate")}</Link>
+        <Link href="/transparency" className="shrink-0 px-3 py-2.5">{t("nav.transparency")}</Link>
+        <Link href="/donations" className="shrink-0 px-3 py-2.5">{t("nav.donations")}</Link>
+        {user?.role === "field_worker" && <Link href="/field" className="shrink-0 px-3 py-2.5">{t("nav.field")}</Link>}
+        {user?.role === "coordinator" && (
+          <Link href="/coordinator" className="shrink-0 px-3 py-2.5">{t("nav.coordinator")}</Link>
+        )}
+      </nav>
     </header>
   );
 }

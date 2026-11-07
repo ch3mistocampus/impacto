@@ -1,15 +1,9 @@
-import { HATCH_AMBER } from "./ledgerStyles";
+import { STAGE_TEXT, stageSwatch } from "./ledgerStyles";
+import type { Stage } from "./types";
 
-export type StatTone = "requested" | "pledged" | "received" | "used";
+export type StatTone = Stage;
 
-const TONE: Record<StatTone, { chip: string; value: string }> = {
-  requested: { chip: "border-2 border-foreground/40 bg-transparent", value: "text-foreground" },
-  pledged: { chip: "", value: "text-amber" },
-  received: { chip: "bg-sky/45", value: "text-sky" },
-  used: { chip: "bg-sky", value: "text-sky" },
-};
-
-/** One ledger number. Each tone has its own swatch so the four states are never read as one. */
+/** One ledger number. Each stage has its own swatch so the six measures are never read as one. */
 export function StatTile({
   label,
   value,
@@ -21,19 +15,14 @@ export function StatTile({
   tone: StatTone;
   hint?: string;
 }) {
-  const s = TONE[tone];
   return (
-    <div className="flex items-baseline gap-2 py-1.5">
-      <span
-        className={`size-3 shrink-0 self-center rounded-[3px] ${s.chip}`}
-        style={tone === "pledged" ? HATCH_AMBER : undefined}
-        aria-hidden
-      />
-      <span className="text-sm text-muted flex-1">
+    <div className="flex items-baseline gap-2 py-1">
+      <span className="size-3 shrink-0 self-center rounded-[3px]" style={stageSwatch(tone)} aria-hidden />
+      <span className={`text-sm flex-1 ${tone === "verified" ? "font-semibold text-leaf" : "text-muted"}`}>
         {label}
         {hint && <span className="block text-xs">{hint}</span>}
       </span>
-      <span className={`font-display text-xl font-semibold tabular-nums ${s.value}`}>
+      <span className={`font-display text-xl font-semibold tabular-nums ${STAGE_TEXT[tone]}`}>
         {typeof value === "number" ? value.toLocaleString() : value}
       </span>
     </div>

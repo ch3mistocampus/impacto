@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { Fragment, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { useAction, useMutation, useQuery } from "convex/react";
 import { ConvexError } from "convex/values";
@@ -31,6 +31,7 @@ import {
 
 type Draft = NonNullable<FunctionReturnType<typeof api.field.getMyDraft>>;
 type Urgency = "low" | "medium" | "high";
+type MilestoneRow = { key: string; es: string; en: string };
 const CATEGORIES: Category[] = ["roof_shelter", "reconstruction", "heal_sow"];
 const URGENCIES: Urgency[] = ["low", "medium", "high"];
 
@@ -211,7 +212,13 @@ function Editor({ data, onReanalyze }: { data: Draft; onReanalyze: (transcript?:
       unit: n.unit,
       aiSuggested: n.aiSuggested,
       quote: n.aiSuggested ? ex?.materials.find((m) => m.itemKey === n.itemKey)?.sourceQuote : undefined,
+      approximate: n.aiSuggested ? ex?.materials.find((m) => m.itemKey === n.itemKey)?.approximate === true : false,
     })),
+  );
+  const [damageEs, setDamageEs] = useState(ex?.damageDescriptionEs ?? "");
+  const [damageEn, setDamageEn] = useState(ex?.damageDescriptionEn ?? "");
+  const [milestones, setMilestones] = useState<MilestoneRow[]>(() =>
+    (ex?.proposedMilestones ?? []).map((m, i) => ({ key: `m${i}`, es: m.es, en: m.en })),
   );
   const [priv, setPriv] = useState<PrivateState>(
     data.private ?? { beneficiaryName: "", contact: "", privateAddress: "", privateNotes: "" },
@@ -246,6 +253,13 @@ function Editor({ data, onReanalyze }: { data: Draft; onReanalyze: (transcript?:
           aiSuggested: r.aiSuggested,
         };
       }),
+      ...(ex
+        ? {
+            damageDescriptionEs: damageEs,
+            damageDescriptionEn: damageEn,
+            proposedMilestones: milestones.map(({ es, en }) => ({ es, en })),
+          }
+        : {}),
     });
     await savePrivate({ sessionToken, projectId: data.project._id, ...priv });
   };
@@ -303,8 +317,10 @@ function Editor({ data, onReanalyze }: { data: Draft; onReanalyze: (transcript?:
   const busy = status === "saving" || status === "submitting";
   const markDirty = () => status === "saved" && setStatus("idle");
 
+  const quotes = rows.map((r) => r.quote).filter((q): q is string => !!q);
+
   return (
-    <div className="mx-auto max-w-2xl space-y-4 pt-6" onChangeCapture={markDirty}>
+    <div className="mx-auto max-w-2xl space-y-4 pt-6 lg:max-w-6xl" onChangeCapture={markDirty}>
       <div className="flex items-center justify-between gap-3">
         <Link href="/field" className="text-sm text-muted">
           ← {t("common.back")}
@@ -323,7 +339,16 @@ function Editor({ data, onReanalyze }: { data: Draft; onReanalyze: (transcript?:
             ex.source === "fallback" ? "bg-amber-soft text-amber" : "bg-sky-soft text-sky"
           }`}
         >
-          <span className="font-semibold">{t(ex.source === "fallback" ? "field.source.fallback" : "field.source.openai")}</span>
+          {ex.source === "fallback" ? (
+            <span className="inline-flex items-center rounded-full border border-current px-2.5 py-0.5 text-xs font-bold">
+              {t("field.source.fallback")}
+            </span>
+          ) : (
+            <span className="font-semibold">{t("field.source.openai")}</span>
+          )}
+          {ex.source === "fallback" && (ex.notice === "openai_error" || ex.notice === "no_api_key") && (
+            <span>{t(`field.source.fallback.${ex.notice}` as DictKey)}</span>
+          )}
           {ex.model && <span className="opacity-75">· {ex.model}</span>}
           {ex.redactions > 0 && (
             <span className="flex items-center gap-1">
@@ -333,7 +358,9 @@ function Editor({ data, onReanalyze }: { data: Draft; onReanalyze: (transcript?:
         </div>
       )}
 
-      {/* Transcript, verbatim */}
+      {/* Transcript (left, sticky on wide screens) | extracted fields (right). Stacked on mobile. */}
+      <div className="space-y-4 lg:grid lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:items-start lg:gap-6 lg:space-y-0">
+      <div className="lg:sticky lg:top-20 lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto">
       <Card>
         <div className="flex flex-wrap items-center justify-between gap-2">
           <h2 className="font-display text-lg font-semibold">
@@ -353,7 +380,7 @@ function Editor({ data, onReanalyze }: { data: Draft; onReanalyze: (transcript?:
           />
         ) : (
           <blockquote lang={report.language} className="mt-2 whitespace-pre-wrap border-l-4 border-clay pl-3 text-lg leading-relaxed">
-            {report.transcriptOriginal}
+            <HighlightedText text={report.transcriptOriginal} quotes={quotes} />
           </blockquote>
         )}
         <button
@@ -382,7 +409,10 @@ function Editor({ data, onReanalyze }: { data: Draft; onReanalyze: (transcript?:
           </button>
         </div>
       </Card>
+      </div>
 
+      <div className="space-y-4">
+      <h2 className="sr-only">{t("field.fields")}</h2>
       {/* AI-drafted fields */}
       <Card className="space-y-4">
         <div>
@@ -412,7 +442,9 @@ function Editor({ data, onReanalyze }: { data: Draft; onReanalyze: (transcript?:
 
         <div>
           <div className="mb-2 flex items-center justify-between gap-2">
-            <span className="text-sm font-medium text-muted">{t("field.urgency")}</span>
+            <span className="text-sm font-medium text-muted">
+              {t("field.urgency")} · <span className="italic">{t("field.urgency.suggested")}</span>
+            </span>
             <AiBadge />
           </div>
           <div className="grid grid-cols-3 gap-2">
@@ -462,6 +494,26 @@ function Editor({ data, onReanalyze }: { data: Draft; onReanalyze: (transcript?:
         ))}
       </Card>
 
+      {ex && (
+        <Card className="space-y-3">
+          <div className="flex items-center justify-between gap-2">
+            <h2 className="font-display text-lg font-semibold">{t("field.damage")}</h2>
+            <AiBadge />
+          </div>
+          {(
+            [
+              ["field.damageEs", damageEs, setDamageEs, "es"],
+              ["field.damageEn", damageEn, setDamageEn, "en"],
+            ] as const
+          ).map(([label, value, set, lang]) => (
+            <label key={label} className="block">
+              <span className="mb-1 block text-sm font-medium text-muted">{t(label)}</span>
+              <textarea rows={2} lang={lang} value={value} onChange={(e) => set(e.target.value)} className={inputCls} />
+            </label>
+          ))}
+        </Card>
+      )}
+
       <Card>
         <h2 className="mb-3 font-display text-lg font-semibold">{t("field.materials")}</h2>
         <MaterialsEditor
@@ -472,6 +524,61 @@ function Editor({ data, onReanalyze }: { data: Draft; onReanalyze: (transcript?:
           }}
         />
       </Card>
+
+      {ex && (
+        <Card>
+          <div className="flex items-center justify-between gap-2">
+            <h2 className="font-display text-lg font-semibold">{t("field.milestones")}</h2>
+            <AiBadge />
+          </div>
+          <p className="text-sm text-muted">{t("field.milestones.hint")}</p>
+          <ol className="mt-3 space-y-2">
+            {milestones.map((m, i) => (
+              <li key={m.key} className="flex items-start gap-2 rounded-xl border border-border bg-background p-2">
+                <span className="mt-3 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-clay-soft text-sm font-bold text-clay">
+                  {i + 1}
+                </span>
+                <div className="grid min-w-0 flex-1 grid-cols-1 gap-2 sm:grid-cols-2">
+                  {(["es", "en"] as const).map((lang) => (
+                    <input
+                      key={lang}
+                      lang={lang}
+                      aria-label={`${t("field.milestones")} ${i + 1} (${lang})`}
+                      value={m[lang]}
+                      placeholder={lang.toUpperCase()}
+                      onChange={(e) =>
+                        setMilestones((ms) => ms.map((x) => (x.key === m.key ? { ...x, [lang]: e.target.value } : x)))
+                      }
+                      className={inputCls}
+                    />
+                  ))}
+                </div>
+                <button
+                  type="button"
+                  aria-label={t("field.milestones.remove")}
+                  onClick={() => {
+                    setMilestones((ms) => ms.filter((x) => x.key !== m.key));
+                    markDirty();
+                  }}
+                  className="mt-1 flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-xl text-brick"
+                >
+                  ×
+                </button>
+              </li>
+            ))}
+          </ol>
+          <button
+            type="button"
+            className={`${btnSecondary} mt-3 w-full border-dashed`}
+            onClick={() => {
+              setMilestones((ms) => [...ms, { key: `new-${Date.now()}`, es: "", en: "" }]);
+              markDirty();
+            }}
+          >
+            + {t("field.milestones.add")}
+          </button>
+        </Card>
+      )}
 
       {ex && ex.missingQuestions.length > 0 && (
         <Card className="border-amber bg-amber-soft/40">
@@ -527,6 +634,35 @@ function Editor({ data, onReanalyze }: { data: Draft; onReanalyze: (transcript?:
           {t("field.submit")}
         </button>
       </div>
+      </div>
+      </div>
     </div>
   );
+}
+
+/** Highlights each source quote (case-insensitive) inside the transcript. */
+function HighlightedText({ text, quotes }: { text: string; quotes: string[] }) {
+  const lower = text.toLowerCase();
+  const ranges: [number, number][] = [];
+  for (const q of quotes) {
+    const needle = q.trim().toLowerCase();
+    if (needle.length < 3) continue;
+    const at = lower.indexOf(needle);
+    if (at >= 0) ranges.push([at, at + needle.length]);
+  }
+  ranges.sort((a, b) => a[0] - b[0]);
+  const parts: ReactNode[] = [];
+  let pos = 0;
+  for (const [a, b] of ranges) {
+    if (a < pos) continue; // overlapping — skip
+    if (a > pos) parts.push(<Fragment key={`t${pos}`}>{text.slice(pos, a)}</Fragment>);
+    parts.push(
+      <mark key={`m${a}`} className="rounded bg-amber-soft px-0.5 text-inherit">
+        {text.slice(a, b)}
+      </mark>,
+    );
+    pos = b;
+  }
+  if (pos < text.length) parts.push(<Fragment key={`t${pos}`}>{text.slice(pos)}</Fragment>);
+  return <>{parts}</>;
 }

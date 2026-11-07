@@ -6,8 +6,8 @@ import { api } from "../../../convex/_generated/api";
 import { useI18n } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
 import type { DictKey } from "@/lib/dict";
-import { Button, Chip, Label, Section, VerifiedBy, formatDate, inputCls, useAction } from "./ui";
-import { containsPrivate, type ReviewData } from "./types";
+import { AiNever, Button, Chip, Label, Section, VerifiedBy, formatDate, inputCls, useAction } from "./ui";
+import { containsPrivate, type ReviewData, type ReviewReport } from "./types";
 
 const TYPE_TONE: Record<string, "amber" | "sky" | "leaf" | "clay" | "neutral" | "brick"> = {
   pledge: "amber",
@@ -32,6 +32,14 @@ export function MilestonePanel({ data }: { data: ReviewData }) {
 
   return (
     <div className="space-y-5">
+      <ProposedMilestones
+        reports={data.fieldReports}
+        onUse={(m) => {
+          setEs(m.es);
+          setEn(m.en);
+          document.getElementById("ms-es")?.focus();
+        }}
+      />
       <Section title={t("coord.milestone")}>
         <p className="mb-3 text-sm text-muted">{t("coord.milestone.note")}</p>
         <form
@@ -120,5 +128,56 @@ export function MilestonePanel({ data }: { data: ReviewData }) {
         )}
       </Section>
     </div>
+  );
+}
+
+type Proposed = { es: string; en: string };
+
+function proposedFrom(reports: ReviewReport[]): Proposed[] {
+  const out: Proposed[] = [];
+  const seen = new Set<string>();
+  for (const r of reports) {
+    const list = (r.draftExtraction as { proposedMilestones?: unknown } | null)?.proposedMilestones;
+    if (!Array.isArray(list)) continue;
+    for (const m of list) {
+      if (!m || typeof m !== "object") continue;
+      const es = String((m as Proposed).es ?? "").trim();
+      const en = String((m as Proposed).en ?? "").trim();
+      const key = `${es}|${en}`;
+      if ((es || en) && !seen.has(key)) {
+        seen.add(key);
+        out.push({ es: es || en, en: en || es });
+      }
+    }
+  }
+  return out;
+}
+
+/** AI suggestions from the field report. Never verified on their own: "use" only copies into the form. */
+export function ProposedMilestones({ reports, onUse }: { reports: ReviewReport[]; onUse?: (m: Proposed) => void }) {
+  const { t, pick } = useI18n();
+  const items = proposedFrom(reports);
+  if (items.length === 0) return null;
+  return (
+    <Section title={t("coord.pm.title")} aside={<Chip tone="amber">{t("coord.aiDraft")}</Chip>}>
+      <p className="mb-3 text-sm text-muted">{t("coord.pm.note")}</p>
+      <ol className="space-y-2">
+        {items.map((m, i) => (
+          <li
+            key={i}
+            className="flex flex-wrap items-center gap-3 rounded-md border border-dashed border-amber/60 bg-amber-soft/30 px-3 py-2"
+          >
+            <span className="w-5 text-right text-xs tabular-nums text-muted">{i + 1}.</span>
+            <span className="min-w-0 flex-1 text-sm">{pick(m.es, m.en)}</span>
+            {onUse && (
+              <Button size="sm" variant="ghost" onClick={() => onUse(m)}>
+                {t("coord.pm.use")}
+              </Button>
+            )}
+          </li>
+        ))}
+      </ol>
+      <AiNever className="mt-3" />
+    </Section>
   );
 }

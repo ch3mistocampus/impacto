@@ -16,12 +16,24 @@ function pickMime(): string | undefined {
 
 const fmt = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
 
-export function AudioRecorder({ onChange }: { onChange: (blob: Blob | null) => void }) {
+export type MicIssue = "denied" | "unsupported";
+
+/**
+ * Voice capture. If the mic is denied or MediaRecorder is unsupported, calls `onUnavailable`
+ * so the parent can switch to typed input (and shows a friendly message itself as a fallback).
+ */
+export function AudioRecorder({
+  onChange,
+  onUnavailable,
+}: {
+  onChange: (blob: Blob | null) => void;
+  onUnavailable?: (issue: MicIssue) => void;
+}) {
   const { t } = useI18n();
   const [state, setState] = useState<"idle" | "recording" | "done">("idle");
   const [seconds, setSeconds] = useState(0);
   const [url, setUrl] = useState<string | null>(null);
-  const [error, setError] = useState(false);
+  const [error, setError] = useState<MicIssue | null>(null);
   const recRef = useRef<MediaRecorder | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -32,10 +44,15 @@ export function AudioRecorder({ onChange }: { onChange: (blob: Blob | null) => v
   };
 
   const start = async () => {
-    setError(false);
+    setError(null);
     if (url) URL.revokeObjectURL(url);
     setUrl(null);
     onChange(null);
+    if (typeof MediaRecorder === "undefined" || !navigator.mediaDevices?.getUserMedia) {
+      setError("unsupported");
+      onUnavailable?.("unsupported");
+      return;
+    }
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       const mime = pickMime();
@@ -59,9 +76,15 @@ export function AudioRecorder({ onChange }: { onChange: (blob: Blob | null) => v
         setSeconds(s);
         if (s >= MAX_SECONDS) stop();
       }, 250);
-    } catch {
-      setError(true);
+    } catch (e) {
+      const name = e instanceof DOMException ? e.name : "";
+      const issue: MicIssue =
+        name === "NotAllowedError" || name === "SecurityError" || name === "NotFoundError" || name === "NotReadableError"
+          ? "denied"
+          : "unsupported";
+      setError(issue);
       setState("idle");
+      onUnavailable?.(issue);
     }
   };
 
@@ -119,7 +142,11 @@ export function AudioRecorder({ onChange }: { onChange: (blob: Blob | null) => v
           </button>
         </div>
       )}
-      {error && <p className="rounded-xl bg-amber-soft px-3 py-2 text-sm text-amber">{t("field.rec.denied")}</p>}
+      {error && (
+        <p role="alert" className="rounded-xl bg-amber-soft px-3 py-2 text-sm text-amber">
+          {t(error === "denied" ? "field.mic.denied" : "field.mic.unsupported")}
+        </p>
+      )}
     </div>
   );
 }

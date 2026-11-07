@@ -7,12 +7,13 @@ import { useQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import { useI18n } from "@/lib/i18n";
 import { CategoryChips } from "@/components/public/Landing";
+import { PledgeIsNotNote } from "@/components/public/LedgerBar";
 import { isCategory, type Category } from "@/components/public/types";
 import { SwipeCard } from "./SwipeCard";
 import { ContributionSheet } from "./ContributionSheet";
 import { useReducedMotion } from "./useReducedMotion";
 import { parsePledges, pledgesSnapshot, subscribePledges } from "./followTokens";
-import type { DeckCard } from "./types";
+import type { DeckCard, PledgeMode } from "./types";
 
 export function DonateDeck() {
   const { t, pick } = useI18n();
@@ -28,6 +29,7 @@ export function DonateDeck() {
   const [dismissed, setDismissed] = useState<Set<string>>(() => new Set());
   const [exiting, setExiting] = useState<"left" | "right" | null>(null);
   const [sheetSnap, setSheetSnap] = useState<DeckCard | null>(null);
+  const [sheetMode, setSheetMode] = useState<PledgeMode>("request_instructions");
   const savedRaw = useSyncExternalStore(subscribePledges, pledgesSnapshot, () => "");
   const saved = useMemo(() => parsePledges(savedRaw), [savedRaw]);
   const exitTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -75,8 +77,10 @@ export function DonateDeck() {
     );
   }
 
-  function help() {
+  /** Open the pledge sheet preset to a mode (§4C: have / buy / pledge quantity). */
+  function help(mode: PledgeMode = "request_instructions") {
     if (!top || exiting) return;
+    setSheetMode(mode);
     setSheetSnap(top);
   }
 
@@ -89,7 +93,13 @@ export function DonateDeck() {
         pass();
       } else if (e.key === "ArrowRight") {
         e.preventDefault();
-        help();
+        help("request_instructions");
+      } else if (e.key === "1") {
+        e.preventDefault();
+        help("have_materials");
+      } else if (e.key === "2") {
+        e.preventDefault();
+        help("will_buy");
       }
   });
 
@@ -118,6 +128,7 @@ export function DonateDeck() {
       <div className="max-w-md w-full mx-auto lg:mx-0 lg:max-w-none">
         <h1 className="font-display text-3xl sm:text-4xl font-semibold leading-tight">{t("donate.title")}</h1>
         <p className="mt-2 text-muted">{t("donate.lead")}</p>
+        <PledgeIsNotNote className="mt-3" />
 
         <CategoryChips
           value={category}
@@ -196,7 +207,7 @@ export function DonateDeck() {
                   exiting={exiting}
                   reducedMotion={reducedMotion}
                   onPass={pass}
-                  onHelp={help}
+                  onHelp={() => help("request_instructions")}
                 />
               </>
             )}
@@ -215,19 +226,35 @@ export function DonateDeck() {
                   aria-keyshortcuts="ArrowLeft"
                 >
                   <span aria-hidden className="mr-1.5">←</span>
-                  {t("donate.pass")}
+                  {t("donate.act.pass")}
                 </button>
                 <button
                   type="button"
-                  onClick={help}
-                  className="h-16 rounded-full bg-clay text-white text-lg font-semibold shadow-[0_2px_0_var(--brick)]"
+                  onClick={() => help("request_instructions")}
+                  className="h-16 rounded-full bg-clay text-white text-lg font-semibold leading-tight px-3 shadow-[0_2px_0_var(--brick)]"
                   aria-keyshortcuts="ArrowRight"
                 >
-                  {t("donate.help")}
+                  {t("donate.act.pledge")}
                   <span aria-hidden className="ml-1.5">→</span>
                 </button>
+                <button
+                  type="button"
+                  onClick={() => help("have_materials")}
+                  className="min-h-14 rounded-2xl border-2 border-clay bg-clay-soft text-clay font-semibold px-3 py-2 leading-tight"
+                  aria-keyshortcuts="1"
+                >
+                  {t("donate.act.have")}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => help("will_buy")}
+                  className="min-h-14 rounded-2xl border-2 border-clay bg-clay-soft text-clay font-semibold px-3 py-2 leading-tight"
+                  aria-keyshortcuts="2"
+                >
+                  {t("donate.act.buy")}
+                </button>
               </div>
-              <p className="mt-3 text-center text-xs text-muted hidden sm:block">{t("donate.keyboardHint")}</p>
+              <p className="mt-3 text-center text-xs text-muted hidden sm:block">{t("donate.keyboardHint2")}</p>
             </>
           )}
         </section>
@@ -235,7 +262,12 @@ export function DonateDeck() {
 
       {saved.length > 0 && (
         <aside className="max-w-md w-full mx-auto lg:mx-0 lg:max-w-none">
-          <h2 className="font-display text-xl font-semibold">{t("donate.myPledges")}</h2>
+          <div className="flex items-baseline justify-between gap-3">
+            <h2 className="font-display text-xl font-semibold">{t("donate.myPledges")}</h2>
+            <Link href="/donations" className="text-sm font-semibold text-sky underline underline-offset-2">
+              {t("donate.successDonations")}
+            </Link>
+          </div>
           <ul className="mt-2 divide-y divide-border border-y border-border">
             {saved.slice(0, 6).map((p) => (
               <li key={p.token}>
@@ -254,7 +286,7 @@ export function DonateDeck() {
         </aside>
       )}
 
-      <ContributionSheet card={sheetCard} onClose={closeSheet} />
+      <ContributionSheet card={sheetCard} initialMode={sheetMode} onClose={closeSheet} />
     </div>
   );
 }

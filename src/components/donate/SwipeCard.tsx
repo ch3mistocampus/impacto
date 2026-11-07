@@ -7,6 +7,7 @@ import { LedgerBar } from "@/components/public/LedgerBar";
 import { MaterialImage } from "@/components/public/MaterialImage";
 import { CategoryBadge } from "@/components/public/CategoryBadge";
 import { VerifiedBadge } from "@/components/public/VerifiedBadge";
+import { DemoTag } from "@/components/public/PublicMeta";
 import { CATEGORY_STYLE } from "@/components/public/types";
 import type { DeckCard } from "./types";
 
@@ -86,7 +87,7 @@ export function SwipeCard({
           className="pointer-events-none absolute top-5 left-5 z-10 rotate-[-10deg] rounded-lg border-4 border-sky px-3 py-1 font-display text-2xl font-bold text-sky bg-surface/80 transition-opacity"
           style={{ opacity: intent === "help" ? 1 : 0 }}
         >
-          {t("donate.help")}
+          {t("donate.act.pledge")}
         </span>
         <span
           aria-hidden
@@ -102,6 +103,7 @@ export function SwipeCard({
             alt={pick(card.nameEs, card.nameEn)}
             className="h-[85%] w-auto max-w-[70%] drop-shadow-md"
           />
+          <DemoTag className="absolute top-3 right-3" />
           <div className="absolute inset-x-4 bottom-3 flex flex-wrap items-end justify-between gap-1.5">
             <CategoryBadge category={card.category} className="bg-surface/90" />
             {card.verified && <VerifiedBadge />}
@@ -116,12 +118,13 @@ export function SwipeCard({
               {card.region && <span>, {card.region}</span>}
             </p>
           </div>
-          <p className="text-sm leading-relaxed line-clamp-3">{pick(card.summaryEs, card.summaryEn)}</p>
+          <p className="text-sm leading-relaxed line-clamp-2">{pick(card.summaryEs, card.summaryEn)}</p>
           <div className="mt-auto pt-1">
             <LedgerBar ledger={card.ledger} unit={card.unit} compact />
+            <p className="mt-2 text-xs font-semibold text-amber">{t("stage.pledgeIsNot")}</p>
           </div>
           <Link
-            href={`/p/${card.projectId}`}
+            href={`/transparency/projects/${card.projectId}`}
             className="self-start text-sm font-semibold underline underline-offset-4 decoration-2"
           >
             {t("donate.viewProject")}

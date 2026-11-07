@@ -3,6 +3,7 @@ import type { MutationCtx } from "./_generated/server";
 import { v } from "convex/values";
 import type { Doc, Id } from "./_generated/dataModel";
 import { materialMilestoneText } from "./projects";
+import { computeWeeklySnapshot, draftSummary } from "./weekly";
 
 /**
  * SYNTHETIC demo data only. Idempotent:
@@ -14,7 +15,15 @@ import { materialMilestoneText } from "./projects";
 
 const DAY = 24 * 60 * 60 * 1000;
 const DEMO_TRANSCRIPT =
-  "La casa necesita unos doscientos ladrillos, quince bolsas de cemento y reparación del techo.";
+  "Estamos ayudando a una familia cuya casa sufrió daños. Necesitamos aproximadamente 200 ladrillos, 15 bolsas de cemento y materiales para reparar el techo.";
+const DEMO_TRANSCRIPT_EN =
+  "We are helping a family whose house was damaged. We need approximately 200 bricks, 15 bags of cement and materials to repair the roof.";
+
+const DEMO_QUOTES: Record<string, string> = {
+  bricks: "aproximadamente 200 ladrillos",
+  cement_bag: "15 bolsas de cemento",
+  zinc_sheet: "materiales para reparar el techo",
+};
 
 type Role = Doc<"users">["role"];
 type Cat = Doc<"projects">["category"];
@@ -41,7 +50,12 @@ type SeedNeed = {
   aiSuggested?: boolean;
   pledges?: { qty: number; mode: Doc<"pledges">["mode"]; status?: Doc<"pledges">["status"]; received?: number }[];
   receivedDirect?: number; // received outside any pledge
+  delivered?: number; // defaults to `used` (stage order: delivered >= used)
   used?: number;
+  verified?: number; // <= used; seeded with a synthetic, approved staff_note evidence
+  nameEs?: string; // override MATERIALS name
+  nameEn?: string;
+  unit?: string;
 };
 
 type SeedProject = {
@@ -60,6 +74,9 @@ type SeedProject = {
   private: { beneficiaryName: string; privateAddress: string; contact: string; privateNotes?: string };
   needs: SeedNeed[];
   outcomes?: { es: string; en: string }[];
+  /** Synthetic financial records (original currency, no FX). */
+  contributions?: { amount: number; currency: string; status: Doc<"donations">["status"] }[];
+  expenses?: { amount: number; currency: string; category: string; supplierRegion?: string; localLabor?: boolean; approved: boolean }[];
 };
 
 const PROJECTS: SeedProject[] = [
@@ -79,10 +96,12 @@ const PROJECTS: SeedProject[] = [
     transcript: "El techo de zinc se levantó con el viento. Hacen falta como veinticuatro planchas y clavos.",
     private: { beneficiaryName: "Familia Ejemplo A", privateAddress: "Dirección de ejemplo 1 (sintética)", contact: "787-555-0101 (falso)" },
     needs: [
-      { itemKey: "zinc_sheet", qty: 24, pledges: [{ qty: 10, mode: "will_buy", status: "fulfilled", received: 10 }, { qty: 6, mode: "have_materials" }], used: 8 },
-      { itemKey: "nails", qty: 6, receivedDirect: 6, used: 6 },
+      { itemKey: "zinc_sheet", qty: 24, pledges: [{ qty: 10, mode: "will_buy", status: "fulfilled", received: 10 }, { qty: 6, mode: "have_materials" }], delivered: 10, used: 8 },
+      { itemKey: "nails", qty: 6, receivedDirect: 6, used: 6, verified: 6 },
       { itemKey: "tarp", qty: 4 },
     ],
+    contributions: [{ amount: 500, currency: "USD", status: "allocated" }, { amount: 250, currency: "USD", status: "committed" }],
+    expenses: [{ amount: 180, currency: "USD", category: "Clavos y tornillería", supplierRegion: "Utuado", approved: true }],
   },
   {
     alias: "Reconstrucción 007",
@@ -101,10 +120,12 @@ const PROJECTS: SeedProject[] = [
     private: { beneficiaryName: "Familia Ejemplo B", privateAddress: "Dirección de ejemplo 2 (sintética)", contact: "787-555-0102 (falso)" },
     needs: [
       { itemKey: "bricks", qty: 300, pledges: [{ qty: 50, mode: "have_materials" }] },
-      { itemKey: "cement_bag", qty: 20, receivedDirect: 8, used: 5 },
+      { itemKey: "cement_bag", qty: 20, receivedDirect: 8, delivered: 8, used: 5 },
       { itemKey: "rebar", qty: 12 },
       { itemKey: "wood_beam", qty: undefined, aiSuggested: true }, // needs confirmation
     ],
+    contributions: [{ amount: 300, currency: "USD", status: "received" }],
+    expenses: [{ amount: 120, currency: "USD", category: "Mano de obra local", supplierRegion: "Jayuya", localLabor: true, approved: false }],
   },
   {
     alias: "Siembra y sana 003",
@@ -121,9 +142,9 @@ const PROJECTS: SeedProject[] = [
     transcript: "Queremos sembrar en el solar del centro comunal. Necesitamos semillas, tierra y herramientas.",
     private: { beneficiaryName: "Grupo Comunitario Ejemplo C", privateAddress: "Solar de ejemplo (sintético)", contact: "demo-c@example.org" },
     needs: [
-      { itemKey: "seeds", qty: 40, receivedDirect: 25, used: 25 },
+      { itemKey: "seeds", qty: 40, receivedDirect: 25, used: 25, verified: 25 },
       { itemKey: "soil", qty: 30, pledges: [{ qty: 10, mode: "will_buy" }] },
-      { itemKey: "tools", qty: 6, pledges: [{ qty: 3, mode: "have_materials", status: "fulfilled", received: 3 }], used: 3 },
+      { itemKey: "tools", qty: 6, pledges: [{ qty: 3, mode: "have_materials", status: "fulfilled", received: 3 }], used: 3, verified: 3 },
     ],
     outcomes: [{ es: "Primeras 25 hileras sembradas en el huerto comunitario", en: "First 25 rows planted in the community garden" }],
   },
@@ -160,7 +181,7 @@ const PROJECTS: SeedProject[] = [
     transcript: "Se filtra el agua por todo el techo, hacen falta lonas y planchas.",
     private: { beneficiaryName: "Familia Ejemplo E", privateAddress: "Dirección de ejemplo 5 (sintética)", contact: "787-555-0105 (falso)" },
     needs: [
-      { itemKey: "tarp", qty: 3, receivedDirect: 3, used: 3 },
+      { itemKey: "tarp", qty: 3, receivedDirect: 3, used: 3, verified: 3 },
       { itemKey: "zinc_sheet", qty: 18 },
     ],
   },
@@ -178,8 +199,13 @@ const PROJECTS: SeedProject[] = [
     transcript: "La escalera se rompió, nadie puede subir con seguridad.",
     private: { beneficiaryName: "Comunidad Ejemplo F", privateAddress: "Sector de ejemplo (sintético)", contact: "demo-f@example.org" },
     needs: [
-      { itemKey: "cement_bag", qty: 10, status: "fulfilled", pledges: [{ qty: 10, mode: "will_buy", status: "fulfilled", received: 10 }], used: 10 },
-      { itemKey: "rebar", qty: 8, status: "fulfilled", receivedDirect: 8, used: 8 },
+      { itemKey: "cement_bag", qty: 10, status: "fulfilled", pledges: [{ qty: 10, mode: "will_buy", status: "fulfilled", received: 10 }], used: 10, verified: 10 },
+      { itemKey: "rebar", qty: 8, status: "fulfilled", receivedDirect: 8, used: 8, verified: 8 },
+    ],
+    contributions: [{ amount: 400, currency: "USD", status: "allocated" }],
+    expenses: [
+      { amount: 260, currency: "USD", category: "Varillas de acero", supplierRegion: "Comerío", approved: true },
+      { amount: 140, currency: "USD", category: "Mano de obra local", supplierRegion: "Comerío", localLabor: true, approved: true },
     ],
     outcomes: [{ es: "Escalera reconstruida y en uso por 6 hogares", en: "Stairway rebuilt and in use by 6 households" }],
   },
@@ -193,9 +219,9 @@ const PROJECTS: SeedProject[] = [
     titleEs: "Reparación de vivienda: paredes y techo",
     titleEn: "Home repair: walls and roof",
     summaryEs:
-      "Vivienda con paredes dañadas y techo con filtraciones. Se necesitan unos 200 ladrillos, 15 bolsas de cemento y materiales para el techo (cantidad por confirmar).",
+      "Una vivienda sufrió daños. Se necesitan aproximadamente 200 ladrillos, 15 bolsas de cemento y materiales para reparar el techo (cantidad por confirmar).",
     summaryEn:
-      "Home with damaged walls and a leaking roof. About 200 bricks, 15 bags of cement and roofing materials (quantity to be confirmed) are needed.",
+      "A home was damaged. About 200 bricks, 15 bags of cement and materials to repair the roof (quantity to be confirmed) are needed.",
     daysAgo: 0,
     transcript: DEMO_TRANSCRIPT,
     private: {
@@ -207,7 +233,14 @@ const PROJECTS: SeedProject[] = [
     needs: [
       { itemKey: "bricks", qty: 200, status: "draft", aiSuggested: true },
       { itemKey: "cement_bag", qty: 15, status: "draft", aiSuggested: true },
-      { itemKey: "zinc_sheet", qty: undefined, status: "draft", aiSuggested: true },
+      {
+        itemKey: "zinc_sheet",
+        qty: undefined,
+        status: "draft",
+        aiSuggested: true,
+        nameEs: "Materiales de techo (planchas de zinc)",
+        nameEn: "Roofing materials (zinc sheets)",
+      },
     ],
   },
 ];
@@ -236,6 +269,13 @@ async function wipeProject(ctx: MutationCtx, projectId: Id<"projects">) {
   for (const r of await ctx.db.query("pledges").withIndex("by_project", (q) => q.eq("projectId", projectId)).take(1000)) {
     await ctx.db.delete(r._id);
   }
+  for (const r of await ctx.db.query("evidence").withIndex("by_project", (q) => q.eq("projectId", projectId)).take(500)) {
+    for (const sid of new Set([r.privateStorageId, r.publicStorageId])) {
+      if (!sid) continue;
+      try { await ctx.storage.delete(sid); } catch { /* already gone */ }
+    }
+    await ctx.db.delete(r._id);
+  }
   for (const r of await ctx.db.query("materialEvents").withIndex("by_project", (q) => q.eq("projectId", projectId)).take(1000)) {
     await ctx.db.delete(r._id);
   }
@@ -246,6 +286,9 @@ async function wipeProject(ctx: MutationCtx, projectId: Id<"projects">) {
     await ctx.db.delete(r._id);
   }
   for (const r of await ctx.db.query("expenses").withIndex("by_project", (q) => q.eq("projectId", projectId)).take(500)) {
+    if (r.receiptStorageId) {
+      try { await ctx.storage.delete(r.receiptStorageId); } catch { /* already gone */ }
+    }
     await ctx.db.delete(r._id);
   }
   for (const r of await ctx.db.query("donations").withIndex("by_project", (q) => q.eq("projectId", projectId)).take(500)) {
@@ -303,6 +346,14 @@ async function seedAll(ctx: MutationCtx) {
     }
   }
 
+  // Wipe demo weekly reports and demo general-fund contributions (no project).
+  for (const r of await ctx.db.query("weeklyReports").take(1000)) {
+    if (r.isDemo || (r.generatedBy && demoUserIds.has(r.generatedBy))) await ctx.db.delete(r._id);
+  }
+  for (const d of await ctx.db.query("donations").withIndex("by_project", (q) => q.eq("projectId", undefined)).take(1000)) {
+    if (demoUserIds.has(d.recordedBy)) await ctx.db.delete(d._id);
+  }
+
   const fieldWorker = userIds.field_worker;
   const coordinator = userIds.coordinator;
   let donorN = 1;
@@ -324,36 +375,66 @@ async function seedAll(ctx: MutationCtx) {
       region: sp.region,
       createdBy: fieldWorker,
       approvedBy: isPublic ? coordinator : undefined,
+      approvedAt: isPublic ? publishedAt! - 60_000 : undefined,
       publishedAt,
       safetyPauseReasonPublic: sp.pauseReason,
       isDemo: true,
     });
     await ctx.db.insert("projectPrivate", { projectId, ...sp.private });
 
+    // Same shape as convex/ai.ts Extraction / field.extractionValidator.
+    const isLiveDemo = sp.transcript === DEMO_TRANSCRIPT;
     const draftExtraction = {
-      title: sp.titleEs,
+      source: "fallback" as const,
+      notice: "Extracción sintética de demostración / Synthetic demo extraction",
+      redactions: 0,
+      titleEs: sp.titleEs,
+      titleEn: sp.titleEn,
       category: sp.category,
+      summaryEs: sp.summaryEs,
+      summaryEn: sp.summaryEn,
       urgency: sp.urgency,
+      damageDescriptionEs: isLiveDemo
+        ? "Vivienda de una familia con daños en paredes y techo (datos de demostración)."
+        : sp.summaryEs,
+      damageDescriptionEn: isLiveDemo
+        ? "A family's home with damaged walls and roof (demo data)."
+        : sp.summaryEn,
       materials: sp.needs.map((n) => ({
         itemKey: n.itemKey,
-        nameEs: MATERIALS[n.itemKey].es,
-        qty: n.qty ?? null,
-        unit: MATERIALS[n.itemKey].unit,
-        uncertain: n.qty === undefined,
+        nameEs: n.nameEs ?? MATERIALS[n.itemKey].es,
+        nameEn: n.nameEn ?? MATERIALS[n.itemKey].en,
+        quantity: n.qty ?? null,
+        unit: n.unit ?? MATERIALS[n.itemKey].unit,
+        confidence: (n.qty === undefined ? "low" : isLiveDemo ? "medium" : "high") as "low" | "medium" | "high",
+        approximate: isLiveDemo && n.qty !== undefined,
+        sourceQuote: isLiveDemo ? (DEMO_QUOTES[n.itemKey] ?? sp.transcript) : sp.transcript,
       })),
+      missingQuestions:
+        sp.status === "in_review"
+          ? [{ es: "¿Qué materiales para el techo se necesitan y en qué cantidad?", en: "Which roofing materials are needed, and how many?" }]
+          : [],
+      proposedMilestones: isLiveDemo
+        ? [
+            { es: "Materiales recibidos", en: "Materials received" },
+            { es: "Muro reconstruido", en: "Wall rebuilt" },
+            { es: "Techo reparado", en: "Roof repaired" },
+          ]
+        : [],
+      transcriptTranslated: isLiveDemo ? DEMO_TRANSCRIPT_EN : null,
     };
     await ctx.db.insert("fieldReports", {
       projectId,
       transcriptOriginal: sp.transcript,
       language: "es",
       transcriptTranslated:
-        sp.transcript === DEMO_TRANSCRIPT
-          ? "The house needs about two hundred bricks, fifteen bags of cement and roof repair."
-          : undefined,
+        sp.transcript === DEMO_TRANSCRIPT ? DEMO_TRANSCRIPT_EN : undefined,
       draftExtraction,
       aiStatus: "done",
       missingQuestions:
-        sp.status === "in_review" ? ["¿Cuántas planchas de zinc se necesitan para el techo?"] : [],
+        sp.status === "in_review"
+          ? ["¿Qué materiales para el techo se necesitan y en qué cantidad? / Which roofing materials are needed, and how many?"]
+          : [],
       reviewStatus: isPublic ? "approved" : "submitted",
       createdBy: fieldWorker,
     });
@@ -366,8 +447,10 @@ async function seedAll(ctx: MutationCtx) {
       en: string,
       at: number,
       verified = true,
+      evidenceId?: Id<"evidence">,
     ) => {
       await ctx.db.insert("milestones", {
+        evidenceId,
         projectId,
         type,
         status: verified ? "verified" : "pending",
@@ -388,7 +471,8 @@ async function seedAll(ctx: MutationCtx) {
     // Needs, pledges, events
     const step = isPublic ? Math.max(1, Math.floor((sp.daysAgo * DAY) / 12)) : 1000;
     for (const n of sp.needs) {
-      const m = MATERIALS[n.itemKey];
+      const base = MATERIALS[n.itemKey];
+      const m = { es: n.nameEs ?? base.es, en: n.nameEn ?? base.en, unit: n.unit ?? base.unit };
       const status = n.status ?? "approved";
       const needId = await ctx.db.insert("materialNeeds", {
         projectId,
@@ -437,6 +521,15 @@ async function seedAll(ctx: MutationCtx) {
         const r = materialMilestoneText("received", n.receivedDirect, needDoc);
         await ms("received", r.es, r.en, t);
       }
+      const delivered = n.delivered ?? n.used;
+      if (delivered) {
+        t += step;
+        await ctx.db.insert("materialEvents", {
+          needId, projectId, eventType: "delivered", qty: delivered, verifiedBy: coordinator,
+        });
+        const d = materialMilestoneText("delivered", delivered, needDoc);
+        await ms("delivered", d.es, d.en, t);
+      }
       if (n.used) {
         t += step;
         await ctx.db.insert("materialEvents", {
@@ -444,6 +537,58 @@ async function seedAll(ctx: MutationCtx) {
         });
         const u = materialMilestoneText("used", n.used, needDoc);
         await ms("used", u.es, u.en, t);
+      }
+      if (n.verified) {
+        t += step;
+        const evidenceId = await ctx.db.insert("evidence", {
+          projectId,
+          needId,
+          type: "staff_note",
+          noteEs: `Nota de personal (sintética, datos de demostración): se verificó en sitio el uso de ${n.verified} ${m.es.toLowerCase()}.`,
+          noteEn: `Staff note (synthetic, demo data): on-site check confirmed use of ${n.verified} ${m.en.toLowerCase()}.`,
+          reviewStatus: "approved",
+          publicApproved: true,
+          uploadedBy: coordinator,
+          reviewedBy: coordinator,
+          reviewedAt: now,
+        });
+        const eventId = await ctx.db.insert("materialEvents", {
+          needId, projectId, eventType: "verified", qty: n.verified, verifiedBy: coordinator, evidenceId,
+        });
+        await ctx.db.patch("evidence", evidenceId, { materialEventId: eventId });
+        const vt = materialMilestoneText("verified", n.verified, needDoc);
+        await ms("verified", vt.es, vt.en, t, true, evidenceId);
+      }
+    }
+    for (const c of sp.contributions ?? []) {
+      await ctx.db.insert("donations", {
+        projectId,
+        nonprofitId,
+        amount: c.amount,
+        currency: c.currency,
+        status: c.status,
+        donorName: "Donante institucional ficticio (demo)",
+        externalReference: "DEMO-SINTETICO",
+        recordedBy: coordinator,
+      });
+    }
+    for (const e of sp.expenses ?? []) {
+      t += step;
+      await ctx.db.insert("expenses", {
+        projectId,
+        amount: e.amount,
+        currency: e.currency,
+        category: e.category,
+        reviewStatus: e.approved ? "approved" : "pending",
+        approvedBy: e.approved ? coordinator : undefined,
+        approvedAt: e.approved ? Math.min(now, t) : undefined,
+        recordedBy: coordinator,
+        supplierRegion: e.supplierRegion,
+        localLabor: e.localLabor,
+      });
+      if (e.approved) {
+        const amt = `${e.amount.toLocaleString("en-US")} ${e.currency}`;
+        await ms("expense", `Gasto aprobado: ${amt} — ${e.category}`, `Expense approved: ${amt} — ${e.category}`, Math.min(now, t));
       }
     }
     for (const o of sp.outcomes ?? []) {
@@ -459,6 +604,25 @@ async function seedAll(ctx: MutationCtx) {
       );
     }
   }
+
+  // One published weekly report computed from the records above (last 7 days).
+  const periodEnd = now + 1;
+  const periodStart = periodEnd - 7 * DAY;
+  const snapshot = await computeWeeklySnapshot(ctx, nonprofitId, periodStart, periodEnd);
+  const text = draftSummary(snapshot, periodStart, periodEnd);
+  await ctx.db.insert("weeklyReports", {
+    nonprofitId,
+    periodStart,
+    periodEnd,
+    snapshot,
+    summaryEs: `${text.es}\nDatos de demostración (sintéticos).`,
+    summaryEn: `${text.en}\nDemo data (synthetic).`,
+    status: "published",
+    generatedBy: coordinator,
+    reviewedBy: coordinator,
+    publishedAt: now,
+    isDemo: true,
+  });
 
   return { nonprofit: nonprofit?.name ?? "Espejo de Agua", wipedProjects: wiped, projects: PROJECTS.length, users: DEMO_USERS.length };
 }

@@ -9,12 +9,13 @@ import type { DictKey } from "@/lib/dict";
 import { MaterialImage } from "./MaterialImage";
 import { StatTile } from "./StatTile";
 import { ProjectCard } from "./ProjectCard";
-import { HATCH_AMBER } from "./ledgerStyles";
-import { CATEGORIES, CATEGORY_STYLE, type Category } from "./types";
+import { StageLegend } from "./LedgerBar";
+import { DemoStamp } from "./PublicMeta";
+import { CATEGORIES, CATEGORY_STYLE, STAGES, type Category } from "./types";
 
 export function Landing() {
   const { t } = useI18n();
-  const totals = useQuery(api.public.impactTotals, {});
+  const dash = useQuery(api.public.transparencyDashboard, {});
   const [filter, setFilter] = useState<Category | undefined>(undefined);
   const projects = useQuery(api.public.listPublishedProjects, filter ? { category: filter } : {});
 
@@ -34,12 +35,12 @@ export function Landing() {
             >
               {t("landing.ctaDonate")}
             </Link>
-            <a
-              href="#proyectos"
+            <Link
+              href="/transparency"
               className="inline-flex items-center justify-center rounded-full border-2 border-foreground/80 px-6 py-3 text-base font-semibold"
             >
-              {t("landing.ctaProjects")}
-            </a>
+              {t("landing.ctaTransparency")}
+            </Link>
           </div>
           <p className="mt-5 inline-flex items-start gap-2 text-sm text-amber bg-amber-soft rounded-lg px-3 py-2">
             <span aria-hidden className="mt-1 size-2 shrink-0 rounded-full bg-amber" />
@@ -59,13 +60,14 @@ export function Landing() {
               {t("landing.bucketsTitle")}
             </h2>
             <p className="mt-2 text-muted">{t("landing.bucketsLead")}</p>
+            <DemoStamp asOf={dash?.asOf ?? null} className="mt-3" />
           </div>
           <Legend />
         </div>
 
         <div className="mt-8 grid gap-5 md:grid-cols-3">
           {CATEGORIES.map((c) => {
-            const row = totals?.find((r) => r.category === c);
+            const row = dash?.categories.find((r) => r.category === c);
             const s = CATEGORY_STYLE[c];
             return (
               <article key={c} className={`rounded-3xl border-t-[6px] ${s.border} bg-surface border-x border-b border-x-border border-b-border overflow-hidden`}>
@@ -76,31 +78,36 @@ export function Landing() {
                   <h3 className={`font-display text-2xl font-semibold ${s.text}`}>{t(`category.${c}`)}</h3>
                   <p className="text-sm text-muted mt-1">{t(`landing.desc.${c}` as DictKey)}</p>
                   <p className="mt-3 text-sm">
-                    <strong className="font-display text-lg tabular-nums">{row?.projectsPublished ?? "–"}</strong>{" "}
+                    <strong className="font-display text-lg tabular-nums">{row?.projects.length ?? "–"}</strong>{" "}
                     <span className="text-muted">{t("landing.projectsPublished")}</span>
                   </p>
                   <div className="mt-3 border-t border-border pt-2" aria-live="polite">
                     {row ? (
-                      <>
-                        <StatTile tone="requested" label={t("ledger.requested")} value={row.itemsRequested} />
-                        <StatTile tone="pledged" label={t("ledger.pledged")} value={row.itemsPledged} />
-                        <StatTile tone="received" label={t("ledger.received")} value={row.itemsReceived} />
-                        <StatTile tone="used" label={t("ledger.used")} value={row.itemsUsedVerified} />
-                      </>
+                      STAGES.map((k) => (
+                        <StatTile key={k} tone={k} label={t(`stage.${k}`)} value={row.totals[k]} />
+                      ))
                     ) : (
                       <p className="py-6 text-sm text-muted">{t("common.loading")}</p>
                     )}
                   </div>
                   <p className="mt-3 rounded-xl bg-leaf-soft text-leaf px-3 py-2 text-sm font-semibold">
-                    <span className="font-display text-lg tabular-nums mr-1.5">{row?.outcomesVerified ?? "–"}</span>
-                    {t("landing.outcomes")}
+                    <span className="font-display text-lg tabular-nums mr-1.5">{row?.totals.verified ?? "–"}</span>
+                    {t("landing.verifiedImpact")}
                   </p>
-                  <Link
-                    href={`/donate?category=${c}`}
-                    className={`mt-4 inline-flex font-semibold ${s.text} underline underline-offset-4 decoration-2`}
-                  >
-                    {t("landing.ctaDonate")}
-                  </Link>
+                  <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2">
+                    <Link
+                      href={`/donate?category=${c}`}
+                      className={`inline-flex font-semibold ${s.text} underline underline-offset-4 decoration-2`}
+                    >
+                      {t("landing.ctaDonate")}
+                    </Link>
+                    <Link
+                      href={`/transparency#${c}`}
+                      className="inline-flex font-semibold text-foreground underline underline-offset-4 decoration-2"
+                    >
+                      {t("landing.bucketTransparency")}
+                    </Link>
+                  </div>
                 </div>
               </article>
             );
@@ -143,30 +150,12 @@ export function Landing() {
 
 function Legend() {
   const { t } = useI18n();
-  const items: { key: "requested" | "pledged" | "received" | "used"; swatch: React.ReactNode }[] = [
-    { key: "requested", swatch: <span className="size-3 rounded-[3px] border-2 border-foreground/40" /> },
-    { key: "pledged", swatch: <span className="size-3 rounded-[3px]" style={HATCH_AMBER} /> },
-    { key: "received", swatch: <span className="size-3 rounded-[3px] bg-sky/45" /> },
-    { key: "used", swatch: <span className="size-3 rounded-[3px] bg-sky" /> },
-  ];
   return (
-    <details className="mt-4 md:mt-0 md:max-w-xs text-sm group">
+    <details className="mt-4 md:mt-0 md:max-w-sm text-sm group">
       <summary className="cursor-pointer font-semibold underline underline-offset-4 decoration-dotted">
         {t("landing.howTitle")}
       </summary>
-      <ul className="mt-2 space-y-2">
-        {items.map((i) => (
-          <li key={i.key} className="grid grid-cols-[0.75rem_1fr] gap-2 items-start">
-            <span className="mt-1 flex" aria-hidden>
-              {i.swatch}
-            </span>
-            <span>
-              <strong>{t(`ledger.${i.key}`)}.</strong>{" "}
-              <span className="text-muted">{t(`landing.how.${i.key}` as DictKey)}</span>
-            </span>
-          </li>
-        ))}
-      </ul>
+      <StageLegend className="mt-3" />
     </details>
   );
 }
