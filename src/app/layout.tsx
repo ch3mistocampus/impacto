@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Karla, Source_Serif_4 } from "next/font/google";
+import { Suspense } from "react";
 import "./globals.css";
 import { Providers } from "./providers";
 import { AppHeader } from "@/components/AppHeader";
@@ -30,7 +31,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     <html lang="en" className={`${sans.variable} ${display.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col bg-background text-foreground">
         <Providers>
-          <AppHeader />
+          <Suspense fallback={<div aria-hidden className="h-[8.75rem] sm:h-28" />}>
+            <AppHeader />
+          </Suspense>
           <main className="flex-1 w-full max-w-6xl mx-auto px-4 pb-16">{children}</main>
         </Providers>
       </body>

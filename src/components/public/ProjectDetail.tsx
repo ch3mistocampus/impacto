@@ -68,8 +68,9 @@ export function ProjectDetail({ backHref = "/#proyectos" }: { backHref?: string 
             <MaterialImage
               src={p.coverPhotoUrl ?? s.image}
               alt=""
-              emoji={s.emoji}
-              className={`size-full ${p.coverPhotoUrl ? "object-cover" : "p-5"}`}
+              fallbackSrc={s.image}
+              className="size-full"
+              sizes="176px"
             />
           </div>
         </div>

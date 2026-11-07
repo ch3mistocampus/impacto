@@ -8,7 +8,7 @@ import { api } from "../../../convex/_generated/api";
 import { useI18n } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
 import type { DictKey } from "@/lib/dict";
-import { MaterialGlyph } from "@/components/ui/MaterialGlyph";
+import { MaterialImage } from "@/components/public/MaterialImage";
 import {
   DoubleRule,
   FlagBand,
@@ -162,7 +162,7 @@ export function ContributionSheet({
     >
       <FlagBand thickness={5} className="shrink-0" />
       <div className="flex items-start gap-3 px-5 sm:px-7 pt-4 pb-4 border-b border-border">
-        {shown && <MaterialGlyph itemKey={shown.itemKey} className="mt-1 size-10 shrink-0 text-foreground" />}
+        {shown && <MaterialImage itemKey={shown.itemKey} alt="" className="mt-1 size-14 shrink-0 rounded-[2px]" />}
         <div className="min-w-0 flex-1">
           <h2 id={titleId} className="font-display text-2xl font-normal leading-tight">
             {done ? t("donate.successTitle") : t("donate.sheetTitle")}
