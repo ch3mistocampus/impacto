@@ -73,8 +73,8 @@ export const landing = {
     en: "Blocks, cement and rebar to rebuild walls.",
   },
   "landing.desc.heal_sow": {
-    es: "Semillas, tierra y agua para huertos y espacios que sanan.",
-    en: "Seeds, soil and water for gardens and healing spaces.",
+    es: "Encuentros abiertos para sanar en comunidad: círculos de apoyo, talleres, teatro, deporte y fe.",
+    en: "Open gatherings to heal as a community: support circles, workshops, theatre, sport and faith.",
   },
   "landing.projectsPublished.one": { es: "proyecto público", en: "public project" },
   "landing.projectsPublished.other": { es: "proyectos públicos", en: "public projects" },

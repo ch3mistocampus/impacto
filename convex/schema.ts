@@ -149,7 +149,7 @@ export default defineSchema({
 
   materialNeeds: defineTable({
     projectId: v.id("projects"),
-    itemKey: v.string(), // e.g. "bricks", "cement_bag", "zinc_sheet", "seeds" — maps to icon
+    itemKey: v.string(), // e.g. "bricks", "cement_bag", "zinc_sheet", "meals" — maps to icon
     nameEs: v.string(),
     nameEn: v.string(),
     requestedQty: v.optional(v.number()), // undefined => needs confirmation

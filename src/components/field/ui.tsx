@@ -31,10 +31,14 @@ export const ITEM_KEYS = [
   "tarp",
   "paint",
   "rebar",
-  "seeds",
-  "soil",
   "water_tank",
   "tools",
+  "facilitator",
+  "venue",
+  "meals",
+  "transport",
+  "sports_kit",
+  "art_supplies",
 ] as const;
 
 export type { ProjectStatus, Category } from "@/components/ui/tricolor";

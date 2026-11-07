@@ -74,7 +74,7 @@ export function Seal({
 /* Programs: told apart by shape, never by colour                      */
 /* ------------------------------------------------------------------ */
 
-/** Techo y abrigo = triangle (a roof), Reconstrucción = square (a block), Sanar y sembrar = circle (a seed). */
+/** Techo y abrigo = triangle (a roof), Reconstrucción = square (a block), Sanar y sembrar = circle (people gathered in a circle). */
 export function CategoryMark({
   category,
   size = 12,

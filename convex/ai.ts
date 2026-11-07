@@ -67,10 +67,15 @@ const ITEM_KEYS = [
   "tarp",
   "paint",
   "rebar",
-  "seeds",
-  "soil",
   "water_tank",
   "tools",
+  // Sanar y sembrar: open community gatherings (support circles, workshops, theatre, sport, faith).
+  "facilitator",
+  "venue",
+  "meals",
+  "transport",
+  "sports_kit",
+  "art_supplies",
 ] as const;
 
 // Keep in sync with DEMO_TRANSCRIPT in src/components/field/ui.tsx
@@ -142,6 +147,9 @@ const UNIT_WORDS: Record<string, string> = {
   rollo: "rollos", metros: "metros", metro: "metros", cubetas: "cubetas", cubeta: "cubetas",
   sobres: "sobres", sobre: "sobres", paquetes: "paquetes", paquete: "paquetes",
   cajas: "cajas", caja: "cajas", boxes: "cajas", box: "cajas",
+  horas: "horas", hora: "horas", hours: "horas", hour: "horas", porciones: "porciones",
+  porcion: "porciones", portions: "porciones", viajes: "viajes", viaje: "viajes", trips: "viajes",
+  trip: "viajes", personas: "personas", people: "personas", kits: "kits", kit: "kits",
 };
 const SKIP = new Set(["de", "del", "of", "the", "los", "las", "el", "la", "más", "mas", "o", "menos"]);
 
@@ -155,11 +163,37 @@ const CATALOG: Catalog[] = [
   { key: "tarp", stems: ["lona", "toldo", "tarp", "plastico"], nameEs: "Lonas", nameEn: "Tarps", unit: "unidades" },
   { key: "paint", stems: ["pintura", "paint", "sellador", "sealant"], nameEs: "Pintura / sellador", nameEn: "Paint / sealant", unit: "galones" },
   { key: "rebar", stems: ["varilla", "cabilla", "rebar"], nameEs: "Varillas", nameEn: "Rebar", unit: "unidades" },
-  { key: "seeds", stems: ["semilla", "seed"], nameEs: "Semillas", nameEn: "Seeds", unit: "sobres" },
-  { key: "soil", stems: ["tierra", "abono", "composta", "soil", "compost"], nameEs: "Tierra / abono", nameEn: "Soil / compost", unit: "sacos" },
   { key: "water_tank", stems: ["tanque", "cisterna", "tank"], nameEs: "Tanque de agua", nameEn: "Water tank", unit: "unidades" },
   { key: "tools", stems: ["herramienta", "pala", "martillo", "rastrillo", "tool", "shovel", "hammer"], nameEs: "Herramientas", nameEn: "Tools", unit: "unidades" },
+  {
+    key: "facilitator",
+    stems: [
+      "psicolog", "terapeut", "facilitador", "tallerista", "acompanante", "pastor", "sacerdote", "capellan",
+      "entrenador", "arbitro", "cuentero", "psycholog", "therapist", "counselor", "facilitator", "chaplain",
+      "coach", "referee", "storyteller",
+    ],
+    nameEs: "Facilitadores / acompañantes", nameEn: "Facilitators", unit: "personas",
+  },
+  { key: "venue", stems: ["salon", "cancha", "coliseo", "caseta", "venue"], nameEs: "Espacio para el encuentro", nameEn: "Venue", unit: "unidades" },
+  { key: "meals", stems: ["refrigerio", "almuerzo", "comida", "sancocho", "meal", "lunch", "snack", "food"], nameEs: "Comida / refrigerios", nameEn: "Meals / snacks", unit: "porciones" },
+  { key: "transport", stems: ["transporte", "chiva", "buses", "transport"], nameEs: "Transporte", nameEn: "Transport", unit: "viajes" },
+  { key: "sports_kit", stems: ["balon", "pelota", "uniforme", "camiseta", "peto", "ball", "jersey", "uniform"], nameEs: "Balones y uniformes", nameEn: "Balls and jerseys", unit: "unidades" },
+  { key: "art_supplies", stems: ["titere", "crayola", "marcador", "puppet", "craft", "crayon"], nameEs: "Materiales de taller", nameEn: "Workshop supplies", unit: "kits" },
 ];
+
+/** Signals that a report is about an open community gathering (Sanar y sembrar), not a repair. */
+const HEAL_RE =
+  /terapia|psico|acompanamiento|duelo|sanacion|\bsanar|taller|teatro|cuento|titere|futbol|torneo|deporte|\bculto|\bmisa\b|oracion|encuentro|therapy|counsel|grief|healing|workshop|theat|storytell|puppet|soccer|football|tournament|\bsports?\b|worship|prayer|gathering/;
+const EVENT_KEYS = ["facilitator", "venue", "meals", "sports_kit", "art_supplies"];
+
+function healTitle(lower: string): [string, string] {
+  if (/futbol|torneo|deporte|soccer|football|tournament|\bsports?\b/.test(lower)) return ["Encuentro deportivo comunitario", "Community sports day"];
+  if (/teatro|cuento|titere|theat|storytell|puppet/.test(lower)) return ["Teatro y cuentos para la comunidad", "Theatre and stories for the community"];
+  if (/\bculto|\bmisa\b|oracion|worship|prayer/.test(lower)) return ["Encuentro de fe y memoria", "Faith and remembrance gathering"];
+  if (/terapia|psico|duelo|acompanamiento|therapy|counsel|grief/.test(lower)) return ["Círculo de apoyo comunitario", "Community support circle"];
+  if (/taller|workshop/.test(lower)) return ["Taller comunitario", "Community workshop"];
+  return ["Encuentro comunitario", "Community gathering"];
+}
 
 const norm = (w: string) =>
   w.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9.]/g, "");
@@ -256,17 +290,20 @@ export function fallbackExtract(transcript: string, language: "es" | "en", redac
   const lower = transcript.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
   let category: Category = "reconstruction";
   const structural = has("bricks") || has("cement_bag") || has("rebar") || has("wood_beam");
-  if (has("seeds") || has("soil") || /huerto|siembra|cosecha|garden|farm|cultivo/.test(lower)) category = structural ? "reconstruction" : "heal_sow";
-  else if (!structural && (has("zinc_sheet") || has("tarp"))) category = "roof_shelter";
+  const healWords = HEAL_RE.test(lower);
+  if (!structural && (has("zinc_sheet") || has("tarp")) && !healWords) category = "roof_shelter";
+  else if (!structural && (healWords || EVENT_KEYS.some(has))) category = "heal_sow";
+  const heal = category === "heal_sow";
 
-  const urgency: Urgency = /urgente|urgent|emergencia|emergency|lluvia|rain|ninos|children|ancian|elderly|enferm/.test(lower)
+  // A gathering with children is not an emergency; only explicit urgency counts there.
+  const urgency: Urgency = (heal ? /urgente|urgent|emergencia|emergency/ : /urgente|urgent|emergencia|emergency|lluvia|rain|ninos|children|ancian|elderly|enferm/).test(lower)
     ? "high"
     : "medium";
 
   const titles: Record<Category, [string, string]> = {
     reconstruction: ["Reconstrucción de vivienda", "Home reconstruction"],
     roof_shelter: ["Reparación de techo", "Roof repair"],
-    heal_sow: ["Huerto comunitario", "Community garden"],
+    heal_sow: healTitle(lower),
   };
   const fmt = (m: Material, lang: "es" | "en") => {
     const name = lang === "es" ? m.nameEs.toLowerCase() : m.nameEn.toLowerCase();
@@ -276,12 +313,14 @@ export function fallbackExtract(transcript: string, language: "es" | "en", redac
   };
   const listEs = materials.map((m) => fmt(m, "es")).join("; ");
   const listEn = materials.map((m) => fmt(m, "en")).join("; ");
+  const leadEs = heal ? "Encuentro abierto a la comunidad." : "Reporte de campo.";
+  const leadEn = heal ? "Gathering open to the community." : "Field report.";
   const summaryEs = materials.length
-    ? `Reporte de campo. Necesidades mencionadas: ${listEs}.`
-    : "Reporte de campo. No se identificaron materiales específicos; revisar la transcripción.";
+    ? `${leadEs} Necesidades mencionadas: ${listEs}.`
+    : `${leadEs} No se identificaron necesidades específicas; revisar la transcripción.`;
   const summaryEn = materials.length
-    ? `Field report. Needs mentioned: ${listEn}.`
-    : "Field report. No specific materials identified; please review the transcript.";
+    ? `${leadEn} Needs mentioned: ${listEn}.`
+    : `${leadEn} No specific needs identified; please review the transcript.`;
 
   const missingQuestions = materials
     .filter((m) => m.quantity === null)
@@ -295,7 +334,13 @@ export function fallbackExtract(transcript: string, language: "es" | "en", redac
       en: "Approximately how large is the damaged roof area?",
     });
   if (!materials.length)
-    missingQuestions.push({ es: "¿Qué materiales se necesitan y en qué cantidad?", en: "Which materials are needed, and how many?" });
+    missingQuestions.push(
+      heal
+        ? { es: "¿Qué apoyos necesita el encuentro (facilitadores, espacio, comida, transporte)?", en: "What does the gathering need (facilitators, venue, food, transport)?" }
+        : { es: "¿Qué materiales se necesitan y en qué cantidad?", en: "Which materials are needed, and how many?" },
+    );
+  if (heal)
+    missingQuestions.push({ es: "¿Qué fecha y lugar tendrá el encuentro?", en: "What date and place will the gathering have?" });
 
   // Damage description: only from words actually present in the transcript (no invented details).
   const dEs: string[] = [];
@@ -323,19 +368,30 @@ export function fallbackExtract(transcript: string, language: "es" | "en", redac
   }
   const sentence = (parts: string[], fallback: string) =>
     parts.length ? `${parts[0].charAt(0).toUpperCase()}${parts.join("; ").slice(1)}.` : fallback;
-  const damageDescriptionEs = sentence(dEs, "Sin descripción del daño en el reporte; confirmar con el equipo de campo.");
-  const damageDescriptionEn = sentence(dEn, "No damage description in the report; confirm with the field team.");
-  if (!dEs.length)
+  const damageDescriptionEs = sentence(
+    dEs,
+    heal ? "Encuentro comunitario; no hay daños físicos que reparar." : "Sin descripción del daño en el reporte; confirmar con el equipo de campo.",
+  );
+  const damageDescriptionEn = sentence(
+    dEn,
+    heal ? "Community gathering; no physical damage to repair." : "No damage description in the report; confirm with the field team.",
+  );
+  if (!dEs.length && !heal)
     missingQuestions.push({ es: "¿Qué daños tiene la vivienda o el lugar?", en: "What damage does the home or site have?" });
 
   // Proposed milestones (editable suggestions, never verified).
   const proposedMilestones: Milestone[] = [];
-  if (materials.length) proposedMilestones.push({ es: "Materiales recibidos", en: "Materials received" });
-  if (structural) proposedMilestones.push({ es: "Muro reconstruido", en: "Wall rebuilt" });
-  if (has("zinc_sheet") || has("tarp")) proposedMilestones.push({ es: "Techo reparado", en: "Roof repaired" });
-  if (has("seeds") || has("soil")) proposedMilestones.push({ es: "Huerto sembrado", en: "Garden planted" });
-  if (has("water_tank")) proposedMilestones.push({ es: "Tanque de agua instalado", en: "Water tank installed" });
-  if (proposedMilestones.length < 2) proposedMilestones.push({ es: "Trabajo completado", en: "Work completed" });
+  if (heal) {
+    if (materials.length) proposedMilestones.push({ es: "Apoyos confirmados", en: "Support confirmed" });
+    proposedMilestones.push({ es: "Encuentro realizado", en: "Gathering held" });
+    proposedMilestones.push({ es: "Informe del encuentro publicado", en: "Gathering report published" });
+  } else {
+    if (materials.length) proposedMilestones.push({ es: "Materiales recibidos", en: "Materials received" });
+    if (structural) proposedMilestones.push({ es: "Muro reconstruido", en: "Wall rebuilt" });
+    if (has("zinc_sheet") || has("tarp")) proposedMilestones.push({ es: "Techo reparado", en: "Roof repaired" });
+    if (has("water_tank")) proposedMilestones.push({ es: "Tanque de agua instalado", en: "Water tank installed" });
+    if (proposedMilestones.length < 2) proposedMilestones.push({ es: "Trabajo completado", en: "Work completed" });
+  }
 
   const n = norm(transcript.replace(/\s+/g, ""));
   const isDemoEs = n === norm(DEMO_TRANSCRIPT_ES.replace(/\s+/g, ""));
@@ -547,10 +603,11 @@ Rules:
 - itemKey must be one of: ${ITEM_KEYS.join(", ")}, or "other". Roof repair with no specific material => "zinc_sheet" with quantity null.
 - unit: short Spanish unit word (e.g. "unidades", "bolsas", "planchas", "galones", "sacos").
 - sourceQuote: the exact words from the transcript supporting this material (copy them verbatim, original language).
-- category: roof_shelter (roofs, tarps, shelter), reconstruction (walls, structure, bricks, cement), heal_sow (gardens, seeds, soil, community healing).
-- damageDescriptionEs/En: one or two short sentences describing ONLY the damage stated in the transcript. No names, no locations.
+- category: roof_shelter (roofs, tarps, shelter), reconstruction (walls, structure, bricks, cement), heal_sow ("Sanar y sembrar": open community gatherings that help people heal together, e.g. support or grief circles, psychosocial accompaniment, workshops, theatre and storytelling for children, a soccer day, a faith or remembrance gathering, a shared meal; often hosted or sponsored by donors). heal_sow is NOT about gardens or farming.
+- For heal_sow, the "materials" are what the gathering needs: facilitator (psychologist, therapist, pastor/priest, coach, referee, storyteller; unit "personas" or "horas"), venue, meals, transport, sports_kit, art_supplies. Gatherings are open to everyone: never list or ask for who attends; at most an expected number of people.
+- damageDescriptionEs/En: one or two short sentences describing ONLY the damage stated in the transcript. No names, no locations. For heal_sow, describe what the community lived through and why it wants to gather, as stated; if nothing is stated, say it is a community gathering with no physical damage to repair.
 - urgency is a SUGGESTION for the worker to confirm: high only if the transcript indicates danger, exposure to rain, vulnerable people, or says urgent.
-- proposedMilestones: 2-4 short, verifiable project milestones in order (e.g. "Materiales recibidos"/"Materials received", "Muro reconstruido"/"Wall rebuilt", "Techo reparado"/"Roof repaired"). Each has es and en.
+- proposedMilestones: 2-4 short, verifiable project milestones in order (e.g. "Materiales recibidos"/"Materials received", "Muro reconstruido"/"Wall rebuilt", "Techo reparado"/"Roof repaired"; for heal_sow e.g. "Apoyos confirmados"/"Support confirmed", "Encuentro realizado"/"Gathering held", "Informe del encuentro publicado"/"Gathering report published"). Each has es and en.
 - missingQuestions: concrete follow-up questions the field worker should answer (especially unknown quantities). Bilingual.
 - transcriptTranslated: translate the full transcript into the OTHER language (Spanish->English or English->Spanish).
 - Do not include any personal names, phone numbers or addresses in any output. Text in [brackets] was redacted.
@@ -715,13 +772,15 @@ async function aiExtract(
 
 // ---- photo analysis ----
 
+const BUILD_KEYS = ITEM_KEYS.filter((k) => !EVENT_KEYS.includes(k) && k !== "transport");
+
 const PHOTO_SYSTEM = `You help a disaster-recovery nonprofit draft a materials list from ONE photo of damage.
 Describe ONLY physical damage and building materials visible in the photo.
 Rules:
 - Never describe, identify or guess anything about people, faces, names, house numbers, street signs, licence plates or locations.
 - If the photo shows people, faces, readable house numbers, names, documents or licence plates, set privacyConcern=true.
 - observationsEs/En: 1-4 short factual sentences about the visible damage (Spanish and English, same order).
-- materials: building materials likely needed to repair what is visible. itemKey must be one of: ${ITEM_KEYS.join(", ")}, or "other".
+- materials: building materials likely needed to repair what is visible. itemKey must be one of: ${BUILD_KEYS.join(", ")}, or "other".
 - quantity: a number ONLY if the items are clearly countable in the photo (e.g. 3 missing roof sheets). Otherwise null. Never estimate areas or volumes.
 - confidence: how sure you are this material is needed, from the photo alone. Prefer "low"/"medium".
 - reasonEs/En: one short phrase pointing to what in the photo supports it.
@@ -742,7 +801,7 @@ const PHOTO_SCHEMA = {
         additionalProperties: false,
         required: ["itemKey", "nameEs", "nameEn", "quantity", "unit", "confidence", "reasonEs", "reasonEn"],
         properties: {
-          itemKey: { type: "string", enum: [...ITEM_KEYS, "other"] },
+          itemKey: { type: "string", enum: [...BUILD_KEYS, "other"] },
           nameEs: { type: "string" },
           nameEn: { type: "string" },
           quantity: { type: ["integer", "null"] },

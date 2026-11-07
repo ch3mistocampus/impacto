@@ -68,20 +68,6 @@ const GLYPHS: Record<string, React.ReactNode> = {
       <path d="M12 28l3 3M17 23.5l3 3M22 19l3 3M27 14.5l3 3M32 10l3 3" />
     </g>
   ),
-  seeds: (
-    <g {...P}>
-      <path d="M14 10h20l-2 28H16z" />
-      <path d="M24 30c0-5 0-8 0-10M24 22c-4 0-6-3-6-5 4 0 6 2 6 5zM24 20c4 0 6-3 6-5-4 0-6 2-6 5z" />
-    </g>
-  ),
-  soil: (
-    <g {...P}>
-      <path d="M6 30c6-6 30-6 36 0" />
-      <path d="M6 30c0 5 36 5 36 0" />
-      <path d="M14 26l2-6M24 24V14M34 26l-2-6" />
-      <path d="M24 16c-3 0-5-2-5-4 3 0 5 1 5 4z" />
-    </g>
-  ),
   water_tank: (
     <g {...P}>
       <ellipse cx="24" cy="12" rx="12" ry="3.5" />
@@ -94,6 +80,52 @@ const GLYPHS: Record<string, React.ReactNode> = {
       <path d="M10 38l16-16" />
       <path d="M24 16a6 6 0 0 1 8-6l-4 4 2 4 4 2 4-4a6 6 0 0 1-6 8" />
       <path d="M38 38L24 24M16 10l-4 4 6 6 4-4z" />
+    </g>
+  ),
+  facilitator: (
+    <g {...P}>
+      <circle cx="15" cy="15" r="4.5" />
+      <circle cx="33" cy="15" r="4.5" />
+      <path d="M7 36c0-6 3.6-10 8-10s8 4 8 10M25 36c0-6 3.6-10 8-10s8 4 8 10" />
+      <path d="M21 9c1.6-2 4.4-2 6 0" />
+    </g>
+  ),
+  venue: (
+    <g {...P}>
+      <path d="M5 20L24 9l19 11" />
+      <path d="M9 18v20M39 18v20M5 38h38" />
+      <path d="M17 38v-6h14v6M17 32l-2 6M31 32l2 6" />
+    </g>
+  ),
+  meals: (
+    <g {...P}>
+      <path d="M8 22h32c0 9-7 15-16 15S8 31 8 22z" />
+      <path d="M6 22h36M20 37h8" />
+      <path d="M18 17c0-3 2-3 2-6M24 17c0-3 2-3 2-6M30 17c0-3 2-3 2-6" />
+    </g>
+  ),
+  transport: (
+    <g {...P}>
+      <path d="M6 32V16a4 4 0 0 1 4-4h28a4 4 0 0 1 4 4v16z" />
+      <path d="M6 22h36M15 12v10M24 12v10M33 12v10" />
+      <circle cx="14" cy="34" r="3.5" />
+      <circle cx="34" cy="34" r="3.5" />
+    </g>
+  ),
+  sports_kit: (
+    <g {...P}>
+      <circle cx="24" cy="24" r="15" />
+      <path d="M24 17l6.7 4.9-2.6 7.9h-8.2l-2.6-7.9z" />
+      <path d="M24 17V9M30.7 21.9l7.6-2.5M28.1 29.8l4.7 6.4M19.9 29.8l-4.7 6.4M17.3 21.9l-7.6-2.5" />
+    </g>
+  ),
+  art_supplies: (
+    <g {...P}>
+      <path d="M10 40V24a8 8 0 0 1 16 0v16z" />
+      <circle cx="15" cy="23" r="1" />
+      <circle cx="21" cy="23" r="1" />
+      <path d="M15 29c2 2 4 2 6 0" />
+      <path d="M32 40l4-24 3 .5-4 24zM36 16l1.5-5 1.5 5.5" />
     </g>
   ),
   generic: (

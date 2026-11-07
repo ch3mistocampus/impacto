@@ -44,16 +44,20 @@ export const JOBS = [
   ["tarp", "public/materials/tarp.png", "1:1", material("folded blue tarp with metal grommets")],
   ["paint", "public/materials/paint.png", "1:1", material("paint can with lid off showing clay-colored paint, with a brush resting on top, unlabeled can")],
   ["rebar", "public/materials/rebar.png", "1:1", material("bundle of ribbed steel rebar rods tied with wire")],
-  ["seeds", "public/materials/seeds.png", "1:1", material("two blank seed packets beside small green seedlings sprouting in a little pot")],
-  ["soil", "public/materials/soil.png", "1:1", material("open bag of dark rich garden soil, unlabeled bag")],
   ["water_tank", "public/materials/water_tank.png", "1:1", material("cylindrical household water storage tank (cisterna) as used on Puerto Rican rooftops")],
   ["tools", "public/materials/tools.png", "1:1", material("hammer and a hand saw crossed together")],
+  ["facilitator", "public/materials/facilitator.png", "1:1", material("two simple chairs facing each other with a small cushion, as for a support conversation")],
+  ["venue", "public/materials/venue.png", "1:1", material("small open-sided community hall with a tin roof and a few plastic chairs")],
+  ["meals", "public/materials/meals.png", "1:1", material("large pot of sancocho soup beside a stack of bowls")],
+  ["transport", "public/materials/transport.png", "1:1", material("colorful rural Colombian chiva bus seen from the side")],
+  ["sports_kit", "public/materials/sports_kit.png", "1:1", material("soccer ball resting on a folded plain jersey")],
+  ["art_supplies", "public/materials/art_supplies.png", "1:1", material("hand puppet beside crayons and a sheet of paper")],
   ["generic", "public/materials/generic.png", "1:1", material("simple open wooden crate filled with assorted building supplies (a few bricks, a roll of wire, a small bag)")],
 
   // 2. Program illustrations (landscape)
   ["roof_shelter", "public/brand/roof_shelter.png", "3:2", scene("A modest Puerto Rican house getting a new corrugated zinc roof; two stylized figures seen from behind working on the roof, a ladder leaning on the wall.")],
   ["reconstruction", "public/brand/reconstruction.png", "3:2", scene("Brick and cement block walls of a small home being rebuilt; a stylized figure seen from behind laying bricks, a wheelbarrow and cement bags nearby.")],
-  ["heal_sow", "public/brand/heal_sow.png", "3:2", scene("A community garden with raised beds of young seedlings, a watering can, stylized figures seen from behind planting together.")],
+  ["heal_sow", "public/brand/heal_sow.png", "3:2", scene("Neighbors gathered in a circle of chairs under a shaded community hall, children playing soccer on a field behind them, stylized figures seen from behind.")],
 
   // 3. Hero + logo
   ["hero", "public/brand/hero.png", "21:9", scene("Wide panoramic view of a hillside barrio in recovery at sunrise: houses with fresh new zinc and painted roofs, lush green plants and gardens returning, a winding road, soft morning sky with warm sun rising over green mountains. Calm, hopeful.")],
