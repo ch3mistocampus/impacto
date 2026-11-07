@@ -105,7 +105,7 @@ export function ProjectDetail({ backHref = "/#proyectos" }: { backHref?: string 
 
       {p.status === "paused" && (
         <div className="mt-6">
-          <PausedNotice reason={p.safetyPauseReasonPublic} />
+          <PausedNotice reason={pick(p.safetyPauseReasonPublic ?? undefined, p.safetyPauseReasonPublicEn ?? undefined) || null} />
         </div>
       )}
 

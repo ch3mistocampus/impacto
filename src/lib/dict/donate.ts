@@ -1,8 +1,8 @@
 export const donate = {
   "donate.title": { es: "Elige qué materiales aportar", en: "Choose materials to give" },
   "donate.lead": {
-    es: "Desliza a la derecha para comprometer una cantidad, o di si ya tienes los materiales o puedes comprarlos. No se procesan pagos.",
-    en: "Swipe right to pledge a quantity, or say whether you have the materials or can buy them. No payments are processed.",
+    es: "Desliza a la derecha para comprometer materiales. No se cobra nada.",
+    en: "Swipe right to pledge materials. No payment is taken.",
   },
   "donate.filterCategory": { es: "Filtrar por categoría", en: "Filter by category" },
   "donate.filterMaterial": { es: "Material", en: "Material" },
@@ -107,8 +107,8 @@ export const donate = {
   // --- /donations ---
   "donations.title": { es: "Mis donaciones", en: "My pledges" },
   "donations.lead": {
-    es: "Compromisos guardados en este navegador. Cada paso lo confirma la organización; solo lo verificado cuenta como impacto.",
-    en: "Pledges saved in this browser. The nonprofit confirms each step; only verified counts as impact.",
+    es: "Compromisos guardados en este navegador.",
+    en: "Pledges saved in this browser.",
   },
   "donations.empty": {
     es: "Aún no tienes compromisos en este navegador.",

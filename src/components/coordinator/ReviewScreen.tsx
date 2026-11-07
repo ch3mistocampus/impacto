@@ -1,5 +1,6 @@
 "use client";
 
+import { displayAlias } from "@/lib/alias";
 import Link from "next/link";
 import { Component, useState, type ReactNode } from "react";
 import { useMutation, useQuery } from "convex/react";
@@ -86,10 +87,10 @@ function ReviewBody({ data }: { data: ReviewData }) {
               {p.isDemo && <DemoLabel />}
             </div>
             <h1 className="mt-3 font-display text-4xl font-normal leading-[1.08] sm:text-5xl">
-              {reviewing ? pick(p.titleEs, p.titleEn) : p.publicAlias}
+              {reviewing ? pick(p.titleEs, p.titleEn) : displayAlias(p.publicAlias, locale)}
             </h1>
             <p className="mt-2 text-[15px] text-muted">
-              {reviewing ? p.publicAlias : pick(p.titleEs, p.titleEn)}
+              {reviewing ? displayAlias(p.publicAlias, locale) : pick(p.titleEs, p.titleEn)}
               {p.createdByName && ` · ${t("role.field_worker")}: ${p.createdByName}`} · {formatDate(p.createdAt, locale)}
             </p>
             {p.publishedAt && (
@@ -172,7 +173,7 @@ function ManageLayout({ data }: { data: ReviewData }) {
 }
 
 function StatusControls({ data }: { data: ReviewData }) {
-  const { t } = useI18n();
+  const { t, pick } = useI18n();
   const { sessionToken, user } = useSession();
   const p = data.project;
   const pause = useMutation(api.coordinator.pause);
@@ -190,7 +191,7 @@ function StatusControls({ data }: { data: ReviewData }) {
       <div className="flex flex-wrap items-center gap-4 rounded-[2px] border border-rule bg-navy-soft px-4 py-4 sm:px-5">
         <div className="min-w-0 flex-1">
           <p className="font-display text-xl">{t("coord.status.paused")}</p>
-          {p.safetyPauseReasonPublic && <p className="mt-1 text-[15px]">{p.safetyPauseReasonPublic}</p>}
+          {p.safetyPauseReasonPublic && <p className="mt-1 text-[15px]">{pick(p.safetyPauseReasonPublic ?? undefined, p.safetyPauseReasonPublicEn ?? undefined)}</p>}
           <p className="mt-1 text-[13px] text-muted">{t("coord.paused.calm")}</p>
         </div>
         <Button

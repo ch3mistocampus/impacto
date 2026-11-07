@@ -252,7 +252,6 @@ function NeedRow({ need }: { need: ReviewNeed }) {
           <div className="mt-0.5 flex flex-wrap gap-1.5">
             {need.aiSuggested && (
               <Chip tone="navy">
-                <span aria-hidden className="font-display italic">IA</span>
                 {t("coord.need.aiSuggested")}
               </Chip>
             )}

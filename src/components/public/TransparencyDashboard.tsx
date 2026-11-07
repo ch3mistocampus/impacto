@@ -179,7 +179,6 @@ function ReportItem({ r, summary }: { r: WeeklyReport; summary: string }) {
           <div className="flex items-center gap-3 text-[13px] leading-snug text-muted">
             <VerifiedBadge variant="seal" compact label={t("report.sealVerified")} className="shrink-0" />
             <p>
-              <span className="block font-display text-[15px] italic text-foreground">{t("report.sealVerified")}</span>
               {t("tr.publishedOn")} {fmt.date(r.publishedAt)}
             </p>
           </div>

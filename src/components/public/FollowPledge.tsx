@@ -176,7 +176,7 @@ export function FollowPledge() {
           <p className="mt-1 text-muted">{pick(data.project.titleEs, data.project.titleEn)}</p>
           {data.project.status === "paused" && (
             <div className="mt-4">
-              <PausedNotice reason={data.project.safetyPauseReasonPublic} compact />
+              <PausedNotice reason={pick(data.project.safetyPauseReasonPublic ?? undefined, data.project.safetyPauseReasonPublicEn ?? undefined) || null} compact />
             </div>
           )}
           <h3 className="mt-8 border-t border-rule pt-4 font-display text-xl font-normal">

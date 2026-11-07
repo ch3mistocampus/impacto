@@ -157,7 +157,6 @@ export function ProposedMilestones({ reports, onUse }: { reports: ReviewReport[]
       title={t("coord.pm.title")}
       aside={
         <Chip tone="navy">
-          <span aria-hidden className="font-display italic">IA</span>
           {t("coord.aiDraft")}
         </Chip>
       }

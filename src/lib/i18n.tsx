@@ -34,7 +34,7 @@ type I18nCtx = {
 const UNIT_EN: Record<string, string> = {
   unidades: "units", unidad: "unit", bolsas: "bags", bultos: "sacks", sacos: "sacks", cajas: "boxes",
   galones: "gallons", kits: "kits", libras: "pounds", metros: "meters", piezas: "pieces",
-  planchas: "sheets", láminas: "sheets", rollos: "rolls", sobres: "packets", tejas: "roof tiles",
+  planchas: "sheets", láminas: "sheets", rollos: "rolls", sobres: "packets", tejas: "sheets",
 };
 
 const Ctx = createContext<I18nCtx | null>(null);

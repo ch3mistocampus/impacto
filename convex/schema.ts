@@ -94,6 +94,7 @@ export default defineSchema({
     approvedAt: v.optional(v.number()),
     publishedAt: v.optional(v.number()),
     safetyPauseReasonPublic: v.optional(v.string()),
+    safetyPauseReasonPublicEn: v.optional(v.string()),
     coverPhotoId: v.optional(v.id("photos")), // must point at a publicApproved photo
     isDemo: v.boolean(),
     /** Demo seed only: the simulated story date to show instead of _creationTime (seed inserts everything "now"). */
@@ -222,6 +223,8 @@ export default defineSchema({
     donorName: v.optional(v.string()),
     externalReference: v.optional(v.string()),
     recordedBy: v.id("users"),
+    /** Demo seed only: simulated date to display instead of _creationTime. */
+    seededAt: v.optional(v.number()),
   }).index("by_project", ["projectId"]),
 
   expenses: defineTable({
@@ -236,6 +239,8 @@ export default defineSchema({
     recordedBy: v.optional(v.id("users")),
     supplierRegion: v.optional(v.string()), // coarse region of purchase (regional procurement)
     localLabor: v.optional(v.boolean()), // paid local labor
+    /** Demo seed only: simulated date to display instead of _creationTime. */
+    seededAt: v.optional(v.number()),
   }).index("by_project", ["projectId"]),
 
   // Evidence for material events / milestones. Originals (privateStorageId) are coordinator-only.

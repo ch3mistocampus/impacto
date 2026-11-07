@@ -35,6 +35,7 @@ const inboxItem = v.object({
   createdAt: v.number(),
   publishedAt: v.union(v.number(), v.null()),
   safetyPauseReasonPublic: v.union(v.string(), v.null()),
+  safetyPauseReasonPublicEn: v.union(v.string(), v.null()),
   needsCount: v.number(),
   needsDraftCount: v.number(),
   needsConfirmationCount: v.number(),
@@ -63,6 +64,7 @@ async function inboxRow(ctx: QueryCtx, p: Doc<"projects">) {
     createdAt: shownAt(p),
     publishedAt: p.publishedAt ?? null,
     safetyPauseReasonPublic: p.safetyPauseReasonPublic ?? null,
+    safetyPauseReasonPublicEn: p.safetyPauseReasonPublicEn ?? null,
     needsCount: needs.length,
     needsDraftCount: needs.filter((n) => n.status === "draft").length,
     needsConfirmationCount: needs.filter((n) => n.needsConfirmation && n.status !== "rejected").length,
@@ -226,6 +228,7 @@ export const getProjectForReview = query({
       createdByName: v.union(v.string(), v.null()),
       publishedAt: v.union(v.number(), v.null()),
       safetyPauseReasonPublic: v.union(v.string(), v.null()),
+      safetyPauseReasonPublicEn: v.union(v.string(), v.null()),
       coverPhotoId: v.union(v.id("photos"), v.null()),
       isDemo: v.boolean(),
       approvedAt: v.union(v.number(), v.null()),
@@ -388,6 +391,7 @@ export const getProjectForReview = query({
         createdByName: creator?.name ?? null,
         publishedAt: p.publishedAt ?? null,
         safetyPauseReasonPublic: p.safetyPauseReasonPublic ?? null,
+        safetyPauseReasonPublicEn: p.safetyPauseReasonPublicEn ?? null,
         coverPhotoId: p.coverPhotoId ?? null,
         isDemo: p.isDemo,
         approvedAt: p.approvedAt ?? (p.approvedBy ? (p.publishedAt ?? null) : null),
@@ -555,6 +559,7 @@ export const approveAndPublish = mutation({
       approvedAt: now,
       publishedAt: now,
       safetyPauseReasonPublic: undefined,
+      safetyPauseReasonPublicEn: undefined,
     });
     const needs = await ctx.db
       .query("materialNeeds")
@@ -646,7 +651,11 @@ export const pause = mutation({
       .first();
     const leak = findPrivateLeak(priv?.beneficiaryName, { reasonPublicEs: reason, reasonPublicEn: args.reasonPublicEn ?? "" });
     if (leak) throw new ConvexError({ code: "ALIAS_CONTAINS_PRIVATE", field: leak });
-    await ctx.db.patch("projects", project._id, { status: "paused", safetyPauseReasonPublic: reason });
+    await ctx.db.patch("projects", project._id, {
+      status: "paused",
+      safetyPauseReasonPublic: reason,
+      safetyPauseReasonPublicEn: args.reasonPublicEn?.trim() || undefined,
+    });
     await ctx.db.insert("milestones", {
       projectId: project._id,
       type: "paused",
@@ -667,7 +676,7 @@ export const resume = mutation({
   handler: async (ctx, args) => {
     const { user, project } = await requireCoordinatorFor(ctx, args.sessionToken, args.projectId);
     if (project.status !== "paused") throw new ConvexError({ code: "INVALID_STATUS", status: project.status });
-    await ctx.db.patch("projects", project._id, { status: "published", safetyPauseReasonPublic: undefined });
+    await ctx.db.patch("projects", project._id, { status: "published", safetyPauseReasonPublic: undefined, safetyPauseReasonPublicEn: undefined });
     await ctx.db.insert("milestones", {
       projectId: project._id,
       type: "published",
@@ -690,7 +699,7 @@ export const complete = mutation({
     if (project.status !== "published" && project.status !== "paused") {
       throw new ConvexError({ code: "INVALID_STATUS", status: project.status });
     }
-    await ctx.db.patch("projects", project._id, { status: "completed", safetyPauseReasonPublic: undefined });
+    await ctx.db.patch("projects", project._id, { status: "completed", safetyPauseReasonPublic: undefined, safetyPauseReasonPublicEn: undefined });
     await audit(ctx, user._id, "project", project._id, "complete");
     return null;
   },

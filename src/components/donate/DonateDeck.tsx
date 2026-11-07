@@ -279,7 +279,7 @@ export function DonateDeck() {
                   {t("donate.act.buy")}
                 </button>
               </p>
-              <p className="mt-2 text-center text-xs text-muted hidden sm:block">{t("donate.keyboardHint2")}</p>
+              <p className="sr-only">{t("donate.keyboardHint2")}</p>
             </>
           )}
         </section>

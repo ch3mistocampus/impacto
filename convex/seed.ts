@@ -309,6 +309,7 @@ export async function seedAll(ctx: MutationCtx) {
       approvedAt,
       publishedAt,
       safetyPauseReasonPublic: sp.status === "paused" ? sp.pause?.es : undefined,
+      safetyPauseReasonPublicEn: sp.status === "paused" ? sp.pause?.en : undefined,
       isDemo: true,
       seededAt: createdAt,
     });
@@ -619,6 +620,7 @@ export async function seedAll(ctx: MutationCtx) {
             donorName: c.donor,
             externalReference: `DEMO-${c.currency}-${String(log.donations.length).padStart(3, "0")}`,
             recordedBy: coordinator,
+            seededAt: t,
           });
         },
       });
@@ -638,6 +640,7 @@ export async function seedAll(ctx: MutationCtx) {
             recordedBy: coordinator,
             supplierRegion: e.supplierRegion,
             localLabor: e.localLabor,
+            seededAt: t,
           });
           // Mock receipt photo on file (unless the demo leaves it as a field to-do).
           let receiptEvidenceId: Id<"evidence"> | undefined;

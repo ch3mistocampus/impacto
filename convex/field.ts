@@ -797,6 +797,7 @@ export const getMyProject = query({
         publishedAt: project.publishedAt ?? null,
         approvedByName: approver?.name ?? null,
         safetyPauseReasonPublic: project.status === "paused" ? (project.safetyPauseReasonPublic ?? null) : null,
+        safetyPauseReasonPublicEn: project.status === "paused" ? (project.safetyPauseReasonPublicEn ?? null) : null,
         isPublic: isPublicStatus(project.status),
       },
       feedback: {

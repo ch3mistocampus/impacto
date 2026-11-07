@@ -2,8 +2,8 @@ export const coord = {
   // Gate
   "coord.gate.title": { es: "Mesa de verificación", en: "Verification desk" },
   "coord.gate.body": {
-    es: "Esta área es solo para coordinadores de la organización. Aquí se revisan borradores, se protege la identidad de las familias y se confirma lo que realmente llegó.",
-    en: "This area is for nonprofit coordinators only. Review drafts, protect families' identity, and confirm what actually arrived.",
+    es: "Solo para coordinadores de la organización.",
+    en: "For nonprofit coordinators only.",
   },
   "coord.gate.signIn": { es: "Entrar como coordinador/a (demo)", en: "Sign in as coordinator (demo)" },
   "coord.gate.wrongRole": {
@@ -40,8 +40,8 @@ export const coord = {
   // Demo reset (only works when the deployment has DEMO_MODE=true)
   "coord.demo.title": { es: "Demo", en: "Demo" },
   "coord.demo.body": {
-    es: "Restablece todos los proyectos, compromisos y registros de demostración a su estado inicial. No afecta datos reales. Tu sesión se mantiene.",
-    en: "Resets every demo project, pledge and record to its initial state. Real data isn't touched. Your session stays signed in.",
+    es: "Restablece todos los datos de demostración. No afecta datos reales.",
+    en: "Reset all demo data. Real data isn't touched.",
   },
   "coord.demo.reset": { es: "Restablecer demo", en: "Reset demo" },
   "coord.demo.disabled": {
@@ -283,8 +283,8 @@ export const coord = {
     en: "Fictional demo scenario. Not real Espejo de Agua operations.",
   },
   "coord.aiNever": {
-    es: "La IA solo sugiere. Nunca aprueba proyectos, prioriza beneficiarios, verifica entregas ni certifica gastos: eso lo decide el equipo de la organización.",
-    en: "AI only suggests. It never approves projects, prioritizes beneficiaries, verifies deliveries, or certifies spending — the nonprofit team decides.",
+    es: "La IA solo sugiere. Las personas aprueban, verifican y publican.",
+    en: "AI only suggests. People approve, verify and publish.",
   },
   "coord.paused.calm": {
     es: "Pausar es un estado legítimo: protege a las personas y al equipo. El público ve un motivo general, nunca la ubicación.",
@@ -395,8 +395,8 @@ export const coord = {
   "coord.fin.title": { es: "Finanzas", en: "Financials" },
   "coord.fin.overall": { es: "Finanzas de la organización", en: "Organization financials" },
   "coord.fin.note": {
-    es: "Cada moneda por separado, en su monto original. No convertimos tasas de cambio. Un compromiso de materiales no es dinero.",
-    en: "Each currency separately, in its original amount. No exchange-rate conversion. A material pledge is not cash.",
+    es: "Cada moneda por separado, sin conversión. Un compromiso de materiales no es dinero.",
+    en: "Each currency shown separately, no conversion. Material pledges aren't cash.",
   },
   "coord.fin.received": { es: "Recibido", en: "Received" },
   "coord.fin.allocated": { es: "Asignado", en: "Allocated" },
@@ -443,8 +443,8 @@ export const coord = {
   // Weekly reports
   "coord.wr.title": { es: "Informes semanales de transparencia", en: "Weekly transparency reports" },
   "coord.wr.note": {
-    es: "El informe se calcula solo con registros reales del periodo. Tú revisas el resumen y decides cuándo publicarlo.",
-    en: "The report is computed only from real records in the period. You review the summary and decide when to publish.",
+    es: "Se genera con los registros del periodo. Revisa y luego publica.",
+    en: "Built from the period's records. Review, then publish.",
   },
   "coord.wr.generate": { es: "Generar informe semanal", en: "Generate weekly report" },
   "coord.wr.from": { es: "Desde", en: "From" },
@@ -466,8 +466,8 @@ export const coord = {
   // AI-proposed milestones
   "coord.pm.title": { es: "Hitos propuestos por la IA", en: "AI-proposed milestones" },
   "coord.pm.note": {
-    es: "Sugerencias del reporte de campo. No son resultados: conviértelas en hito solo cuando el equipo lo haya comprobado.",
-    en: "Suggestions from the field report. They aren't outcomes — turn one into a milestone only once staff have checked it.",
+    es: "Solo sugerencias. Conviértelas en hito cuando el equipo lo haya comprobado.",
+    en: "Suggestions only. Make one a milestone once staff have checked it.",
   },
   "coord.pm.use": { es: "Usar como hito", en: "Use as milestone" },
   "coord.pm.used": { es: "Copiado al formulario", en: "Copied to the form" },

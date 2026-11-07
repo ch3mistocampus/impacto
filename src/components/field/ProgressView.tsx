@@ -169,7 +169,7 @@ function Meta({ label, value }: { label: string; value: string }) {
 // ---------------------------------------------------------------------------
 
 function Stepper({ data }: { data: FieldProject }) {
-  const { t } = useI18n();
+  const { t, pick } = useI18n();
   const cur = currentStep(data);
   const s = data.project.status;
   const done = s === "completed";
@@ -222,7 +222,7 @@ function Stepper({ data }: { data: FieldProject }) {
       {s === "paused" && (
         <div className="mt-4 border-l-2 border-rule bg-paper px-4 py-3">
           <p className="font-semibold">{t("field.pv.paused.title")}</p>
-          {data.project.safetyPauseReasonPublic && <p className="mt-1 text-[15px]">{data.project.safetyPauseReasonPublic}</p>}
+          {data.project.safetyPauseReasonPublic && <p className="mt-1 text-[15px]">{pick(data.project.safetyPauseReasonPublic ?? undefined, data.project.safetyPauseReasonPublicEn ?? undefined)}</p>}
           <p className="mt-1 text-sm text-muted">{t("field.pv.paused.body")}</p>
         </div>
       )}

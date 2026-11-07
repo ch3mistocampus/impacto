@@ -86,9 +86,9 @@ type Row = FunctionReturnType<typeof api.field.listMyProjects>[number];
 
 /** One-line progress hint per project (changes requested, review, verified materials, pledges). */
 function ProgressHint({ p }: { p: Row }) {
-  const { t } = useI18n();
+  const { t, tn } = useI18n();
   const parts: { text: string; tone: string }[] = [];
-  if (p.openTodos > 0) parts.push({ text: `${p.openTodos} ${t("field.todo.count")}`, tone: "text-gold-ink font-semibold" });
+  if (p.openTodos > 0) parts.push({ text: tn("field.todo.n", p.openTodos), tone: "text-gold-ink font-semibold" });
   if (p.status === "draft" && p.changesRequested) parts.push({ text: t("field.hint.changes"), tone: "text-gold-ink font-semibold" });
   if (p.status === "in_review") parts.push({ text: t("field.hint.inReview"), tone: "text-gold-ink" });
   if (p.needsPublished > 0) {
@@ -99,8 +99,8 @@ function ProgressHint({ p }: { p: Row }) {
     if (p.needsReceiving > 0 && p.needsVerified < p.needsPublished)
       parts.push({ text: `${p.needsReceiving} ${t("field.hint.receiving")}`, tone: "text-foreground" });
   }
-  if (p.activePledges > 0) parts.push({ text: `${p.activePledges} ${t("field.hint.pledges")}`, tone: "text-gold-ink" });
-  if (p.pendingFollowUps > 0) parts.push({ text: `${p.pendingFollowUps} ${t("field.hint.followUps")}`, tone: "text-muted" });
+  if (p.activePledges > 0) parts.push({ text: tn("field.hint.pledges", p.activePledges), tone: "text-gold-ink" });
+  if (p.pendingFollowUps > 0) parts.push({ text: tn("field.hint.followUps", p.pendingFollowUps), tone: "text-muted" });
   if (parts.length === 0) return null;
   return (
     <p className="flex flex-wrap gap-x-3 gap-y-1 text-sm tabular-nums">

@@ -22,6 +22,7 @@ export type ProjectCardData = {
   needsCount: number;
   isDemo?: boolean;
   safetyPauseReasonPublic?: string | null;
+  safetyPauseReasonPublicEn?: string | null;
   totals: StageTotals;
 };
 

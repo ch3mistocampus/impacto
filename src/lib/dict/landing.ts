@@ -75,8 +75,8 @@ export const landing = {
   "landing.projectsKicker": { es: "En curso", en: "Underway" },
   "landing.filterLabel": { es: "Filtrar por programa", en: "Filter by program" },
   "landing.mission": {
-    es: "Equipos de campo describen el daño, la organización verifica cada necesidad y tú eliges qué materiales aportar. Luego ves lo que realmente llegó y se usó.",
-    en: "Field teams describe the damage, the nonprofit verifies each need, and you choose which materials to give. Then you see what actually arrived and was used.",
+    es: "Los equipos de campo reportan necesidades. La organización las verifica. Tú aportas materiales y ves lo que realmente se usó.",
+    en: "Field teams report needs. The nonprofit verifies them. You give materials and see what was actually used.",
   },
   "landing.ctaDonate": { es: "Donar materiales", en: "Donate materials" },
   "landing.ctaProjects": { es: "Ver proyectos", en: "See projects" },
@@ -96,8 +96,8 @@ export const landing = {
   },
   "landing.bucketsTitle": { es: "Tres frentes de recuperación", en: "Three fronts of recovery" },
   "landing.bucketsLead": {
-    es: "Solicitado, comprometido, recibido, entregado, usado y verificado se cuentan por separado. Solo lo verificado cuenta como impacto.",
-    en: "Requested, pledged, received, delivered, used and verified are counted separately. Only verified counts as impact.",
+    es: "Seis etapas, contadas por separado. Solo lo verificado cuenta como impacto.",
+    en: "Six stages, counted separately. Only verified counts as impact.",
   },
   "landing.desc.roof_shelter": {
     es: "Zinc, lonas y madera para volver a estar bajo techo.",
@@ -119,8 +119,8 @@ export const landing = {
   "landing.outcomes.other": { es: "resultados verificados", en: "verified outcomes" },
   "landing.privacyTitle": { es: "Sin pines en el mapa. Sin nombres.", en: "No map pins. No names." },
   "landing.privacyBody": {
-    es: "Las familias aparecen solo con un alias del proyecto y una región general. Nombres, direcciones y fotos identificables quedan con la organización.",
-    en: "Families appear only as a project alias and a general region. Names, addresses and identifiable photos stay with the nonprofit.",
+    es: "Las familias aparecen solo con un alias y una región. Nombres, direcciones y fotos identificables quedan en privado.",
+    en: "Families appear only as an alias and a region. Names, addresses and identifying photos stay private.",
   },
   "landing.projectsTitle": { es: "Proyectos publicados", en: "Published projects" },
   "landing.projectsEmpty": {

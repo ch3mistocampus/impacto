@@ -115,10 +115,11 @@ export function Timeline({ items, emptyLabel }: { items: TimelineItem[]; emptyLa
                   // Use is recorded by staff but is not impact until a separate "verified" event.
                   <PendingBadge label={t("project.usedAwaiting")} />
                 ) : verified ? (
-                  <VerifiedBadge
-                    compact={!["delivered", "verified", "outcome", "received"].includes(m.type)}
-                    label={t("project.verifiedByOrg")}
-                  />
+                  // Routine steps (reported, approved, published) carry the verified dot on the node only;
+                  // the badge is kept for material and outcome steps, where it carries meaning.
+                  ["delivered", "verified", "outcome", "received"].includes(m.type) ? (
+                    <VerifiedBadge label={t("project.verifiedByOrg")} />
+                  ) : null
                 ) : (
                   <PendingBadge label={t("project.pending")} />
                 )}

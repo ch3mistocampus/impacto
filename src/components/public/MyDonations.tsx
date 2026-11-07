@@ -358,7 +358,7 @@ function PledgeItem({ row, showSource = false }: { row: Row; showSource?: boolea
 
       {data.project?.status === "paused" && (
         <div className="mt-4">
-          <PausedNotice reason={data.project.safetyPauseReasonPublic} compact />
+          <PausedNotice reason={pick(data.project.safetyPauseReasonPublic ?? undefined, data.project.safetyPauseReasonPublicEn ?? undefined) || null} compact />
         </div>
       )}
 

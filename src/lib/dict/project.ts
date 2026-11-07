@@ -24,8 +24,8 @@ export const project = {
     en: "No public events yet.",
   },
   "project.privacyNote": {
-    es: "Mostramos solo un alias y la región general. Ningún nombre ni dirección.",
-    en: "We show only an alias and the general region. No names or addresses.",
+    es: "Solo alias y región. Sin nombres ni direcciones.",
+    en: "Alias and region only. No names or addresses.",
   },
   "project.milestone.need_reported": { es: "Necesidad reportada", en: "Need reported" },
   "project.milestone.approved": { es: "Aprobado por la organización", en: "Approved by nonprofit" },
@@ -108,8 +108,8 @@ export const project = {
 
   "project.approvedOn": { es: "Aprobado por la organización el", en: "Approved by the nonprofit on" },
   "project.materialsLead": {
-    es: "Cada material se cuenta en seis medidas separadas. Una promesa no es una entrega.",
-    en: "Each material is counted in six separate measures. A promise is not a delivery.",
+    es: "Seis conteos separados por material. Comprometer no es entregar.",
+    en: "Six separate counts per material. A pledge isn't a delivery.",
   },
   "project.financials": { es: "Dinero", en: "Money" },
   "project.financialsLead": {

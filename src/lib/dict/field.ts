@@ -59,8 +59,8 @@ export const field = {
   "field.photos": { es: "Fotos del daño y materiales", en: "Photos of damage and materials" },
   "field.photos.add": { es: "Tomar o añadir fotos", en: "Take or add photos" },
   "field.photos.private": {
-    es: "Las fotos quedan privadas. Solo se envían a la IA si tú lo pides, foto por foto; la organización aprueba cuáles son seguras para publicar.",
-    en: "Photos stay private. They're only sent to AI if you ask, one photo at a time; the nonprofit approves which are safe to publish.",
+    es: "Las fotos quedan privadas hasta que la organización las aprueba. La IA solo ve una foto si tú lo pides.",
+    en: "Photos stay private until the nonprofit approves them. AI only sees a photo if you ask.",
   },
   "field.photos.remove": { es: "Quitar foto", en: "Remove photo" },
   "field.photos.processing": { es: "Preparando…", en: "Preparing…" },
@@ -82,8 +82,8 @@ export const field = {
     en: "Drafting. Only the text is sent, with names and phone numbers hidden (no private data, no photos).",
   },
   "field.analyzing.bodyAudio": {
-    es: "Transcribiendo tu audio con un servicio de IA y preparando un borrador. Antes de extraer los datos se ocultan nombres y teléfonos. No se envían datos privados ni fotos.",
-    en: "Transcribing your audio with an AI service and drafting. Names and phone numbers are hidden before extraction. No private data or photos are sent.",
+    es: "Transcribiendo y preparando el borrador. Primero se ocultan nombres y teléfonos.",
+    en: "Transcribing and drafting. Names and phone numbers are hidden first.",
   },
   "field.analyzing.slow": {
     es: "Puede tardar hasta 45 segundos. Si falla, podrás escribir el reporte.",
@@ -93,8 +93,8 @@ export const field = {
   // audio → AI consent (per report)
   "field.audioAi.toggle": { es: "Enviar audio a IA para transcribir", en: "Send audio to AI for transcription" },
   "field.audioAi.notice": {
-    es: "La grabación se envía a un servicio de IA externo (OpenRouter) solo para transcribirla. No digas nombres, direcciones ni teléfonos.",
-    en: "The recording is sent to an external AI service (OpenRouter) only to transcribe it. Don't say names, addresses or phone numbers.",
+    es: "El audio va a un servicio de IA (OpenRouter) solo para transcribirlo. No digas nombres, direcciones ni teléfonos.",
+    en: "Audio goes to an AI service (OpenRouter) only to be transcribed. Don't say names, addresses or phone numbers.",
   },
   "field.audioAi.off": {
     es: "Audio a IA desactivado. Escribe el reporte aquí; el audio no se graba ni se sube.",
@@ -387,9 +387,11 @@ export const field = {
   "field.hint.verified": { es: "materiales verificados", en: "materials verified" },
   "field.hint.changes": { es: "Cambios solicitados", en: "Changes requested" },
   "field.hint.inReview": { es: "Esperando revisión", en: "Awaiting review" },
-  "field.hint.pledges": { es: "compromisos", en: "pledges" },
+  "field.hint.pledges.one": { es: "{n} compromiso", en: "{n} pledge" },
+  "field.hint.pledges.other": { es: "{n} compromisos", en: "{n} pledges" },
   "field.hint.receiving": { es: "con materiales recibidos", en: "with materials received" },
-  "field.hint.followUps": { es: "avances en revisión", en: "updates in review" },
+  "field.hint.followUps.one": { es: "{n} avance en revisión", en: "{n} update in review" },
+  "field.hint.followUps.other": { es: "{n} avances en revisión", en: "{n} updates in review" },
   // editor banner when coordinator requested changes
   "field.changes.title": { es: "La coordinación pidió cambios", en: "The coordinator requested changes" },
   "field.changes.body": {
@@ -416,11 +418,15 @@ export const field = {
   // to-dos (confirm received / delivered / upload receipt, with photo)
   "field.todo.title": { es: "Pendientes", en: "To-do" },
   "field.todo.intro": {
-    es: "Confirma con una foto lo que llegó o se entregó. La organización revisa la foto antes de que sea pública.",
-    en: "Confirm what arrived or was delivered with a photo. The nonprofit reviews the photo before it goes public.",
+    es: "Confirma con una foto. La organización la revisa antes de publicarla.",
+    en: "Confirm with a photo. The nonprofit reviews it before it's public.",
   },
   "field.todo.none": { es: "Todo al día. No hay pendientes.", en: "All caught up. Nothing to do." },
   "field.todo.count": { es: "pendientes", en: "to-dos" },
+  "field.todo.label.one": { es: "pendiente", en: "to-do" },
+  "field.todo.label.other": { es: "pendientes", en: "to-dos" },
+  "field.todo.n.one": { es: "{n} pendiente", en: "{n} to-do" },
+  "field.todo.n.other": { es: "{n} pendientes", en: "{n} to-dos" },
   "field.todo.receive": { es: "Confirmar que llegaron", en: "Confirm materials arrived" },
   "field.todo.deliver": { es: "Confirmar entrega al proyecto", en: "Confirm delivery to the project" },
   "field.todo.receipt": { es: "Subir recibo del gasto", en: "Upload the expense receipt" },

@@ -1,5 +1,6 @@
 "use client";
 
+import { displayAlias } from "@/lib/alias";
 import Link from "next/link";
 import { useState } from "react";
 import { useMutation, useQuery } from "convex/react";
@@ -9,7 +10,6 @@ import { useSession } from "@/lib/session";
 import type { DictKey } from "@/lib/dict";
 import { DoubleRule, FlagBand, Kicker } from "@/components/ui/tricolor";
 import {
-  AiNever,
   Button,
   CategoryTag,
   Chip,
@@ -68,7 +68,6 @@ export function CoordinatorDesk() {
           </div>
         </div>
         <DoubleRule className="mt-5" />
-        <AiNever className="mt-4 max-w-3xl" />
       </header>
 
       <div className="mt-8">
@@ -106,7 +105,7 @@ export function CoordinatorDesk() {
         )}
       </div>
 
-      <DemoControls />
+      {tab === "inbox" && <DemoControls />}
     </div>
   );
 }
@@ -194,7 +193,7 @@ function ProjectList({ items, empty, mode }: { items: InboxItem[]; empty: string
                 {pick(p.titleEs, p.titleEn)}
               </p>
               <p className="mt-0.5 text-sm text-muted">
-                {p.publicAlias}
+                {displayAlias(p.publicAlias, locale)}
                 {p.region ? ` · ${p.region}` : ""} · <span className="tabular-nums">{p.needsCount}</span>{" "}
                 {tn("coord.needsCount", p.needsCount)} ·{" "}
                 {mode === "review"
@@ -204,7 +203,7 @@ function ProjectList({ items, empty, mode }: { items: InboxItem[]; empty: string
                     : ""}
               </p>
               {p.status === "paused" && p.safetyPauseReasonPublic && (
-                <p className="mt-1 border-l border-rule pl-2 text-sm text-foreground">{p.safetyPauseReasonPublic}</p>
+                <p className="mt-1 border-l border-rule pl-2 text-sm text-foreground">{pick(p.safetyPauseReasonPublic ?? undefined, p.safetyPauseReasonPublicEn ?? undefined)}</p>
               )}
             </div>
             <div className="col-start-2 flex items-center gap-4 sm:col-start-3 sm:justify-end">

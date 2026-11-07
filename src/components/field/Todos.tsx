@@ -108,7 +108,7 @@ function TodoRow({ todo, onOpen, href, projectLabel }: { todo: FieldTodo; onOpen
 
 /** To-do card on the project progress page. `?todo=<id>` opens that task directly. */
 export function ProjectTodos({ todos, initialOpenId }: { todos: FieldTodo[]; initialOpenId?: string | null }) {
-  const { t } = useI18n();
+  const { t, tn } = useI18n();
   const [openId, setOpenId] = useState<string | null>(initialOpenId ?? null);
   const [done, setDone] = useState(false);
   const open = todos.find((x) => x.id === openId) ?? null;
@@ -119,7 +119,7 @@ export function ProjectTodos({ todos, initialOpenId }: { todos: FieldTodo[]; ini
         <h2 className={sectionTitle}>{t("field.todo.title")}</h2>
         {todos.length > 0 && (
           <span className="font-display text-2xl tabular-nums text-gold-ink">
-            {todos.length} <span className="text-sm font-sans text-muted">{t("field.todo.count")}</span>
+            {todos.length} <span className="text-sm font-sans text-muted">{tn("field.todo.label", todos.length)}</span>
           </span>
         )}
       </div>

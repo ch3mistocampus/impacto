@@ -1,3 +1,4 @@
+import { shownAt } from "./lib/shownAt";
 import { mutation, query } from "./_generated/server";
 import type { MutationCtx, QueryCtx } from "./_generated/server";
 import { v, ConvexError } from "convex/values";
@@ -274,7 +275,7 @@ export const financials = query({
         status: d.status,
         donorName: d.donorName ?? null,
         externalReference: d.externalReference ?? null,
-        createdAt: d._creationTime,
+        createdAt: shownAt(d),
       });
     }
     const expenseRows = [];
@@ -293,7 +294,7 @@ export const financials = query({
         approvedAt: e.approvedAt ?? null,
         approvedByName: await userName(e.approvedBy),
         recordedByName: await userName(e.recordedBy),
-        createdAt: e._creationTime,
+        createdAt: shownAt(e),
       });
     }
     contributions.sort((a, b) => b.createdAt - a.createdAt);

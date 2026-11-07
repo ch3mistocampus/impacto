@@ -122,12 +122,12 @@ export const community = {
   // form
   "community.form.title": { es: "Escríbele a la organización", en: "Write to the nonprofit" },
   "community.form.lead": {
-    es: "Pregunta, avisa de una preocupación, agradece o sugiere algo. Un equipo lo lee antes de publicarlo.",
-    en: "Ask, raise a concern, say thanks or suggest something. A person reads it before it is published.",
+    es: "Una persona lee cada mensaje antes de publicarlo.",
+    en: "A person reads every message before it's published.",
   },
   "community.form.guidance": {
-    es: "Por seguridad: no escribas nombres, direcciones ni teléfonos de las familias (ni los tuyos). Si los escribes, los ocultaremos automáticamente.",
-    en: "For safety: don't write names, addresses or phone numbers of families (or your own). If you do, we hide them automatically.",
+    es: "Por favor no incluyas nombres, direcciones ni teléfonos. Los ocultamos automáticamente.",
+    en: "Please don't include names, addresses or phone numbers. We hide them automatically.",
   },
   "community.form.kind": { es: "¿Qué quieres compartir?", en: "What do you want to share?" },
   "community.form.project": { es: "¿Sobre qué proyecto? (opcional)", en: "About which project? (optional)" },
@@ -172,8 +172,8 @@ export const community = {
   "coord.tab.community": { es: "Comunidad", en: "Community" },
   "coord.cm.title": { es: "Mensajes de la comunidad", en: "Community messages" },
   "coord.cm.note": {
-    es: "Nada se publica sin tu aprobación. Los teléfonos, correos y direcciones ya se ocultaron al recibir el mensaje; el contacto privado nunca se publica.",
-    en: "Nothing is published without your approval. Phones, emails and addresses were already hidden on receipt; private contact is never published.",
+    es: "Nada se publica sin tu aprobación. Los datos de contacto se ocultan automáticamente.",
+    en: "Nothing is published without your approval. Contact details are hidden automatically.",
   },
   "coord.cm.filter.pending": { es: "Pendientes", en: "Pending" },
   "coord.cm.filter.approved": { es: "Publicados", en: "Published" },

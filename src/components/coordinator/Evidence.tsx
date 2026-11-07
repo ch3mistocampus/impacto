@@ -89,7 +89,6 @@ function ReportView({ r }: { r: ReviewReport }) {
         <div className="rounded-[2px] border border-dashed border-rule/60 bg-paper p-3 sm:p-4">
           <div className="flex flex-wrap items-center gap-2">
             <Chip tone="navy">
-              <span aria-hidden className="font-display italic">IA</span>
               {t("coord.aiDraft")}
             </Chip>
             <span className="text-[13px] text-muted">{t("coord.aiDraftNote")}</span>
