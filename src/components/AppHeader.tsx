@@ -7,6 +7,7 @@ import { useI18n } from "@/lib/i18n";
 import { useSession, type Role } from "@/lib/session";
 import type { DictKey } from "@/lib/dict";
 import { FlagBand } from "@/components/ui/tricolor";
+import { BrandMark } from "@/components/BrandMark";
 
 const ROLES: Role[] = ["field_worker", "coordinator", "donor", "community"];
 
@@ -85,10 +86,13 @@ function AppHeaderInner() {
 
       <header style={{ viewTransitionName: "site-header" }} className="sticky top-0 z-30 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/85">
         <div className="mx-auto flex h-12 max-w-6xl items-stretch gap-6 px-4 sm:h-16">
-          <Link href="/" className="flex flex-col justify-center leading-none" aria-label={`${t("app.name")} · ${t("app.attribution")}`}>
-            <span className="font-display text-[1.6rem] font-normal tracking-tight sm:text-[1.85rem]">{t("app.name")}</span>
-            <span className="mt-0.5 font-display text-[12px] italic text-muted">
-              {t("app.attributionPrefix")} {t("app.attribution")}
+          <Link href="/" className="flex items-center gap-2.5 sm:gap-3" aria-label={`${t("app.name")} · ${t("app.attribution")}`}>
+            <BrandMark className="h-5 w-auto sm:h-7" />
+            <span className="flex flex-col justify-center leading-none">
+              <span className="font-display text-[1.6rem] font-normal tracking-tight sm:text-[1.85rem]">{t("app.name")}</span>
+              <span className="mt-0.5 font-display text-[12px] italic text-muted">
+                {t("app.attributionPrefix")} {t("app.attribution")}
+              </span>
             </span>
           </Link>
 

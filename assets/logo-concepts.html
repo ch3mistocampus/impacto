@@ -1,0 +1,278 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Impacto Logo Concepts</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,800&family=Inter:wght@400;500;600;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --navy: #0b2a5b; --navy-soft: #e9eef7; --gold: #e8b70b; --gold-ink: #7a5d00;
+    --red: #b3122a; --emerald: #13693f; --paper: #f6f7fa; --rule: #e3e6ee; --muted: #5b6b85;
+    --bg: #f6f7fa; --card: #ffffff;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--navy); font-family: Inter, system-ui, sans-serif; }
+  header { max-width: 1240px; margin: 0 auto; padding: 48px 16px 24px; }
+  header h1 { font-family: Fraunces, serif; font-weight: 800; font-size: clamp(32px, 5vw, 52px); margin: 0 0 8px; letter-spacing: -0.02em; }
+  header p { color: var(--muted); margin: 0; max-width: 680px; line-height: 1.5; }
+  .swatches { display: flex; gap: 8px; margin-top: 16px; }
+  .swatches span { width: 28px; height: 28px; border-radius: 6px; }
+  .toggle { margin-top: 16px; display: inline-flex; gap: 4px; background: #fff; border: 1px solid var(--rule); border-radius: 999px; padding: 4px; }
+  .toggle button { border: 0; background: transparent; padding: 8px 14px; border-radius: 999px; font: 600 13px Inter, sans-serif; color: var(--navy); cursor: pointer; }
+  .toggle button.on { background: var(--navy); color: #fff; }
+  main { max-width: 1240px; margin: 0 auto; padding: 8px 16px 64px; display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); gap: 20px; }
+  @media (max-width: 420px) { main { grid-template-columns: 1fr; } }
+  .card { background: var(--card); border: 1px solid var(--rule); border-radius: 16px; overflow: hidden; display: flex; flex-direction: column; }
+  .stage { height: 230px; display: grid; place-items: center; padding: 24px; transition: background .25s; }
+  body.dark .stage { background: var(--navy); }
+  .stage svg { max-width: 100%; height: 150px; }
+  .meta { padding: 16px 20px 20px; border-top: 1px solid var(--rule); display: flex; gap: 16px; align-items: flex-start; }
+  .meta .icon { flex: none; width: 56px; height: 56px; border-radius: 14px; overflow: hidden; box-shadow: 0 1px 2px rgba(11,42,91,.15); }
+  .meta .icon svg { width: 100%; height: 100%; display: block; }
+  .meta h2 { font: 600 16px Inter, sans-serif; margin: 2px 0 4px; }
+  .meta h2 small { color: var(--muted); font-weight: 500; margin-right: 6px; }
+  .meta p { margin: 0; color: var(--muted); font-size: 13.5px; line-height: 1.45; }
+
+  /* text inside SVGs */
+  .wm { font-family: Fraunces, serif; font-weight: 800; letter-spacing: -0.02em; }
+  .wm-sans { font-family: Inter, sans-serif; font-weight: 800; letter-spacing: -0.03em; }
+  .ink { fill: var(--navy); }
+  body.dark .ink { fill: #ffffff; }
+  .stroke-ink { stroke: var(--navy); }
+  body.dark .stroke-ink { stroke: #ffffff; }
+  .tag { font-family: Inter, sans-serif; font-weight: 600; letter-spacing: .18em; font-size: 11px; fill: var(--muted); }
+  body.dark .tag { fill: #b9c6dd; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Impacto — 10 logo concepts</h1>
+  <p>Built from the app's existing palette (navy, gold, red, emerald) and type (Fraunces + Inter). Each card shows the full lockup plus a 56px app-icon tile. Toggle the background to check them on navy.</p>
+  <div class="swatches" aria-hidden="true">
+    <span style="background:#0b2a5b"></span><span style="background:#e8b70b"></span><span style="background:#b3122a"></span><span style="background:#13693f"></span>
+  </div>
+  <div class="toggle" role="group" aria-label="Background">
+    <button class="on" data-mode="light">On white</button>
+    <button data-mode="dark">On navy</button>
+  </div>
+</header>
+
+<main>
+
+<!-- 1. Brick Stack -->
+<article class="card">
+  <div class="stage">
+    <svg viewBox="0 0 420 140" role="img" aria-label="Impacto brick stack logo">
+      <g transform="translate(10,20)">
+        <rect x="0"  y="70" width="44" height="22" rx="3" fill="#b3122a"/>
+        <rect x="48" y="70" width="44" height="22" rx="3" fill="#b3122a"/>
+        <rect x="24" y="44" width="44" height="22" rx="3" fill="#e8b70b"/>
+        <rect x="24" y="18" width="44" height="22" rx="3" fill="#13693f" transform="rotate(-8 46 29)"/>
+      </g>
+      <text x="118" y="104" class="wm ink" font-size="64">impacto</text>
+    </svg>
+  </div>
+  <div class="meta">
+    <div class="icon"><svg viewBox="0 0 56 56"><rect width="56" height="56" fill="#0b2a5b"/><rect x="8" y="34" width="19" height="10" rx="2" fill="#b3122a"/><rect x="29" y="34" width="19" height="10" rx="2" fill="#b3122a"/><rect x="18.5" y="22" width="19" height="10" rx="2" fill="#e8b70b"/><rect x="18.5" y="10" width="19" height="10" rx="2" fill="#13693f" transform="rotate(-8 28 15)"/></svg></div>
+    <div><h2><small>01</small>Brick Stack</h2><p>Three bricks in the three category colors, the top one still landing — every pledge adds to the build. Most literal to the donor flow.</p></div>
+  </div>
+</article>
+
+<!-- 2. Roof A -->
+<article class="card">
+  <div class="stage">
+    <svg viewBox="0 0 420 140" role="img" aria-label="Impacto roof wordmark">
+      <text x="20" y="108" class="wm ink" font-size="76">imp</text>
+      <path d="M150 108 L184 40 L218 108" fill="none" stroke="#b3122a" stroke-width="13" stroke-linejoin="round" stroke-linecap="round"/>
+      <rect x="176" y="84" width="16" height="24" rx="2" fill="#e8b70b"/>
+      <text x="226" y="108" class="wm ink" font-size="76">cto</text>
+    </svg>
+  </div>
+  <div class="meta">
+    <div class="icon"><svg viewBox="0 0 56 56"><rect width="56" height="56" fill="#ffffff"/><path d="M12 42 L28 14 L44 42" fill="none" stroke="#b3122a" stroke-width="6" stroke-linejoin="round" stroke-linecap="round"/><rect x="24" y="31" width="8" height="11" rx="1" fill="#e8b70b"/></svg></div>
+    <div><h2><small>02</small>Roof A</h2><p>The “a” becomes a roofline with a gold doorway. Reads as a word first, a home second — works well small as a standalone mark.</p></div>
+  </div>
+</article>
+
+<!-- 3. Espejo de Agua ripple -->
+<article class="card">
+  <div class="stage">
+    <svg viewBox="0 0 420 140" role="img" aria-label="Impacto ripple logo">
+      <g transform="translate(70,70)" fill="none">
+        <circle r="54" stroke="#13693f" stroke-width="5" opacity=".35"/>
+        <circle r="38" stroke="#13693f" stroke-width="6" opacity=".65"/>
+        <circle r="22" stroke="#13693f" stroke-width="7"/>
+        <circle r="8" fill="#e8b70b"/>
+      </g>
+      <text x="142" y="84" class="wm ink" font-size="50">impacto</text>
+      <text x="145" y="108" class="tag">CADA APORTE SE EXPANDE</text>
+    </svg>
+  </div>
+  <div class="meta">
+    <div class="icon"><svg viewBox="0 0 56 56"><rect width="56" height="56" fill="#13693f"/><g transform="translate(28,28)" fill="none" stroke="#fff"><circle r="20" stroke-width="2.5" opacity=".4"/><circle r="13" stroke-width="3" opacity=".7"/><circle r="6.5" stroke-width="3.5"/></g><circle cx="28" cy="28" r="2.5" fill="#e8b70b"/></svg></div>
+    <div><h2><small>03</small>Ripple</h2><p>A nod to Espejo de Agua: one drop (a gift) spreading outward into verified impact. Calm, trustworthy, non-literal.</p></div>
+  </div>
+</article>
+
+<!-- 4. Ledger Bars -->
+<article class="card">
+  <div class="stage">
+    <svg viewBox="0 0 420 140" role="img" aria-label="Impacto ledger bars logo">
+      <g transform="translate(16,24)">
+        <rect x="0"  y="60" width="16" height="36" rx="3" fill="#7a5d00"/>
+        <rect x="22" y="42" width="16" height="54" rx="3" fill="#e8b70b"/>
+        <rect x="44" y="22" width="16" height="74" rx="3" fill="#0b2a5b" class="bar-navy"/>
+        <rect x="66" y="0"  width="16" height="96" rx="3" fill="#13693f"/>
+      </g>
+      <text x="122" y="106" class="wm-sans ink" font-size="60">impacto</text>
+    </svg>
+  </div>
+  <div class="meta">
+    <div class="icon"><svg viewBox="0 0 56 56"><rect width="56" height="56" fill="#ffffff"/><rect x="9" y="30" width="7" height="16" rx="1.5" fill="#7a5d00"/><rect x="19" y="22" width="7" height="24" rx="1.5" fill="#e8b70b"/><rect x="29" y="16" width="7" height="30" rx="1.5" fill="#0b2a5b"/><rect x="39" y="9" width="7" height="37" rx="1.5" fill="#13693f"/></svg></div>
+    <div><h2><small>04</small>Honest Ledger</h2><p>Four bars = pledged → received → used → verified, the app's core promise that each stage is its own number. Data-forward, credible.</p></div>
+  </div>
+</article>
+
+<!-- 5. Sprouting Brick -->
+<article class="card">
+  <div class="stage">
+    <svg viewBox="0 0 420 140" role="img" aria-label="Impacto sprouting brick logo">
+      <g transform="translate(18,18)">
+        <path d="M40 54 C40 34 40 26 40 18" stroke="#13693f" stroke-width="5" stroke-linecap="round" fill="none"/>
+        <path d="M40 30 C22 30 12 18 12 4 C28 4 40 14 40 30Z" fill="#13693f"/>
+        <path d="M40 22 C56 22 66 12 66 0 C52 0 40 8 40 22Z" fill="#13693f" opacity=".75"/>
+        <rect x="0" y="54" width="80" height="40" rx="5" fill="#b3122a"/>
+        <circle cx="22" cy="74" r="6" fill="#ffffff" opacity=".35"/>
+        <circle cx="58" cy="74" r="6" fill="#ffffff" opacity=".35"/>
+      </g>
+      <text x="118" y="104" class="wm ink" font-size="62">impacto</text>
+    </svg>
+  </div>
+  <div class="meta">
+    <div class="icon"><svg viewBox="0 0 56 56"><rect width="56" height="56" fill="#fbf4d9"/><path d="M28 34 V16" stroke="#13693f" stroke-width="3" stroke-linecap="round"/><path d="M28 24 C18 24 13 17 13 9 C22 9 28 15 28 24Z" fill="#13693f"/><path d="M28 19 C37 19 42 13 42 7 C34 7 28 12 28 19Z" fill="#13693f" opacity=".75"/><rect x="10" y="34" width="36" height="16" rx="3" fill="#b3122a"/></svg></div>
+    <div><h2><small>05</small>Sprouting Brick</h2><p>Reconstruction + “heal &amp; sow” in one shape: life growing out of rebuilt ground. Warm and hopeful.</p></div>
+  </div>
+</article>
+
+<!-- 6. i-House Monogram -->
+<article class="card">
+  <div class="stage">
+    <svg viewBox="0 0 420 140" role="img" aria-label="Impacto i-house monogram">
+      <g transform="translate(14,10)">
+        <path d="M0 52 L58 4 L116 52 V120 H0Z" fill="#0b2a5b" class="mono-bg"/>
+        <circle cx="58" cy="46" r="10" fill="#e8b70b"/>
+        <rect x="49" y="64" width="18" height="56" rx="3" fill="#ffffff"/>
+      </g>
+      <text x="150" y="98" class="wm ink" font-size="58">impacto</text>
+    </svg>
+  </div>
+  <div class="meta">
+    <div class="icon"><svg viewBox="0 0 56 56"><rect width="56" height="56" fill="#0b2a5b"/><circle cx="28" cy="18" r="6" fill="#e8b70b"/><rect x="23" y="27" width="10" height="21" rx="2" fill="#ffffff"/></svg></div>
+    <div><h2><small>06</small>i-House</h2><p>A house silhouette holding a lowercase “i”, the dot as a gold light in the window. Strong, ownable app icon.</p></div>
+  </div>
+</article>
+
+<!-- 7. Three Categories -->
+<article class="card">
+  <div class="stage">
+    <svg viewBox="0 0 420 160" role="img" aria-label="Impacto three-category emblem">
+      <g transform="translate(110,6)">
+        <path d="M6 52 L36 22 L66 52" fill="none" stroke="#b3122a" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+        <rect x="80" y="26" width="46" height="26" rx="4" fill="#e8b70b"/>
+        <path d="M168 54 C150 54 142 40 142 22 C160 22 172 34 172 54Z M172 54 C172 34 184 22 200 22 C200 40 190 54 172 54Z" fill="#13693f"/>
+      </g>
+      <text x="210" y="122" text-anchor="middle" class="wm ink" font-size="54">impacto</text>
+      <text x="210" y="148" text-anchor="middle" class="tag">TECHO · RECONSTRUCCIÓN · SIEMBRA</text>
+    </svg>
+  </div>
+  <div class="meta">
+    <div class="icon"><svg viewBox="0 0 56 56"><rect width="56" height="56" fill="#ffffff"/><path d="M8 20 L17 11 L26 20" fill="none" stroke="#b3122a" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/><rect x="30" y="12" width="18" height="10" rx="2" fill="#e8b70b"/><path d="M28 46 C20 46 16 40 16 32 C24 32 28 38 28 46Z M28 46 C28 38 32 32 40 32 C40 40 36 46 28 46Z" fill="#13693f"/></svg></div>
+    <div><h2><small>07</small>Three Causes</h2><p>Roof, brick, sprout — one glyph per category (roof &amp; shelter, reconstruction, heal &amp; sow). Explains the product at a glance.</p></div>
+  </div>
+</article>
+
+<!-- 8. Verified Seal -->
+<article class="card">
+  <div class="stage">
+    <svg viewBox="0 0 420 150" role="img" aria-label="Impacto verified seal">
+      <defs><path id="sealArc" d="M75 75 m-54 0 a54 54 0 1 1 108 0 a54 54 0 1 1 -108 0"/></defs>
+      <g>
+        <circle cx="75" cy="75" r="68" fill="#e8b70b"/>
+        <circle cx="75" cy="75" r="62" fill="none" stroke="#0b2a5b" stroke-width="2"/>
+        <text font-family="Inter, sans-serif" font-weight="800" font-size="11" letter-spacing="3.2" fill="#0b2a5b"><textPath href="#sealArc">IMPACTO · VERIFICADO · IMPACTO · VERIFICADO ·</textPath></text>
+        <circle cx="75" cy="75" r="38" fill="#0b2a5b"/>
+        <path d="M58 76 L71 89 L94 63" fill="none" stroke="#ffffff" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+      </g>
+      <text x="168" y="88" class="wm ink" font-size="56">impacto</text>
+      <text x="171" y="112" class="tag">AYUDA QUE SE PUEDE VER</text>
+    </svg>
+  </div>
+  <div class="meta">
+    <div class="icon"><svg viewBox="0 0 56 56"><rect width="56" height="56" fill="#e8b70b"/><circle cx="28" cy="28" r="19" fill="#0b2a5b"/><path d="M19 28 L25.5 34.5 L37 22" fill="none" stroke="#fff" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+    <div><h2><small>08</small>Verified Seal</h2><p>An official-feeling stamp built around the check mark — leans into transparency and trust, matching the app's gold “seal fill”.</p></div>
+  </div>
+</article>
+
+<!-- 9. Open Hands -->
+<article class="card">
+  <div class="stage">
+    <svg viewBox="0 0 420 140" role="img" aria-label="Impacto hands and home logo">
+      <g transform="translate(14,16)">
+        <path d="M4 60 C4 92 28 108 56 108 C30 100 18 84 18 60Z" fill="#b3122a"/>
+        <path d="M108 60 C108 92 84 108 56 108 C82 100 94 84 94 60Z" fill="#13693f"/>
+        <path d="M30 62 L56 36 L82 62 V88 H30Z" fill="#0b2a5b" class="mono-bg"/>
+        <rect x="50" y="68" width="12" height="20" rx="2" fill="#e8b70b"/>
+        <circle cx="56" cy="14" r="7" fill="#e8b70b"/>
+      </g>
+      <text x="140" y="98" class="wm ink" font-size="60">impacto</text>
+    </svg>
+  </div>
+  <div class="meta">
+    <div class="icon"><svg viewBox="0 0 56 56"><rect width="56" height="56" fill="#ffffff"/><path d="M6 30 C6 44 16 51 28 51 C17 47 12 40 12 30Z" fill="#b3122a"/><path d="M50 30 C50 44 40 51 28 51 C39 47 44 40 44 30Z" fill="#13693f"/><path d="M16 31 L28 19 L40 31 V43 H16Z" fill="#0b2a5b"/><rect x="25" y="34" width="6" height="9" rx="1" fill="#e8b70b"/></svg></div>
+    <div><h2><small>09</small>Held Home</h2><p>Two hands (donor + coordinator) cradling a home, with a gold sun rising. The most emotional, community-centered option.</p></div>
+  </div>
+</article>
+
+<!-- 10. Timeline Dot -->
+<article class="card">
+  <div class="stage">
+    <svg viewBox="0 0 420 140" role="img" aria-label="Impacto timeline wordmark">
+      <text x="20" y="84" class="wm-sans ink" font-size="66">impact</text>
+      <circle cx="356" cy="62" r="23" fill="none" stroke="#13693f" stroke-width="10"/>
+      <circle cx="356" cy="62" r="7" fill="#e8b70b"/>
+      <g>
+        <line x1="24" y1="112" x2="356" y2="112" stroke="#e3e6ee" stroke-width="4" stroke-linecap="round"/>
+        <line x1="24" y1="112" x2="300" y2="112" stroke="#13693f" stroke-width="4" stroke-linecap="round"/>
+        <circle cx="24" cy="112" r="7" fill="#e8b70b"/>
+        <circle cx="116" cy="112" r="7" fill="#e8b70b"/>
+        <circle cx="208" cy="112" r="7" fill="#13693f"/>
+        <circle cx="300" cy="112" r="7" fill="#13693f"/>
+        <circle cx="356" cy="112" r="7" fill="#ffffff" stroke="#13693f" stroke-width="3"/>
+      </g>
+    </svg>
+  </div>
+  <div class="meta">
+    <div class="icon"><svg viewBox="0 0 56 56"><rect width="56" height="56" fill="#0b2a5b"/><circle cx="28" cy="28" r="15" fill="none" stroke="#13693f" stroke-width="7"/><circle cx="28" cy="28" r="15" fill="none" stroke="#3fbf7f" stroke-width="7" stroke-dasharray="70 100" transform="rotate(-90 28 28)"/><circle cx="28" cy="28" r="5" fill="#e8b70b"/></svg></div>
+    <div><h2><small>10</small>Progress Timeline</h2><p>The final “o” is a target, underlined by the public timeline — pledge to verified, step by step. Modern product feel.</p></div>
+  </div>
+</article>
+
+</main>
+
+<script>
+  const buttons = document.querySelectorAll('.toggle button');
+  buttons.forEach(b => b.addEventListener('click', () => {
+    buttons.forEach(x => x.classList.toggle('on', x === b));
+    document.body.classList.toggle('dark', b.dataset.mode === 'dark');
+    // keep navy-filled shapes visible on navy background
+    document.querySelectorAll('.mono-bg, .bar-navy').forEach(el =>
+      el.setAttribute('fill', b.dataset.mode === 'dark' ? '#ffffff' : '#0b2a5b'));
+    document.querySelectorAll('.mono-bg + circle + rect, .mono-bg ~ rect[fill="#ffffff"]').forEach(el =>
+      el.setAttribute('fill', b.dataset.mode === 'dark' ? '#0b2a5b' : '#ffffff'));
+  }));
+</script>
+</body>
+</html>
