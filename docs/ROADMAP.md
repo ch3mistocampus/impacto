@@ -62,7 +62,7 @@ Legend: **[S]** ≤ 2h · **[M]** half day · **[L]** 1–3 days
 36. **Error monitoring & analytics** [S] — Sentry (Marketplace) + Vercel Analytics; error boundaries on each route.
 37. **CI** [S] — GitHub Actions: typecheck, lint, Convex tests, `next build` on PRs; Vercel preview deploys with a preview Convex deployment.
 38. **Accessibility audit** [M] — axe pass + screen-reader run of swipe deck, dialogs, wizard; contrast check in dark mode.
-39. **Custom domain** [S] — avoids the `*.vercel.app` DNS issue seen on campus networks and looks credible to donors.
+39. ~~**Custom domain**~~ ✅ **h4h.casa** (+ www) attached to the Vercel project; public, follows every production deploy. `*.vercel.app` URLs stay login-protected or blocked on some networks — share h4h.casa.
 40. **Backups & environment hygiene** [S] — Convex prod backups, separate demo deployment, secrets inventory.
 
 ## Out of scope (explicitly, per brief)
