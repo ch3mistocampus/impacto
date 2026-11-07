@@ -10,6 +10,7 @@ import { CategoryMark, DoubleRule, Kicker, btn, intlLocale } from "@/components/
 import { StatTile } from "./StatTile";
 import { ProjectCard } from "./ProjectCard";
 import { MaterialImage } from "./MaterialImage";
+import { OrganizationPhotos } from "./OrganizationPhotos";
 import { StageLegend } from "./LedgerBar";
 import { DemoStamp } from "./PublicMeta";
 import { CATEGORIES, CATEGORY_STYLE, STAGES, type Category } from "./types";
@@ -62,6 +63,8 @@ export function Landing() {
         </dl>
         <DemoStamp asOf={dash?.asOf ?? null} className="mt-4 justify-center" />
       </section>
+
+      <OrganizationPhotos />
 
       {/* Three programs */}
       <section className="mt-20 sm:mt-28" aria-labelledby="buckets-title">
