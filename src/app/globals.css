@@ -1,26 +1,65 @@
 @import "tailwindcss";
 
+/* Impacto design tokens — warm, earthy, high-contrast. Use these via Tailwind: bg-clay, text-leaf, etc. */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #fbf7f1;
+  --foreground: #1f1a16;
+  --surface: #ffffff;
+  --muted: #6b5f55;
+  --border: #e6ddd1;
+  --clay: #b4532a; /* primary / Roof and Shelter */
+  --clay-soft: #f6e2d6;
+  --brick: #8a3b2a; /* Reconstruction */
+  --brick-soft: #f1dcd5;
+  --leaf: #3f7a4a; /* Heal and Sow */
+  --leaf-soft: #dcebdc;
+  --sky: #2f6690; /* info / verified */
+  --sky-soft: #dce8f1;
+  --amber: #b7791f; /* pending / needs confirmation */
+  --amber-soft: #f7ead3;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #16120f;
+    --foreground: #f3ece4;
+    --surface: #211b17;
+    --muted: #b3a597;
+    --border: #3a312a;
+    --clay-soft: #3d2418;
+    --brick-soft: #3a1f19;
+    --leaf-soft: #1d3020;
+    --sky-soft: #172a39;
+    --amber-soft: #3a2c14;
+  }
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --color-surface: var(--surface);
+  --color-muted: var(--muted);
+  --color-border: var(--border);
+  --color-clay: var(--clay);
+  --color-clay-soft: var(--clay-soft);
+  --color-brick: var(--brick);
+  --color-brick-soft: var(--brick-soft);
+  --color-leaf: var(--leaf);
+  --color-leaf-soft: var(--leaf-soft);
+  --color-sky: var(--sky);
+  --color-sky-soft: var(--sky-soft);
+  --color-amber: var(--amber);
+  --color-amber-soft: var(--amber-soft);
+  --font-sans: var(--font-sans-src);
+  --font-display: var(--font-display-src);
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+}
+
+:focus-visible {
+  outline: 3px solid var(--sky);
+  outline-offset: 2px;
 }
