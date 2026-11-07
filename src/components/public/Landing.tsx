@@ -11,6 +11,7 @@ import { StatTile } from "./StatTile";
 import { ProjectCard } from "./ProjectCard";
 import { MaterialImage } from "./MaterialImage";
 import { OrganizationPhotos } from "./OrganizationPhotos";
+import { BeforeAfterSection } from "./BeforeAfter";
 import { StageLegend } from "./LedgerBar";
 import { DemoStamp } from "./PublicMeta";
 import { CATEGORIES, CATEGORY_STYLE, STAGES, type Category } from "./types";
@@ -71,6 +72,7 @@ export function Landing() {
       </section>
 
       <OrganizationPhotos />
+      <BeforeAfterSection />
 
       {/* Three programs */}
       <section className="mt-20 sm:mt-28" aria-labelledby="buckets-title">

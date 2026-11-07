@@ -1,4 +1,39 @@
 export const landing = {
+  "ba.kicker": { es: "Antes y después", en: "Before and after" },
+  "ba.title": { es: "De la necesidad real a la entrega verificada", en: "From the real need to a verified delivery" },
+  "ba.body": {
+    es: "«Antes» son fotos reales de Espejo de Agua tras el sismo en el resguardo de Ibanacuara. «Después» muestra cómo Impacto registra una entrega verificada; esas fotos son de demostración y los proyectos son ficticios.",
+    en: "“Before” are real Espejo de Agua photos after the earthquake at the Ibanacuara resguardo. “After” shows how Impacto records a verified delivery; those photos are demo images and the projects are fictional.",
+  },
+  "ba.before": { es: "Antes", en: "Before" },
+  "ba.after": { es: "Después", en: "After" },
+  "ba.real": { es: "Foto real", en: "Real photo" },
+  "ba.demo": { es: "Foto de demostración", en: "Demo photo" },
+  "ba.collapsed.caption": { es: "Vivienda colapsada tras el sismo, Ibanacuara", en: "Home collapsed after the earthquake, Ibanacuara" },
+  "ba.collapsed.alt": {
+    es: "Estructura de vivienda caída con láminas de zinc y guaduas en el suelo, junto a un refugio de lona verde",
+    en: "Fallen home structure with zinc sheets and bamboo poles on the ground, next to a green tarp shelter",
+  },
+  "ba.roofs.caption": { es: "Techos dañados en el resguardo tras el sismo", en: "Damaged roofs at the resguardo after the earthquake" },
+  "ba.roofs.alt": {
+    es: "Techos de zinc doblados y caídos sobre refugios improvisados, con montañas al fondo",
+    en: "Bent, fallen zinc roofs over makeshift shelters, with mountains behind",
+  },
+  "ba.after.caption": {
+    es: "Tejas de zinc recibidas por el equipo, con foto aprobada por la organización",
+    en: "Zinc sheets received by the team, with a photo approved by the nonprofit",
+  },
+  "ba.after.alt": { es: "Pila de tejas de zinc en una bodega (imagen de demostración)", en: "Stack of zinc sheets in a storeroom (demo image)" },
+  "ba.after.steps": { es: "Prometido → recibido → entregado → usado → verificado", en: "Pledged → received → delivered → used → verified" },
+  "ba.project.context": {
+    es: "Contexto del programa, no esta vivienda: foto real de Espejo de Agua tras el sismo en Ibanacuara.",
+    en: "Program context, not this home: real Espejo de Agua photo after the Ibanacuara earthquake.",
+  },
+  "ba.project.after": {
+    es: "La foto más reciente aprobada para este proyecto (demostración).",
+    en: "The latest approved photo for this project (demo).",
+  },
+  "ba.project.none": { es: "Aún sin foto verificada", en: "No verified photo yet" },
   "landing.archive.kicker": { es: "Archivo de la organización", en: "From the official archive" },
   "landing.archive.title": { es: "Espejo de Agua en el territorio", en: "Espejo de Agua in the field" },
   "landing.archive.body": {

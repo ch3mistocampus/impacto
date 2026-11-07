@@ -7,6 +7,7 @@ import { api } from "../../../convex/_generated/api";
 import { useI18n } from "@/lib/i18n";
 import { CategoryMark, FlagBand, Kicker, btn } from "@/components/ui/tricolor";
 import { EvidenceList } from "./EvidenceList";
+import { ProjectBeforeAfter } from "./BeforeAfter";
 import { FinancialsTable } from "./Financials";
 import { LedgerBar, StageLegend } from "./LedgerBar";
 import { MaterialImage } from "./MaterialImage";
@@ -43,6 +44,9 @@ export function ProjectDetail({ backHref = "/#proyectos" }: { backHref?: string 
   const before = evidence.filter((e) => e.type === "before_photo" && e.url);
   const after = evidence.filter((e) => e.type === "after_photo" && e.url);
   const otherEvidence = evidence.filter((e) => e.type !== "before_photo" && e.type !== "after_photo");
+  // Housing programs without their own before/after: real Espejo de Agua context + latest approved photo.
+  const showContextBA = before.length === 0 && after.length === 0 && (p.category === "roof_shelter" || p.category === "reconstruction");
+  const latestPhoto = [...evidence].reverse().find((e) => e.url && e.type === "delivery_photo")?.url ?? null;
 
   return (
     <div className="pt-6 sm:pt-10">
@@ -165,6 +169,14 @@ export function ProjectDetail({ backHref = "/#proyectos" }: { backHref?: string 
                   <figcaption className="mt-1.5 font-display text-[15px] italic">{col.label}</figcaption>
                 </figure>
               ))}
+            </div>
+          </div>
+        )}
+        {showContextBA && (
+          <div className="border-t border-border px-5 py-7 sm:px-10">
+            <h3 className="font-display text-xl font-normal">{t("project.beforeAfter")}</h3>
+            <div className="mt-4">
+              <ProjectBeforeAfter afterUrl={latestPhoto} alias={p.publicAlias} />
             </div>
           </div>
         )}

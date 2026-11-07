@@ -346,7 +346,9 @@
       "contentType": "image/jpeg",
       "intendedUse": "Damaged housing context; Ibanacuara only.",
       "width": 1200,
-      "height": 1600
+      "height": 1600,
+      "webPath": "/espejo-de-agua/ibanacuara-collapsed.webp",
+      "webBytes": 446712
     },
     {
       "sourceUrl": "https://www.espejodeagua.org/assets/img/resguardo-ibanacuara-condiciones3.jpg",
@@ -411,7 +413,9 @@
       "contentType": "image/jpeg",
       "intendedUse": "Roof damage context; Ibanacuara only.",
       "width": 1200,
-      "height": 1600
+      "height": 1600,
+      "webPath": "/espejo-de-agua/ibanacuara-roofs.webp",
+      "webBytes": 165996
     },
     {
       "sourceUrl": "https://www.espejodeagua.org/assets/img/resguardo-ibanacuara-condiciones7.jpg",

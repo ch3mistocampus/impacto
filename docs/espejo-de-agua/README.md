@@ -87,7 +87,7 @@ Temporary shelter context; Ibanacuara only. Downloaded for future contextual use
 
 1200 × 1600 · 417 KiB · [Source image](https://www.espejodeagua.org/assets/img/resguardo-ibanacuara-condiciones2.jpg) · [Source page](https://www.espejodeagua.org/galeria.html)
 
-Damaged housing context; Ibanacuara only. Downloaded for future contextual use; not exposed by the app.
+Damaged housing context; Ibanacuara only. Shown on the homepage from `public/espejo-de-agua/ibanacuara-collapsed.webp`.
 
 ### resguardo-ibanacuara-condiciones4.jpg
 
@@ -111,7 +111,7 @@ Roof damage context; Ibanacuara only. Shown on the homepage from `public/espejo-
 
 1200 × 1600 · 197 KiB · [Source image](https://www.espejodeagua.org/assets/img/resguardo-ibanacuara-condiciones6.jpg) · [Source page](https://www.espejodeagua.org/galeria.html)
 
-Roof damage context; Ibanacuara only. Downloaded for future contextual use; not exposed by the app.
+Roof damage context; Ibanacuara only. Shown on the homepage from `public/espejo-de-agua/ibanacuara-roofs.webp`.
 
 ### resguardo-ibanacuara-condiciones7.jpg
 

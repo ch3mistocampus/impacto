@@ -11,6 +11,9 @@ const manifest = JSON.parse(await fs.readFile(manifestPath, 'utf8'));
 const outputs = {
   'logo-header.png': 'logo.png',
   'resguardo-ibanacuara-condiciones5.jpg': 'ibanacuara-roof.webp',
+  // Before/after "real need" strip: no people visible in either frame.
+  'resguardo-ibanacuara-condiciones2.jpg': 'ibanacuara-collapsed.webp',
+  'resguardo-ibanacuara-condiciones6.jpg': 'ibanacuara-roofs.webp',
   // Road fissure replaces the workshop photo: the homepage promises no identifiable people.
   // Crop a 4:3 band around the crack, excluding the distant walkers and the camera timestamp.
   'terremoto-camino.jpg': 'earthquake-road.webp',
