@@ -306,6 +306,7 @@ export async function seedAll(ctx: MutationCtx) {
       publishedAt,
       safetyPauseReasonPublic: sp.status === "paused" ? sp.pause?.es : undefined,
       isDemo: true,
+      seededAt: createdAt,
     });
     projectIds[sp.key] = { id: projectId, category: sp.category };
     await ctx.db.insert("projectPrivate", { projectId, ...sp.private });
@@ -533,6 +534,7 @@ export async function seedAll(ctx: MutationCtx) {
               followToken: `demo-follow-${String(n0).padStart(2, "0")}-${crypto.randomUUID().slice(0, 8)}`,
               expiresAt: st === "expired" ? Math.min(t + 7 * DAY, now - HOUR) : now + 10 * DAY,
               donorUserId: isLuis ? donorUser : undefined,
+              seededAt: t,
             });
             await ms("pledge", materialMilestoneText("pledge", pl.qty, needDoc), t);
           },
@@ -648,6 +650,7 @@ export async function seedAll(ctx: MutationCtx) {
       respondedAt: answered ? now - f.daysAgo * DAY + 6 * HOUR : undefined,
       authorUserId: f.byRosa ? users.rosa : undefined,
       isDemo: true,
+      seededAt: now - f.daysAgo * DAY,
     });
   }
 
@@ -659,15 +662,15 @@ export async function seedAll(ctx: MutationCtx) {
     const periodEnd = weekEnd - w * 7 * DAY;
     const periodStart = periodEnd - 7 * DAY;
     const snapshot = snapshotFromLog(log, periodStart, periodEnd);
-    const text = draftSummary(snapshot, periodStart, periodEnd);
+    const text = draftSummary(snapshot);
     const published = w > 0;
     await ctx.db.insert("weeklyReports", {
       nonprofitId,
       periodStart,
       periodEnd,
       snapshot,
-      summaryEs: `${text.es}\nDatos de demostración (sintéticos).`,
-      summaryEn: `${text.en}\nDemo data (synthetic).`,
+      summaryEs: text.es,
+      summaryEn: text.en,
       status: published ? "published" : "draft",
       generatedBy: coordinator,
       reviewedBy: published ? coordinator : undefined,

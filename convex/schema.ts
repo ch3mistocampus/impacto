@@ -96,6 +96,8 @@ export default defineSchema({
     safetyPauseReasonPublic: v.optional(v.string()),
     coverPhotoId: v.optional(v.id("photos")), // must point at a publicApproved photo
     isDemo: v.boolean(),
+    /** Demo seed only: the simulated story date to show instead of _creationTime (seed inserts everything "now"). */
+    seededAt: v.optional(v.number()),
   })
     .index("by_status", ["status"])
     .index("by_category_status", ["category", "status"])
@@ -187,6 +189,8 @@ export default defineSchema({
     followToken: v.string(), // donor follows anonymized timeline with this
     expiresAt: v.number(),
     donorUserId: v.optional(v.id("users")), // set when a signed-in donor pledges
+    /** Demo seed only: the simulated story date to show instead of _creationTime (seed inserts everything "now"). */
+    seededAt: v.optional(v.number()),
   })
     .index("by_need_status", ["needId", "status"])
     .index("by_project", ["projectId"])
@@ -320,6 +324,8 @@ export default defineSchema({
     respondedAt: v.optional(v.number()),
     authorUserId: v.optional(v.id("users")),
     isDemo: v.boolean(),
+    /** Demo seed only: the simulated story date to show instead of _creationTime (seed inserts everything "now"). */
+    seededAt: v.optional(v.number()),
   })
     .index("by_status", ["status"])
     .index("by_project_status", ["projectId", "status"]),

@@ -15,10 +15,14 @@ import { StageLegend } from "./LedgerBar";
 import { DemoStamp } from "./PublicMeta";
 import { CATEGORIES, CATEGORY_STYLE, STAGES, type Category } from "./types";
 
+/** Keep the home page short for demos; the full list is one tap away. */
+const HOME_LIMIT = 5;
+
 export function Landing() {
   const { t, tn, locale } = useI18n();
   const dash = useQuery(api.public.transparencyDashboard, {});
   const [filter, setFilter] = useState<Category | undefined>(undefined);
+  const [showAll, setShowAll] = useState(false);
   const projects = useQuery(api.public.listPublishedProjects, filter ? { category: filter } : {});
   const nf = new Intl.NumberFormat(intlLocale(locale));
   const num = (n: number | undefined) => (n === undefined ? "–" : nf.format(n));
@@ -186,7 +190,18 @@ export function Landing() {
           ) : projects.length === 0 ? (
             <p className="py-8 text-muted">{t("landing.projectsEmpty")}</p>
           ) : (
-            projects.map((p) => <ProjectCard key={p.projectId} p={p} />)
+            <>
+              {(showAll ? projects : projects.slice(0, HOME_LIMIT)).map((p) => (
+                <ProjectCard key={p.projectId} p={p} />
+              ))}
+              {!showAll && projects.length > HOME_LIMIT && (
+                <p className="mt-6">
+                  <button type="button" onClick={() => setShowAll(true)} className={btn("secondary", "md")}>
+                    {t("landing.showAll")} ({nf.format(projects.length)})
+                  </button>
+                </p>
+              )}
+            </>
           )}
         </div>
       </section>

@@ -5,7 +5,7 @@ import { useQuery } from "convex/react";
 import { useI18n } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
 import type { DictKey } from "@/lib/dict";
-import { CategoryMark, DoubleRule, FlagBand, Kicker, StageSwatch, btn, intlLocale } from "@/components/ui/tricolor";
+import { CategoryMark, DoubleRule, FlagBand, StageSwatch, btn, intlLocale } from "@/components/ui/tricolor";
 import { CategoryBadge } from "@/components/public/CategoryBadge";
 import { DemoStamp, useDateFmt } from "@/components/public/PublicMeta";
 import { api } from "../../../convex/_generated/api";
@@ -26,8 +26,7 @@ export function CommunityHome() {
     <div className="pt-6 sm:pt-10">
       <header className="max-w-3xl">
         <FlagBand />
-        <Kicker className="mt-5 block">{t("community.kicker")}</Kicker>
-        <h1 className="mt-1 font-display text-4xl font-normal leading-[1.05] sm:text-5xl">{t("community.title")}</h1>
+        <h1 className="mt-5 font-display text-4xl font-normal leading-[1.05] sm:text-5xl">{t("community.title")}</h1>
         {user?.role === "community" && (
           <p className="mt-3 font-display text-xl italic">{fill(t("community.greeting"), { name: user.name })}</p>
         )}
@@ -174,7 +173,6 @@ function RecentOutcomes() {
       <h2 id="cm-outcomes" className="font-display text-2xl font-normal sm:text-3xl">
         {t("community.outcomesTitle")}
       </h2>
-      <p className="mt-1 text-sm text-muted">{t("community.outcomesNote")}</p>
       {rows === undefined ? (
         <p className="mt-4 text-muted">{t("common.loading")}</p>
       ) : rows.length === 0 ? (

@@ -1,3 +1,4 @@
+import { shownAt } from "./lib/shownAt";
 import { mutation, query } from "./_generated/server";
 import type { QueryCtx } from "./_generated/server";
 import { v, ConvexError } from "convex/values";
@@ -157,7 +158,7 @@ export const listApproved = query({
         kind: r.kind,
         message: r.message,
         language: r.language,
-        createdAt: r._creationTime,
+        createdAt: shownAt(r),
         project,
         category: r.category ?? null,
         responseEs: r.responseEs ?? null,
@@ -287,7 +288,7 @@ export const listForModeration = query({
         message: r.message,
         language: r.language,
         status: r.status,
-        createdAt: r._creationTime,
+        createdAt: shownAt(r),
         redacted: hasRedaction(r.message),
         contactPrivate: r.contactPrivate ?? null,
         authorRole: author?.role ?? null,

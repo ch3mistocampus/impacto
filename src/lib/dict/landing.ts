@@ -114,10 +114,11 @@ export const landing = {
   "nav.transparency": { es: "Transparencia", en: "Transparency" },
   "nav.donations": { es: "Mis donaciones", en: "My pledges" },
   // --- /transparency ---
+  "landing.showAll": { es: "Ver todos los proyectos", en: "Show all projects" },
   "tr.title": { es: "Transparencia", en: "Transparency" },
   "tr.lead": {
-    es: "Lo que se pidió, lo que se prometió, lo que llegó y lo que la organización verificó, en cada uno de los tres frentes.",
-    en: "What was requested, promised, delivered and verified by the nonprofit, across all three programs.",
+    es: "Lo pedido, lo prometido, lo entregado y lo verificado.",
+    en: "Requested, pledged, delivered and verified.",
   },
   "tr.countersTitle": { es: "Registros de rendición de cuentas", en: "Accountability records" },
   "tr.counter.weeklyReportsPublished.one": { es: "informe semanal publicado", en: "weekly report published" },
@@ -138,8 +139,8 @@ export const landing = {
   "tr.projects": { es: "Proyectos", en: "Projects" },
   "tr.reportsTitle": { es: "Informes semanales", en: "Weekly reports" },
   "tr.reportsLead": {
-    es: "Generados a partir de los registros reales del periodo y revisados por la organización antes de publicarse.",
-    en: "Generated from the period's actual records and reviewed by the nonprofit before publishing.",
+    es: "Generados de los registros y revisados antes de publicar.",
+    en: "Generated from records, reviewed before publishing.",
   },
   "tr.reportsEmpty": { es: "Aún no se ha publicado ningún informe.", en: "No reports have been published yet." },
   "tr.publishedOn": { es: "Publicado el", en: "Published" },

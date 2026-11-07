@@ -179,7 +179,6 @@ export function FeedbackForm({ fixedProjectId }: { fixedProjectId?: Id<"projects
         <button type="submit" disabled={busy} aria-busy={busy || undefined} className={btn("primary", "lg", "w-full sm:w-auto")}>
           {busy ? t("community.form.sending") : t("community.form.submit")}
         </button>
-        <p className="mt-2 text-xs text-muted">{t("community.form.roadmap")}</p>
       </div>
     </form>
   );

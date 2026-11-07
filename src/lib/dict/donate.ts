@@ -117,8 +117,8 @@ export const donate = {
   "donations.emptyCta": { es: "Elegir materiales", en: "Choose materials" },
   "donations.verifiedAsUsed": { es: "Verificado como usado", en: "Verified as used" },
   "donations.notYetVerified": {
-    es: "Aún no verificado. Comprometido no es entregado.",
-    en: "Not verified yet. Pledged is not delivered.",
+    es: "Aún no verificado.",
+    en: "Not verified yet.",
   },
   "donations.follow": { es: "Ver detalle", en: "See details" },
   "donations.totalVerified": { es: "Unidades verificadas como usadas", en: "Units verified as used" },

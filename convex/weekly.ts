@@ -164,44 +164,18 @@ function fmt(n: number) {
   return n.toLocaleString("en-US");
 }
 
-/** Auto-drafted bilingual summary built ONLY from snapshot numbers. Coordinator reviews/edits before publishing. */
-export function draftSummary(s: WeeklySnapshot, periodStart: number, periodEnd: number): { es: string; en: string } {
-  const from = ymd(periodStart);
-  const to = ymd(periodEnd - 1);
+/**
+ * Auto-drafted bilingual summary built ONLY from snapshot numbers. Coordinator reviews/edits before publishing.
+ * Deliberately short: per-material and financial detail lives in the snapshot table, not the prose.
+ */
+export function draftSummary(s: WeeklySnapshot): { es: string; en: string } {
   const sum = (k: "pledged" | "received" | "delivered" | "used" | "verified") =>
     s.materials.reduce((a, m) => a + m[k], 0);
-  const matLines = (lang: "es" | "en") =>
-    s.materials
-      .filter((m) => m.pledged || m.received || m.delivered || m.used || m.verified)
-      .map((m) =>
-        lang === "es"
-          ? `${m.nameEs} — comprometido: ${fmt(m.pledged)}; recibido: ${fmt(m.received)}; entregado: ${fmt(m.delivered)}; usado: ${fmt(m.used)}; verificado: ${fmt(m.verified)}.`
-          : `${m.nameEn} — pledged: ${fmt(m.pledged)}; received: ${fmt(m.received)}; delivered: ${fmt(m.delivered)}; used: ${fmt(m.used)}; verified: ${fmt(m.verified)}.`,
-      );
-  const finLines = (lang: "es" | "en") =>
-    s.financials.map((f) =>
-      lang === "es"
-        ? `${f.currency} — recibido: ${fmt(f.received)}; asignado: ${fmt(f.allocated)}; gastado (aprobado): ${fmt(f.spent)}; comprometido sin recibir: ${fmt(f.committed)}.`
-        : `${f.currency} — received: ${fmt(f.received)}; allocated: ${fmt(f.allocated)}; spent (approved): ${fmt(f.spent)}; committed but not yet received: ${fmt(f.committed)}.`,
-    );
-  const es = [
-    `Resumen semanal del ${from} al ${to}.`,
-    `Nuevos compromisos de materiales: ${s.pledgesCreated}. Totales del período (unidades) — comprometido: ${fmt(sum("pledged"))}; recibido: ${fmt(sum("received"))}; entregado: ${fmt(sum("delivered"))}; usado: ${fmt(sum("used"))}; verificado con evidencia: ${fmt(sum("verified"))}.`,
-    ...matLines("es"),
-    s.financials.length ? "Finanzas (moneda original, sin conversión):" : "No se registraron movimientos financieros en el período.",
-    ...finLines("es"),
-    `Hitos verificados: ${s.milestonesVerified}. Evidencias aprobadas: ${s.evidenceApproved}. Proyectos publicados: ${s.projectsPublished}. Proyectos pausados por seguridad: ${s.projectsPaused}.`,
-    "Un compromiso no es una entrega: solo las cantidades verificadas cuentan como impacto.",
-  ].join("\n");
-  const en = [
-    `Weekly summary from ${from} to ${to}.`,
-    `New material pledges: ${s.pledgesCreated}. Period totals (units) — pledged: ${fmt(sum("pledged"))}; received: ${fmt(sum("received"))}; delivered: ${fmt(sum("delivered"))}; used: ${fmt(sum("used"))}; verified with evidence: ${fmt(sum("verified"))}.`,
-    ...matLines("en"),
-    s.financials.length ? "Financials (original currency, no conversion):" : "No financial activity was recorded in this period.",
-    ...finLines("en"),
-    `Milestones verified: ${s.milestonesVerified}. Evidence approved: ${s.evidenceApproved}. Projects published: ${s.projectsPublished}. Projects paused for safety: ${s.projectsPaused}.`,
-    "A pledge is not a delivery: only verified quantities count as impact.",
-  ].join("\n");
+  const verified = sum("verified");
+  const pledged = sum("pledged");
+  const delivered = sum("delivered");
+  const es = `${fmt(verified)} unidades verificadas con evidencia. ${fmt(delivered)} entregadas, ${fmt(pledged)} nuevas comprometidas.`;
+  const en = `${fmt(verified)} units verified with evidence. ${fmt(delivered)} delivered, ${fmt(pledged)} newly pledged.`;
   return { es, en };
 }
 
@@ -215,7 +189,7 @@ export const generateWeeklyReport = mutation({
       throw new ConvexError({ code: "INVALID_PERIOD" });
     }
     const snapshot = await computeWeeklySnapshot(ctx, user.nonprofitId, args.periodStart, args.periodEnd);
-    const text = draftSummary(snapshot, args.periodStart, args.periodEnd);
+    const text = draftSummary(snapshot);
     const id = await ctx.db.insert("weeklyReports", {
       nonprofitId: user.nonprofitId,
       periodStart: args.periodStart,

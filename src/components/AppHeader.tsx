@@ -20,6 +20,22 @@ const ROLE_HOME: Record<Role, string> = {
   community: "/community",
 };
 
+const DONATE: NavItem = { href: "/donate", key: "nav.donate" };
+const TRANSPARENCY: NavItem = { href: "/transparency", key: "nav.transparency" };
+const COMMUNITY: NavItem = { href: "/community", key: "nav.community" };
+const PLEDGES: NavItem = { href: "/donations", key: "nav.donations" };
+
+/** Signed-out visitors see the public site (anyone can pledge without an account). */
+const PUBLIC_NAV: NavItem[] = [DONATE, TRANSPARENCY, COMMUNITY, PLEDGES];
+
+/** Each role only sees what that person actually does; staff don't pledge, neighbors don't track pledges. */
+const NAV_BY_ROLE: Record<Role, NavItem[]> = {
+  field_worker: [{ href: "/field", key: "nav.field" }, TRANSPARENCY, COMMUNITY],
+  coordinator: [{ href: "/coordinator", key: "nav.coordinator" }, TRANSPARENCY, COMMUNITY],
+  donor: [PLEDGES, DONATE, TRANSPARENCY, COMMUNITY],
+  community: [COMMUNITY, TRANSPARENCY, DONATE],
+};
+
 /**
  * Two parts:
  *  1. Flag band + slim demo bar (scrolls away). Holds the demo-mode notice and the demo role
@@ -44,14 +60,7 @@ function AppHeaderInner() {
   const pathname = usePathname() ?? "/";
 
   const home = user ? ROLE_HOME[user.role] : null;
-  const base: NavItem[] = [
-    { href: "/donate", key: "nav.donate" },
-    { href: "/transparency", key: "nav.transparency" },
-    { href: "/community", key: "nav.community" },
-    { href: "/donations", key: "nav.donations" },
-    ...(user?.role === "field_worker" ? [{ href: "/field", key: "nav.field" as DictKey }] : []),
-    ...(user?.role === "coordinator" ? [{ href: "/coordinator", key: "nav.coordinator" as DictKey }] : []),
-  ];
+  const base = user ? NAV_BY_ROLE[user.role] : PUBLIC_NAV;
   // Role home first so it's obvious where this role "lives".
   const items = home ? [...base.filter((i) => i.href === home), ...base.filter((i) => i.href !== home)] : base;
   const isActive = (href: string) => pathname === href || pathname.startsWith(href + "/");

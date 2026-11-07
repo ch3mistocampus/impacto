@@ -1,3 +1,4 @@
+import { shownAt } from "./lib/shownAt";
 import { mutation, query } from "./_generated/server";
 import type { QueryCtx } from "./_generated/server";
 import { v, ConvexError } from "convex/values";
@@ -59,7 +60,7 @@ async function inboxRow(ctx: QueryCtx, p: Doc<"projects">) {
     urgency: p.urgency,
     status: p.status,
     region: p.region ?? null,
-    createdAt: p._creationTime,
+    createdAt: shownAt(p),
     publishedAt: p.publishedAt ?? null,
     safetyPauseReasonPublic: p.safetyPauseReasonPublic ?? null,
     needsCount: needs.length,
@@ -200,7 +201,7 @@ async function pledgeRows(ctx: QueryCtx, project: Doc<"projects">) {
         .reduce((s, e) => s + e.qty, 0),
       mode: pl.mode,
       status: pl.status,
-      createdAt: pl._creationTime,
+      createdAt: shownAt(pl),
       expiresAt: pl.expiresAt,
     });
   }
@@ -383,7 +384,7 @@ export const getProjectForReview = query({
         urgency: p.urgency,
         status: p.status,
         region: p.region ?? null,
-        createdAt: p._creationTime,
+        createdAt: shownAt(p),
         createdByName: creator?.name ?? null,
         publishedAt: p.publishedAt ?? null,
         safetyPauseReasonPublic: p.safetyPauseReasonPublic ?? null,

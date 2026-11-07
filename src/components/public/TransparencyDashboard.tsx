@@ -33,24 +33,22 @@ export function TransparencyDashboard() {
       {/* Report masthead */}
       <header className="relative border border-border bg-surface">
         <FlagBand thickness={6} />
-        <div className="px-5 pt-9 pb-7 text-center sm:px-12 sm:pt-12">
-          <Kicker>{t("report.kicker")}</Kicker>
-          <h1 className="mx-auto mt-2 max-w-[16ch] font-display text-[2.6rem] font-normal leading-[1.02] sm:text-6xl">
+        <div className="px-5 pt-8 pb-6 text-center sm:px-12 sm:pt-10">
+          <h1 className="mx-auto max-w-[16ch] font-display text-[2.6rem] font-normal leading-[1.02] sm:text-6xl">
             {t("tr.title")}
           </h1>
-          <p className="mx-auto mt-4 max-w-[46ch] text-[17px] leading-relaxed text-muted">{t("tr.lead")}</p>
-          <p className="mt-3 text-[13px] text-muted">{t("report.issuedBy")}</p>
-          <div className="mt-5 flex justify-center">
-            <DemoStamp asOf={dash?.asOf ?? null} explain className="justify-center text-center" />
+          <p className="mx-auto mt-3 max-w-[46ch] text-[17px] leading-relaxed text-muted">{t("tr.lead")}</p>
+          <div className="mt-4 flex justify-center">
+            <DemoStamp asOf={dash?.asOf ?? null} className="justify-center text-center" />
           </div>
         </div>
 
         {/* Accountability counters: a certificate-style ruled band of figures */}
         <section aria-labelledby="counters-title" className="px-5 pb-8 sm:px-12">
-          <h2 id="counters-title" className="text-center font-display text-xl font-normal italic text-muted">
+          <h2 id="counters-title" className="sr-only">
             {t("tr.countersTitle")}
           </h2>
-          <DoubleRule className="mt-3" />
+          <DoubleRule />
           <dl className="grid grid-cols-2 text-center sm:grid-cols-5">
             {COUNTERS.map((k, i) => {
               const v = dash?.transparency[k];
@@ -100,7 +98,6 @@ export function TransparencyDashboard() {
             aria-labelledby={`b-${cat.category}`}
             className="mt-16 scroll-mt-24"
           >
-            <Kicker className="!text-base">{t("report.program")}</Kicker>
             <ReportHeading
               id={`b-${cat.category}`}
               mark={<CategoryMark category={cat.category} size={18} />}
@@ -111,7 +108,6 @@ export function TransparencyDashboard() {
             <div className="mt-7 grid gap-x-12 gap-y-10 lg:grid-cols-[1fr_1.1fr]">
               <div className="min-w-0">
                 <h3 className="font-display text-xl font-normal">{t("tr.materialTotals")}</h3>
-                <p className="mt-0.5 text-[13px] text-muted">{t("tr.materialTotalsHint")}</p>
                 <div className="mt-3 border-t border-rule pt-2">
                   <LedgerBar ledger={{ ...cat.totals, availableToPledge: 0 }} showAvailable={false} />
                 </div>
@@ -172,17 +168,26 @@ function ReportItem({ r, summary }: { r: WeeklyReport; summary: string }) {
   return (
     <li className="border border-border bg-surface">
       <FlagBand />
-      <div className="px-5 py-7 sm:px-10 sm:py-9">
-        <div className="text-center">
-          <Kicker className="!text-base">{t("report.weekly")}</Kicker>
-          <h3 className="mt-1 font-display text-[1.7rem] font-normal leading-tight sm:text-[2.2rem]">
-            {fmt.short(r.periodStart)} – {fmt.date(r.periodEnd)}
-          </h3>
+      <div className="px-5 py-6 sm:px-8 sm:py-7">
+        <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-3">
+          <div>
+            <Kicker className="!text-sm">{t("report.weekly")}</Kicker>
+            <h3 className="mt-0.5 font-display text-[1.5rem] font-normal leading-tight sm:text-[1.8rem]">
+              {fmt.short(r.periodStart)} – {fmt.date(r.periodEnd)}
+            </h3>
+          </div>
+          <div className="flex items-center gap-3 text-[13px] leading-snug text-muted">
+            <VerifiedBadge variant="seal" compact label={t("report.sealVerified")} className="shrink-0" />
+            <p>
+              <span className="block font-display text-[15px] italic text-foreground">{t("report.sealVerified")}</span>
+              {t("tr.publishedOn")} {fmt.date(r.publishedAt)}
+            </p>
+          </div>
         </div>
 
-        <p className="mx-auto mt-5 max-w-prose whitespace-pre-line text-[15px] leading-relaxed sm:text-base">{summary}</p>
+        <p className="mt-4 max-w-prose whitespace-pre-line text-[15px] leading-relaxed sm:text-base">{summary}</p>
 
-        <dl className="mt-6 grid grid-cols-2 border-y border-rule text-center sm:grid-cols-5">
+        <dl className="mt-5 grid grid-cols-2 border-y border-rule text-center sm:grid-cols-5">
           {SNAP_COUNTS.map((k, i) => (
             <div
               key={k}
@@ -240,16 +245,6 @@ function ReportItem({ r, summary }: { r: WeeklyReport; summary: string }) {
             {snap.financials.length > 0 && <FinancialsTable rows={snap.financials} className="mt-5 max-w-lg" />}
           </details>
         )}
-
-        <footer className="mt-7 flex items-center gap-4 border-t border-border pt-6">
-          <VerifiedBadge variant="seal" label={t("report.sealVerified")} className="shrink-0" />
-          <div className="min-w-0 text-[13px] leading-relaxed text-muted">
-            <p className="font-display text-base italic text-foreground">{t("report.sealVerified")}</p>
-            <p>
-              {t("tr.publishedOn")} {fmt.date(r.publishedAt)}
-            </p>
-          </div>
-        </footer>
       </div>
     </li>
   );

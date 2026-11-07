@@ -1,3 +1,4 @@
+import { shownAt } from "./lib/shownAt";
 import { ConvexError, v } from "convex/values";
 import {
   internalMutation,
@@ -531,7 +532,7 @@ export const getMyDraft = query({
         summaryEn: project.summaryEn,
         urgency: project.urgency,
         status: project.status,
-        _creationTime: project._creationTime,
+        _creationTime: shownAt(project),
       },
       report: report
         ? {
@@ -619,7 +620,7 @@ export const listMyProjects = query({
           category: p.category,
           status: p.status,
           urgency: p.urgency,
-          _creationTime: p._creationTime,
+          _creationTime: shownAt(p),
           needsCount: needs.length,
           needsToConfirm: needs.filter((n) => n.needsConfirmation).length,
           changesRequested: report?.reviewStatus === "changes_requested",
@@ -726,7 +727,7 @@ export const getMyProject = query({
         captionEn: p.captionEn ?? null,
         isCover: project.coverPhotoId === p._id,
         fromFollowUp: followUpPhotoIds.has(p._id),
-        createdAt: p._creationTime,
+        createdAt: shownAt(p),
       })),
     );
     const photoUrl = new Map(photos.map((p) => [p._id as string, p.url] as const));
@@ -772,7 +773,7 @@ export const getMyProject = query({
         region: project.region ?? null,
         // Seeded/backdated projects carry the real report date on the need_reported milestone.
         createdAt: Math.min(
-          project._creationTime,
+          shownAt(project),
           ...ms.filter((m) => m.type === "need_reported").map((m) => m.occurredAt),
         ),
         approvedAt: project.approvedAt ?? null,

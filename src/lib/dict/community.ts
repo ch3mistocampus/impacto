@@ -9,8 +9,8 @@ export const community = {
   "donorHome.kicker": { es: "Tu cuenta de donante (demo)", en: "Your donor account (demo)" },
   "donorHome.greeting": { es: "Hola, {name}", en: "Hello, {name}" },
   "donorHome.lead": {
-    es: "Aquí está todo lo que comprometiste y lo que la organización ha confirmado. Un compromiso no es una entrega: solo cuenta como impacto lo verificado.",
-    en: "Here is everything you pledged and what the nonprofit has confirmed. A pledge is not a delivery: only verified use counts as impact.",
+    es: "Tus compromisos y lo que la organización ya confirmó.",
+    en: "Your pledges and what the nonprofit has confirmed.",
   },
   "donorHome.totalCommitted": { es: "Unidades comprometidas", en: "Units pledged" },
   "donorHome.totalReceived": { es: "Recibidas por la organización", en: "Received by the nonprofit" },
@@ -66,8 +66,8 @@ export const community = {
   "community.title": { es: "Cómo va la recuperación", en: "How recovery is going" },
   "community.greeting": { es: "Hola, {name}. Esta es tu página.", en: "Hello, {name}. This is your page." },
   "community.lead": {
-    es: "En palabras sencillas: lo que se pidió, lo que llegó y lo que la organización verificó. Sin nombres, sin direcciones.",
-    en: "In plain words: what was asked for, what arrived and what the nonprofit verified. No names, no addresses.",
+    es: "Lo que se pidió, lo que llegó y lo verificado. Sin nombres ni direcciones.",
+    en: "What was asked for, what arrived and what was verified. No names or addresses.",
   },
   "community.progressTitle": { es: "Avance en los tres frentes", en: "Progress across the three programs" },
   "community.progress.line": {

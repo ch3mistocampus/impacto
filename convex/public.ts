@@ -1,3 +1,4 @@
+import { shownAt } from "./lib/shownAt";
 import { query } from "./_generated/server";
 import type { QueryCtx } from "./_generated/server";
 import { v } from "convex/values";
@@ -425,7 +426,7 @@ export async function followPledgeData(ctx: QueryCtx, followToken: string) {
       asOf,
       mode: pledge.mode,
       donorName: pledge.donorName,
-      createdAt: pledge._creationTime,
+      createdAt: shownAt(pledge),
       expiresAt: pledge.expiresAt,
       need: {
         needId: need._id,

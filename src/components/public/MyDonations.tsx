@@ -125,7 +125,6 @@ function DonorHome({ name, rows }: { name: string; rows: Row[] | undefined }) {
             <TotalCell label={t("donorHome.totalReceived")} value={nf.format(totals.received)} stage="received" tone="text-foreground" border />
             <TotalCell label={t("donorHome.totalVerified")} value={nf.format(totals.verified)} stage="verified" tone="text-emerald" border />
           </dl>
-          <p className="border-t border-border pt-2 text-xs text-muted">{t("donorHome.totalsNote")}</p>
 
           <section aria-labelledby="donor-action" className="mt-10">
             <h2 id="donor-action" className="font-display text-2xl font-normal">
