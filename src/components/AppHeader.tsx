@@ -7,6 +7,7 @@ import { useI18n } from "@/lib/i18n";
 import { useSession, type Role } from "@/lib/session";
 import type { DictKey } from "@/lib/dict";
 import { FlagBand } from "@/components/ui/tricolor";
+import { startTour } from "@/components/tour/GuidedTour";
 import { BrandMark } from "@/components/BrandMark";
 
 const ROLES: Role[] = ["field_worker", "coordinator", "donor", "community"];
@@ -77,7 +78,15 @@ function AppHeaderInner() {
               <span aria-hidden className="size-1.5 shrink-0 rounded-full bg-gold" />
               <span className="truncate">{t("app.demoBar")}</span>
             </p>
-            <div className="ml-auto shrink-0">
+            <div className="ml-auto flex shrink-0 items-center gap-4">
+              <button
+                type="button"
+                onClick={() => startTour()}
+                className="flex min-h-11 items-center gap-1.5 font-semibold text-gold underline-offset-4 hover:underline"
+              >
+                <span aria-hidden>▶</span>
+                {t("tour.open")}
+              </button>
               <DemoRoleSwitcher />
             </div>
           </div>
@@ -178,7 +187,7 @@ function LangSwitch({
     { v: "en", text: "EN", name: "English" },
   ];
   return (
-    <div role="group" aria-label={label} className="flex items-center text-[13px] font-semibold">
+    <div role="group" aria-label={label} data-tour="lang" className="flex items-center text-[13px] font-semibold">
       {opts.map((o, i) => (
         <span key={o.v} className="flex items-center">
           {i > 0 && <span aria-hidden className="h-3.5 w-px bg-border" />}

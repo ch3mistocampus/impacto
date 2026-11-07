@@ -177,7 +177,7 @@ export function DonateDeck() {
       </div>
 
       <div className="max-w-xl w-full mx-auto lg:mx-0 lg:max-w-[34rem] lg:justify-self-center">
-        <section aria-label={t("donate.swipeHelp")} aria-live="polite">
+        <section aria-label={t("donate.swipeHelp")} aria-live="polite" data-tour="donate-deck">
           <div ref={stack} className="relative h-[42rem] lg:h-[40rem]">
             {deck === undefined ? (
               <div className="absolute inset-0 rounded-[2px] bg-surface border border-border overflow-hidden" aria-busy>

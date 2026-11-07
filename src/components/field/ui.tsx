@@ -114,8 +114,12 @@ export function Spinner({ className = "h-5 w-5" }: { className?: string }) {
 }
 
 /** Hairline sheet with square corners. */
-export function Card({ children, className = "" }: { children: ReactNode; className?: string }) {
-  return <section className={`rounded-[2px] border border-border bg-surface p-4 sm:p-6 ${className}`}>{children}</section>;
+export function Card({ children, className = "", tour }: { children: ReactNode; className?: string; tour?: string }) {
+  return (
+    <section data-tour={tour} className={`rounded-[2px] border border-border bg-surface p-4 sm:p-6 ${className}`}>
+      {children}
+    </section>
+  );
 }
 
 /** Section heading inside a card: Bodoni, regular weight. */

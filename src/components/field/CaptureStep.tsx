@@ -99,7 +99,7 @@ export function CaptureStep() {
       </Link>
       <h1 className="font-display text-[34px] font-normal leading-tight">{t("field.new")}</h1>
 
-      <Card>
+      <Card tour="capture">
         <h2 className={sectionTitle}>{t("field.step1")}</h2>
 
         <fieldset className="mt-5">

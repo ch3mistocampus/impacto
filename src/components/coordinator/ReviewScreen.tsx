@@ -118,12 +118,18 @@ function ReviewLayout({ data }: { data: ReviewData }) {
     <div className="mt-6 grid grid-cols-[minmax(0,1fr)] gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)]">
       <div className="min-w-0 space-y-5">
         <AiNever />
-        <EvidencePanel reports={data.fieldReports} photos={data.photos} />
+        <div data-tour="coord-evidence">
+          <EvidencePanel reports={data.fieldReports} photos={data.photos} />
+        </div>
         <ProposedMilestones reports={data.fieldReports} />
       </div>
       <div className="min-w-0 space-y-5">
-        <PrivatePanel priv={data.private} />
-        <ReviewForm data={data} />
+        <div data-tour="coord-private">
+          <PrivatePanel priv={data.private} />
+        </div>
+        <div data-tour="coord-publish">
+          <ReviewForm data={data} />
+        </div>
       </div>
     </div>
   );

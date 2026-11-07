@@ -9,6 +9,7 @@ import { field } from "./dict/field";
 import { coord } from "./dict/coord";
 import { community } from "./dict/community";
 import { demo } from "./dict/demo";
+import { tour } from "./dict/tour";
 
 const d = <T extends Record<string, { es: string; en: string }>>(x: T) => x;
 
@@ -83,6 +84,7 @@ export const dict = d({
   ...coord,
   ...community,
   ...demo,
+  ...tour,
 });
 
 export type DictKey = keyof typeof dict;

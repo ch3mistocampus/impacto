@@ -341,7 +341,7 @@ function YourReport({ data }: { data: FieldProject }) {
   const d = r?.draft;
   const text = r ? (translated && r.transcriptTranslated ? r.transcriptTranslated : r.transcriptOriginal) : "";
   return (
-    <Card className="space-y-5">
+    <Card className="space-y-5" tour="field-report">
       <h2 className={sectionTitle}>{t("field.pv.yourReport")}</h2>
       {r && (
         <section>
