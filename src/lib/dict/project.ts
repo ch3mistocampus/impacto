@@ -37,6 +37,11 @@ export const project = {
   "project.milestone.outcome": { es: "Resultado verificado", en: "Verified outcome" },
   "project.milestone.paused": { es: "Pausado", en: "Paused" },
   "project.pending": { es: "Pendiente de verificar", en: "Pending verification" },
+  "project.proof": { es: "Prueba", en: "Proof" },
+  "project.proof.view": { es: "Ver prueba ampliada", en: "View proof full size" },
+  "project.proof.close": { es: "Cerrar", en: "Close" },
+  "project.proof.inReview": { es: "En revisión", en: "In review" },
+  "project.proof.notApproved": { es: "No aprobada", en: "Not approved" },
   "project.verified": { es: "Verificado", en: "Verified" },
 
 

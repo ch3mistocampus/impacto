@@ -122,7 +122,8 @@ export type SeedProject = {
   outcomes?: Bi[];
   private: { beneficiaryName: string; privateAddress: string; contact: string; privateNotes: string };
   contributions?: { amount: number; currency: string; status: Doc<"donations">["status"]; donor: string }[];
-  expenses?: { amount: number; currency: string; category: string; supplierRegion?: string; localLabor?: boolean; approved: boolean }[];
+  /** Approved expenses get a mock receipt photo unless noReceipt (then it's a field "upload receipt" to-do). */
+  expenses?: { amount: number; currency: string; category: string; supplierRegion?: string; localLabor?: boolean; approved: boolean; noReceipt?: boolean }[];
   photoSuggestion?: boolean; // seed a private photo + AI photoSuggestions example (draft only)
   followUps?: { es: string; en: string; status: "approved" | "pending" }[];
 };
@@ -408,7 +409,7 @@ export const PROJECTS: SeedProject[] = [
       { amount: 2_000_000, currency: "COP", status: "committed", donor: "Constructora Ejemplo S.A.S. (ficticia)" },
     ],
     expenses: [
-      { amount: 1_200_000, currency: "COP", category: "Transporte marítimo de materiales", supplierRegion: "San Andrés, San Andrés", approved: true },
+      { amount: 1_200_000, currency: "COP", category: "Transporte marítimo de materiales", supplierRegion: "San Andrés, San Andrés", approved: true, noReceipt: true },
     ],
     followUps: [
       {

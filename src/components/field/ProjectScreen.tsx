@@ -2,6 +2,7 @@
 
 import { Fragment, useState, type ReactNode } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { useAction, useMutation, useQuery } from "convex/react";
 import { ConvexError } from "convex/values";
 import type { FunctionReturnType } from "convex/server";
@@ -159,6 +160,7 @@ function TextFallback({ data, onAnalyze }: { data: Draft; onAnalyze: (text: stri
 
 function ProgressLoader({ projectId }: { projectId: Id<"projects"> }) {
   const { t } = useI18n();
+  const openTodoId = useSearchParams().get("todo");
   const { sessionToken } = useSession();
   const data = useQuery(api.field.getMyProject, sessionToken ? { sessionToken, projectId } : "skip");
   if (data === undefined)
@@ -176,7 +178,7 @@ function ProgressLoader({ projectId }: { projectId: Id<"projects"> }) {
         </Link>
       </Card>
     );
-  return <ProgressView data={data} />;
+  return <ProgressView data={data} openTodoId={openTodoId} />;
 }
 
 function BackLink() {

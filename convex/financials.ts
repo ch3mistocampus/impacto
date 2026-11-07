@@ -148,6 +148,7 @@ export const approveExpense = mutation({
       await ctx.db.insert("milestones", {
         projectId: e.projectId,
         type: "expense",
+        expenseId: e._id,
         status: "verified",
         verifiedBy: user._id,
         occurredAt: now,

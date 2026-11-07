@@ -4,6 +4,8 @@ import { v } from "convex/values";
 import { internal } from "./_generated/api";
 import type { Doc, Id } from "./_generated/dataModel";
 import { materialMilestoneText } from "./projects";
+import { DEMO_PROOF_JPEG_B64 } from "./lib/demoProofImages";
+import { demoReceiptSvg } from "./lib/demoReceipt";
 import { draftSummary, type WeeklySnapshot } from "./weekly";
 import {
   DEMO_USERS,
@@ -272,6 +274,8 @@ export async function seedAll(ctx: MutationCtx) {
   }
 
   const log: Log = { pledges: [], events: [], donations: [], expenses: [], evidenceApproved: [], milestones: [], published: [] };
+  /** Mock proof files to store after the mutation (storage writes need an action). */
+  const proofs: ProofJob[] = [];
   const projectIds: Record<string, { id: Id<"projects">; category: Doc<"projects">["category"] }> = {};
   let donorN = 0;
   let pledgeCount = 0;
@@ -366,10 +370,12 @@ export async function seedAll(ctx: MutationCtx) {
       at: number,
       verified = true,
       evidenceId?: Id<"evidence">,
+      expenseId?: Id<"expenses">,
     ) => {
       log.milestones.push({ t: at, type, verified });
       await ctx.db.insert("milestones", {
         evidenceId,
+        expenseId,
         projectId,
         type,
         status: verified ? "verified" : "pending",
@@ -419,7 +425,7 @@ export async function seedAll(ctx: MutationCtx) {
         eventId: Id<"materialEvents">,
         qty: number,
         t: number,
-      ): Promise<Id<"evidence"> | undefined> => {
+      ): Promise<{ id: Id<"evidence">; approved: boolean } | undefined> => {
         const st = n[kind];
         if (!st || firstDone[kind]) return undefined;
         firstDone[kind] = true;
@@ -459,7 +465,52 @@ export async function seedAll(ctx: MutationCtx) {
           reviewedAt: approved ? reviewedAt : undefined,
         });
         await ctx.db.patch("materialEvents", eventId, { evidenceId: id });
-        return approved ? id : undefined;
+        if (kind === "receipt") {
+          proofs.push({
+            evidenceId: id,
+            approved,
+            file: {
+              kind: "receipt",
+              supplier: "Ferretería Ejemplo (ficticia)",
+              region: sp.region,
+              number: `DEMO-${String(proofs.length + 1).padStart(4, "0")}`,
+              t,
+              lines: [{ label: m.nameEs, qty }],
+            },
+          });
+        } else if (kind === "handover" && DEMO_PROOF_JPEG_B64[n.itemKey]) {
+          proofs.push({ evidenceId: id, approved, file: { kind: "photo", itemKey: n.itemKey } });
+        }
+        return { id, approved };
+      };
+
+      /** Approved field photo for custody events that have no other evidence (mock proof). */
+      const photoEvidence = async (
+        type: "received" | "delivered",
+        eventId: Id<"materialEvents">,
+        qty: number,
+        t: number,
+      ): Promise<Id<"evidence"> | undefined> => {
+        if (!DEMO_PROOF_JPEG_B64[n.itemKey]) return undefined;
+        const txt = materialMilestoneText(type, qty, needDoc);
+        const reviewedAt = Math.min(now - HOUR, t + 2 * HOUR);
+        log.evidenceApproved.push(reviewedAt);
+        const id = await ctx.db.insert("evidence", {
+          projectId,
+          needId,
+          materialEventId: eventId,
+          type: "delivery_photo",
+          noteEs: `Foto del equipo de campo (sintética): ${txt.es.charAt(0).toLowerCase()}${txt.es.slice(1)}`,
+          noteEn: `Field team photo (synthetic): ${txt.en.charAt(0).toLowerCase()}${txt.en.slice(1)}`,
+          reviewStatus: "approved",
+          publicApproved: true,
+          uploadedBy: createdBy,
+          reviewedBy: coordinator,
+          reviewedAt,
+        });
+        await ctx.db.patch("materialEvents", eventId, { evidenceId: id });
+        proofs.push({ evidenceId: id, approved: true, file: { kind: "photo", itemKey: n.itemKey } });
+        return id;
       };
 
       const event = async (
@@ -500,7 +551,9 @@ export async function seedAll(ctx: MutationCtx) {
             noteEn: donorNote ? `${txt.en} (${donorNote})` : txt.en,
           });
           const kind = type === "received" ? "receipt" : type === "delivered" ? "handover" : "usedNote";
-          evId = await evidence(kind, eventId, qty, t);
+          const created = await evidence(kind, eventId, qty, t);
+          evId = created?.approved ? created.id : undefined;
+          if (!created && (type === "received" || type === "delivered")) evId = await photoEvidence(type, eventId, qty, t);
         }
         await ms(type, txt, t, true, evId);
       };
@@ -574,7 +627,7 @@ export async function seedAll(ctx: MutationCtx) {
       acts.push({
         rank: 2.5,
         run: async (t) => {
-          await ctx.db.insert("expenses", {
+          const expenseId = await ctx.db.insert("expenses", {
             projectId,
             amount: e.amount,
             currency: e.currency,
@@ -586,6 +639,39 @@ export async function seedAll(ctx: MutationCtx) {
             supplierRegion: e.supplierRegion,
             localLabor: e.localLabor,
           });
+          // Mock receipt photo on file (unless the demo leaves it as a field to-do).
+          let receiptEvidenceId: Id<"evidence"> | undefined;
+          if (e.approved && !e.noReceipt) {
+            const reviewedAt = Math.min(now - HOUR, t + HOUR);
+            log.evidenceApproved.push(reviewedAt);
+            receiptEvidenceId = await ctx.db.insert("evidence", {
+              projectId,
+              expenseId,
+              type: "receipt",
+              noteEs: `Recibo del gasto (sintético): ${fmtAmount(e.amount, "es")} ${e.currency} — ${e.category}`,
+              noteEn: `Expense receipt (synthetic): ${fmtAmount(e.amount, "en")} ${e.currency} — ${e.category}`,
+              reviewStatus: "approved",
+              publicApproved: true,
+              uploadedBy: createdBy,
+              reviewedBy: coordinator,
+              reviewedAt,
+            });
+            proofs.push({
+              evidenceId: receiptEvidenceId,
+              approved: true,
+              expenseId,
+              file: {
+                kind: "receipt",
+                supplier: e.localLabor ? "Recibo de pago de mano de obra" : "Proveedor Ejemplo (ficticio)",
+                region: e.supplierRegion ?? sp.region,
+                number: `DEMO-${String(proofs.length + 1).padStart(4, "0")}`,
+                t,
+                lines: [{ label: e.category, amount: e.amount }],
+                total: e.amount,
+                currency: e.currency,
+              },
+            });
+          }
           if (e.approved) {
             log.expenses.push({ t, currency: e.currency, amount: e.amount });
             await ms(
@@ -595,6 +681,9 @@ export async function seedAll(ctx: MutationCtx) {
                 en: `Expense approved: ${fmtAmount(e.amount, "en")} ${e.currency} — ${e.category}`,
               },
               t,
+              true,
+              receiptEvidenceId,
+              expenseId,
             );
           }
         },
@@ -678,6 +767,8 @@ export async function seedAll(ctx: MutationCtx) {
       isDemo: true,
     });
   }
+
+  if (proofs.length > 0) await ctx.scheduler.runAfter(0, internal.seed.attachDemoProofs, { jobs: proofs });
 
   return {
     nonprofit: nonprofit?.name ?? "Espejo de Agua",
@@ -778,6 +869,93 @@ export const insertDemoPhoto = internalMutation({
     };
     const ex = (report.draftExtraction ?? {}) as Record<string, unknown>;
     await ctx.db.patch("fieldReports", report._id, { draftExtraction: { ...ex, photoSuggestions: [suggestion] } });
+    return true;
+  },
+});
+
+// ---------------------------------------------------------------------------
+// Mock proof files (synthetic material photos + receipts) for seeded evidence
+// ---------------------------------------------------------------------------
+
+const proofFile = v.union(
+  v.object({ kind: v.literal("photo"), itemKey: v.string() }),
+  v.object({
+    kind: v.literal("receipt"),
+    supplier: v.string(),
+    region: v.optional(v.string()),
+    number: v.string(),
+    t: v.number(),
+    lines: v.array(v.object({ label: v.string(), qty: v.optional(v.number()), amount: v.optional(v.number()) })),
+    total: v.optional(v.number()),
+    currency: v.optional(v.string()),
+  }),
+);
+const proofJob = v.object({
+  evidenceId: v.id("evidence"),
+  approved: v.boolean(),
+  expenseId: v.optional(v.id("expenses")),
+  file: proofFile,
+});
+type ProofJob = typeof proofJob.type;
+
+export const attachDemoProofs = internalAction({
+  args: { jobs: v.array(proofJob) },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    for (const job of args.jobs) {
+      let storageId: Id<"_storage">;
+      if (job.file.kind === "photo") {
+        const b64 = DEMO_PROOF_JPEG_B64[job.file.itemKey];
+        if (!b64) continue;
+        const bin = atob(b64);
+        const bytes = new Uint8Array(bin.length);
+        for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+        storageId = await ctx.storage.store(new Blob([bytes], { type: "image/jpeg" }));
+      } else {
+        const f = job.file;
+        const d = new Date(f.t);
+        const svg = demoReceiptSvg({
+          supplier: f.supplier,
+          region: f.region,
+          number: f.number,
+          dateLabel: `Fecha: ${d.getUTCDate()}/${d.getUTCMonth() + 1}/${d.getUTCFullYear()}`,
+          lines: f.lines,
+          total: f.total,
+          currency: f.currency,
+        });
+        storageId = await ctx.storage.store(new Blob([svg], { type: "image/svg+xml" }));
+      }
+      const ok = await ctx.runMutation(internal.seed.setDemoProof, {
+        evidenceId: job.evidenceId,
+        approved: job.approved,
+        expenseId: job.expenseId,
+        storageId,
+      });
+      if (!ok) await ctx.storage.delete(storageId); // wiped by a newer reset
+    }
+    return null;
+  },
+});
+
+export const setDemoProof = internalMutation({
+  args: {
+    evidenceId: v.id("evidence"),
+    approved: v.boolean(),
+    expenseId: v.optional(v.id("expenses")),
+    storageId: v.id("_storage"),
+  },
+  returns: v.boolean(),
+  handler: async (ctx, args) => {
+    const ev = await ctx.db.get(args.evidenceId);
+    if (!ev) return false;
+    await ctx.db.patch("evidence", ev._id, {
+      privateStorageId: args.storageId,
+      publicStorageId: args.approved ? args.storageId : undefined,
+    });
+    if (args.expenseId) {
+      const ex = await ctx.db.get(args.expenseId);
+      if (ex) await ctx.db.patch("expenses", ex._id, { receiptStorageId: args.storageId });
+    }
     return true;
   },
 });

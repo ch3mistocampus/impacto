@@ -16,6 +16,7 @@ import { LedgerBar } from "@/components/public/LedgerBar";
 import { Timeline, type TimelineItem } from "@/components/public/Timeline";
 import { EvidenceList } from "@/components/public/EvidenceList";
 import { MaterialImage } from "@/components/public/MaterialImage";
+import { ProjectTodos } from "./Todos";
 import {
   AiBadge,
   Card,
@@ -58,7 +59,7 @@ function useFmt() {
 }
 
 /** Read-only progress page for a project the worker reported (any non-draft status). */
-export function ProgressView({ data }: { data: FieldProject }) {
+export function ProgressView({ data, openTodoId }: { data: FieldProject; openTodoId?: string | null }) {
   const { t, pick } = useI18n();
   const fmt = useFmt();
   const p = data.project;
@@ -112,6 +113,7 @@ export function ProgressView({ data }: { data: FieldProject }) {
 
       <div className="space-y-5 lg:grid lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] lg:items-start lg:gap-6 lg:space-y-0">
         <div className="space-y-5">
+          {(data.todos.length > 0 || p.status === "published") && <ProjectTodos todos={data.todos} initialOpenId={openTodoId} />}
           <Stepper data={data} />
           <Materials data={data} />
           <Card>
@@ -127,6 +129,13 @@ export function ProgressView({ data }: { data: FieldProject }) {
                   descriptionEs: m.descriptionEs,
                   descriptionEn: m.descriptionEn,
                   photoUrl: m.photoUrl,
+                  proof: m.proof?.url
+                    ? {
+                        url: m.proof.url,
+                        label: t(`field.proof.type.${m.proof.type}` as DictKey),
+                        review: m.proof.reviewStatus,
+                      }
+                    : null,
                 }),
               )}
             />

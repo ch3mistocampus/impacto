@@ -8,6 +8,7 @@ import { useI18n } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
 import { DoubleRule, intlLocale } from "@/components/ui/tricolor";
 import { CategoryLabel, Spinner, StatusChip, btnPrimary } from "./ui";
+import { HomeTodos } from "./Todos";
 
 export function FieldHome() {
   const { t, pick, locale } = useI18n();
@@ -28,6 +29,8 @@ export function FieldHome() {
         </svg>
         {t("field.new")}
       </Link>
+
+      <HomeTodos />
 
       <section aria-labelledby="my-projects">
         <h2 id="my-projects" className="font-display text-2xl font-normal">
@@ -85,6 +88,7 @@ type Row = FunctionReturnType<typeof api.field.listMyProjects>[number];
 function ProgressHint({ p }: { p: Row }) {
   const { t } = useI18n();
   const parts: { text: string; tone: string }[] = [];
+  if (p.openTodos > 0) parts.push({ text: `${p.openTodos} ${t("field.todo.count")}`, tone: "text-gold-ink font-semibold" });
   if (p.status === "draft" && p.changesRequested) parts.push({ text: t("field.hint.changes"), tone: "text-gold-ink font-semibold" });
   if (p.status === "in_review") parts.push({ text: t("field.hint.inReview"), tone: "text-gold-ink" });
   if (p.needsPublished > 0) {

@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useRef, useState } from "react";
 import { useI18n } from "@/lib/i18n";
 import type { DictKey } from "@/lib/dict";
 import { PLEDGED_HATCH, intlLocale } from "@/components/ui/tricolor";
@@ -27,6 +28,8 @@ export type TimelineItem = {
   descriptionEs?: string;
   descriptionEn?: string;
   photoUrl?: string | null;
+  /** Proof attached to this step (field view may show it before review). */
+  proof?: { url: string | null; label?: string; review?: "pending" | "approved" | "rejected" } | null;
 };
 
 const KNOWN = new Set<string>([
@@ -121,9 +124,13 @@ export function Timeline({ items, emptyLabel }: { items: TimelineItem[]; emptyLa
                 )}
               </div>
               {desc && <p className="mt-1.5 text-[15px] leading-relaxed max-w-prose">{desc}</p>}
-              {m.photoUrl && (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={m.photoUrl} alt={desc || title} className="mt-3 w-full max-w-sm border border-border" />
+              {(m.proof?.url || m.photoUrl) && (
+                <ProofThumb
+                  url={(m.proof?.url || m.photoUrl)!}
+                  alt={desc || title}
+                  label={m.proof?.label}
+                  review={m.proof?.review}
+                />
               )}
             </div>
           </li>
@@ -152,4 +159,74 @@ export function toTimelineItems(
     descriptionEn: m.descriptionEn,
     photoUrl: m.photoUrl,
   }));
+}
+
+/** Small proof thumbnail ("Proof · Receipt") that opens the full image in a modal viewer. */
+function ProofThumb({
+  url,
+  alt,
+  label,
+  review,
+}: {
+  url: string;
+  alt: string;
+  label?: string;
+  review?: "pending" | "approved" | "rejected";
+}) {
+  const { t } = useI18n();
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDialogElement>(null);
+  useEffect(() => {
+    const d = ref.current;
+    if (!d) return;
+    if (open && !d.open) d.showModal();
+    else if (!open && d.open) d.close();
+  }, [open]);
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="group mt-3 flex items-stretch gap-3 border border-border bg-paper p-1.5 pr-3 text-left hover:border-rule focus-visible:border-rule"
+        aria-label={`${t("project.proof.view")}: ${alt}`}
+      >
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={url} alt="" className="h-16 w-20 shrink-0 object-cover sm:h-20 sm:w-28" />
+        <span className="flex flex-col justify-center gap-1">
+          <span className="text-[13px] font-semibold uppercase tracking-wide text-muted">
+            {t("project.proof")}
+            {label ? ` · ${label}` : ""}
+          </span>
+          {review === "pending" ? (
+            <PendingBadge label={t("project.proof.inReview")} className="self-start" />
+          ) : review === "rejected" ? (
+            <span className="text-[13px] text-muted">{t("project.proof.notApproved")}</span>
+          ) : null}
+          <span className="text-[13px] text-foreground underline-offset-4 group-hover:underline">{t("project.proof.view")} ↗</span>
+        </span>
+      </button>
+      <dialog
+        ref={ref}
+        onCancel={(e) => {
+          e.preventDefault();
+          setOpen(false);
+        }}
+        onClick={() => setOpen(false)}
+        className="motion-dialog m-auto max-h-[calc(100dvh-2rem)] w-[min(48rem,calc(100vw-2rem))] border border-border bg-surface p-0 backdrop:bg-black/60"
+      >
+        {open && (
+          <figure className="p-2">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={url} alt={alt} className="max-h-[calc(100dvh-8rem)] w-full object-contain" />
+            <figcaption className="flex items-center justify-between gap-3 px-2 pt-2 text-sm">
+              <span className="text-muted">{alt}</span>
+              <button type="button" className="min-h-11 px-2 font-semibold underline-offset-4 hover:underline" onClick={() => setOpen(false)}>
+                {t("project.proof.close")}
+              </button>
+            </figcaption>
+          </figure>
+        )}
+      </dialog>
+    </>
+  );
 }

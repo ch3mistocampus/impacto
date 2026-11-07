@@ -244,6 +244,8 @@ export default defineSchema({
     projectId: v.id("projects"),
     needId: v.optional(v.id("materialNeeds")),
     materialEventId: v.optional(v.id("materialEvents")),
+    /** Receipt uploaded for a recorded expense (field "upload receipt" to-do). */
+    expenseId: v.optional(v.id("expenses")),
     type: evidenceType,
     privateStorageId: v.optional(v.id("_storage")),
     publicStorageId: v.optional(v.id("_storage")),
@@ -293,6 +295,7 @@ export default defineSchema({
     publicDescriptionEn: v.string(),
     photoId: v.optional(v.id("photos")),
     evidenceId: v.optional(v.id("evidence")), // shown publicly only if evidence is approved+publicApproved
+    expenseId: v.optional(v.id("expenses")), // set on "expense" milestones so a later receipt can attach
   }).index("by_project_time", ["projectId", "occurredAt"]),
 
   auditEvents: defineTable({

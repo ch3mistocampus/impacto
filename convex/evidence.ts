@@ -121,6 +121,18 @@ export const reviewEvidence = mutation({
       patch.publicStorageId = undefined;
     }
     await ctx.db.patch("evidence", ev._id, patch);
+    if (args.approve) {
+      // Field to-dos record custody milestones as "pending" until their photo is reviewed.
+      const ms = await ctx.db
+        .query("milestones")
+        .withIndex("by_project_time", (q) => q.eq("projectId", ev.projectId))
+        .take(500);
+      for (const m of ms) {
+        if (m.evidenceId === ev._id && m.status === "pending") {
+          await ctx.db.patch("milestones", m._id, { status: "verified", verifiedBy: user._id });
+        }
+      }
+    }
     await audit(
       ctx,
       user._id,

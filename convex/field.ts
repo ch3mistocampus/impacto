@@ -13,6 +13,7 @@ import { audit, requireRole } from "./lib/auth";
 import { computeLedger } from "./lib/ledger";
 import { isPublicStatus, publicEvidenceList } from "./projects";
 import { category, locale, urgency } from "./schema";
+import { computeTodos } from "./fieldTasks";
 
 /**
  * Lane B — Field intake (role: field_worker).
@@ -629,6 +630,7 @@ export const listMyProjects = query({
           needsReceiving,
           activePledges,
           pendingFollowUps,
+          openTodos: (await computeTodos(ctx, p)).length,
         };
       }),
     );
@@ -737,15 +739,30 @@ export const getMyProject = query({
       .query("milestones")
       .withIndex("by_project_time", (q) => q.eq("projectId", project._id))
       .take(300);
-    const timeline = ms.map((m) => ({
-      milestoneId: m._id,
-      type: m.type,
-      status: m.status,
-      occurredAt: m.occurredAt,
-      descriptionEs: m.publicDescriptionEs,
-      descriptionEn: m.publicDescriptionEn,
-      photoUrl: m.photoId ? (photoUrl.get(m.photoId) ?? null) : null,
-    }));
+    // Creator may see their own proof originals (private until a coordinator approves them).
+    const timeline = await Promise.all(
+      ms.map(async (m) => {
+        const ev = m.evidenceId ? await ctx.db.get(m.evidenceId) : null;
+        const proofSid = ev ? (ev.publicStorageId ?? ev.privateStorageId) : undefined;
+        return {
+          milestoneId: m._id,
+          type: m.type,
+          status: m.status,
+          occurredAt: m.occurredAt,
+          descriptionEs: m.publicDescriptionEs,
+          descriptionEn: m.publicDescriptionEn,
+          photoUrl: m.photoId ? (photoUrl.get(m.photoId) ?? null) : null,
+          proof: ev
+            ? {
+                type: ev.type,
+                url: proofSid ? await ctx.storage.getUrl(proofSid) : null,
+                reviewStatus: ev.reviewStatus,
+                publicApproved: ev.publicApproved,
+              }
+            : null,
+        };
+      }),
+    );
 
     const pledges = await ctx.db
       .query("pledges")
@@ -837,6 +854,7 @@ export const getMyProject = query({
           }
         : null,
       followUps,
+      todos: await computeTodos(ctx, project),
     };
   },
 });
