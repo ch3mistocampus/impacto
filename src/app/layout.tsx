@@ -5,6 +5,7 @@ import "./globals.css";
 import { Providers } from "./providers";
 import { AppHeader } from "@/components/AppHeader";
 import { GuidedTour } from "@/components/tour/GuidedTour";
+import { SiteFooter } from "@/components/SiteFooter";
 
 const sans = Karla({ variable: "--font-sans-src", subsets: ["latin"] });
 const display = Source_Serif_4({
@@ -36,6 +37,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
             <AppHeader />
           </Suspense>
           <main className="flex-1 w-full max-w-6xl mx-auto px-4 pb-16">{children}</main>
+          <SiteFooter />
           <GuidedTour />
         </Providers>
       </body>
