@@ -122,13 +122,15 @@ export function SwipeCard({
 
           <div className="mt-3 flex items-center justify-center gap-3 text-foreground">
             <MaterialGlyph itemKey={card.itemKey} className="size-11 shrink-0" />
-            <h2 className="font-display text-[2.1rem] sm:text-[2.5rem] font-normal leading-none">{name}</h2>
+            <h2 className={`font-display font-normal leading-[1.05] text-balance ${name.length > 18 ? "text-[1.75rem] sm:text-[2rem]" : "text-[2.1rem] sm:text-[2.5rem]"}`}>
+              {name}
+            </h2>
           </div>
 
           {/* the figure */}
           {confirmed ? (
             <p className="mt-4 text-center leading-none">
-              <span className="font-display text-[4.25rem] sm:text-[5rem] font-normal tabular-nums">
+              <span className="font-display text-[4rem] sm:text-[4.5rem] font-normal tabular-nums">
                 {nf.format(L.availableToPledge)}
               </span>{" "}
               <span className="block sm:inline mt-1 sm:mt-0 text-base text-muted">

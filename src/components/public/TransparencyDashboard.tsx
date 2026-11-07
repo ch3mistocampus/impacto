@@ -180,7 +180,7 @@ function ReportItem({ r, summary }: { r: WeeklyReport; summary: string }) {
           </h3>
         </div>
 
-        <p className="mt-5 max-w-prose whitespace-pre-line text-[15px] leading-relaxed sm:text-base">{summary}</p>
+        <p className="mx-auto mt-5 max-w-prose whitespace-pre-line text-[15px] leading-relaxed sm:text-base">{summary}</p>
 
         <dl className="mt-6 grid grid-cols-2 border-y border-rule text-center sm:grid-cols-5">
           {SNAP_COUNTS.map((k, i) => (

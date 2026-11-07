@@ -169,7 +169,7 @@ export function DonateDeck() {
 
       <div className="max-w-xl w-full mx-auto lg:mx-0 lg:max-w-[34rem] lg:justify-self-center">
         <section aria-label={t("donate.swipeHelp")} aria-live="polite">
-          <div className="relative h-[35rem] lg:h-[33rem]">
+          <div className="relative h-[36rem] lg:h-[35rem]">
             {deck === undefined ? (
               <div className="absolute inset-0 rounded-[2px] bg-surface border border-border grid place-items-center text-muted">
                 {t("common.loading")}

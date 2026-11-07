@@ -110,7 +110,7 @@ function ReportView({ r }: { r: ReviewReport }) {
                 const q = m.quantity ?? m.qty ?? null;
                 return (
                 <li key={i} className="py-1.5">
-                  <div className="flex items-baseline gap-2">
+                  <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
                     <span className="min-w-0 shrink text-[15px]">{pick(m.nameEs, m.nameEn)}</span>
                     {(q === null || m.uncertain) && <Chip tone="gold">{t("ledger.needsConfirmation")}</Chip>}
                     {m.confidence && m.confidence !== "high" && <Chip>{m.confidence}</Chip>}

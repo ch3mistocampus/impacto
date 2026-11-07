@@ -244,8 +244,8 @@ function NeedRow({ need }: { need: ReviewNeed }) {
     );
 
   return (
-    <li className={`flex flex-col gap-3 py-3.5 xl:flex-row xl:items-center ${rejected ? "opacity-60" : ""}`}>
-      <div className="flex min-w-0 flex-1 items-center gap-3">
+    <li className={`flex flex-wrap items-center gap-x-4 gap-y-3 py-4 ${rejected ? "opacity-60" : ""}`}>
+      <div className="flex min-w-0 basis-full items-center gap-3">
         <MaterialIcon itemKey={need.itemKey} label={name} />
         <div className="min-w-0">
           <p className={`text-[15px] font-semibold ${rejected ? "line-through" : ""}`}>{name}</p>
@@ -265,7 +265,7 @@ function NeedRow({ need }: { need: ReviewNeed }) {
       </div>
 
       <form
-        className="flex items-center gap-2"
+        className="flex items-center gap-2 pl-[52px]"
         onSubmit={(e) => {
           e.preventDefault();
           saveQty();
@@ -291,7 +291,7 @@ function NeedRow({ need }: { need: ReviewNeed }) {
         )}
       </form>
 
-      <div className="flex gap-1.5">
+      <div className="ml-auto flex gap-1.5">
         <Button
           size="sm"
           variant={need.status === "approved" ? "leaf" : "ghost"}
