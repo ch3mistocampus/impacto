@@ -249,7 +249,7 @@ const MAT_STAGES = ["pledged", "received", "delivered", "used", "verified"] as c
 
 /** The computed snapshot (from real records only). Each stage stays its own column. */
 function SnapshotView({ snapshot }: { snapshot: Snapshot }) {
-  const { t, pick, locale } = useI18n();
+  const { t, pick, locale, u } = useI18n();
   return (
     <div className="space-y-6 text-sm">
       <dl className="grid grid-cols-2 gap-px border-y border-border bg-border sm:grid-cols-3 lg:grid-cols-5">
@@ -284,7 +284,7 @@ function SnapshotView({ snapshot }: { snapshot: Snapshot }) {
               {snapshot.materials.map((m) => (
                 <tr key={`${m.itemKey}-${m.unit}`} className="border-b border-border last:border-0">
                   <th scope="row" className="py-2 pr-2 text-left font-semibold">
-                    {pick(m.nameEs, m.nameEn)} <span className="text-[13px] font-normal text-muted">{m.unit}</span>
+                    {pick(m.nameEs, m.nameEn)} <span className="text-[13px] font-normal text-muted">{u(m.unit)}</span>
                   </th>
                   {MAT_STAGES.map((s) => (
                     <td key={s} className={`py-2 pl-2 text-right font-display text-lg tabular-nums ${m[s] === 0 ? "text-muted/60" : STAGE_TEXT[s]}`}>

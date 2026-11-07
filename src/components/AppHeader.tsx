@@ -61,7 +61,7 @@ function AppHeaderInner() {
       <div>
         <FlagBand thickness={4} />
         {/* Fixed navy (not the flipping --navy token) so the bar reads the same in light and dark. */}
-        <div className="bg-[#0b2a5b] text-white dark:border-b dark:border-border">
+        <div className="bg-[#0b2a5b] text-white">
           <div className="mx-auto flex min-h-11 max-w-6xl items-center gap-3 px-4 text-[13px]">
             <p className="flex min-w-0 items-center gap-2">
               <span aria-hidden className="size-1.5 shrink-0 rounded-full bg-gold" />
@@ -74,7 +74,7 @@ function AppHeaderInner() {
         </div>
       </div>
 
-      <header className="sticky top-0 z-30 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/85">
+      <header style={{ viewTransitionName: "site-header" }} className="sticky top-0 z-30 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/85">
         <div className="mx-auto flex h-12 max-w-6xl items-stretch gap-6 px-4 sm:h-16">
           <Link href="/" className="flex flex-col justify-center leading-none" aria-label={`${t("app.name")} · ${t("app.attribution")}`}>
             <span className="font-display text-[1.6rem] font-normal tracking-tight sm:text-[1.85rem]">{t("app.name")}</span>
@@ -273,7 +273,7 @@ function DemoRoleSwitcher() {
       <div
         id={`${id}-menu`}
         hidden={!open}
-        className="absolute right-0 top-full z-40 w-72 max-w-[calc(100vw-2rem)] border border-rule bg-surface text-foreground shadow-[0_12px_32px_-16px_rgb(11_42_91/0.35)]"
+        className="motion-pop absolute right-0 top-full z-40 w-72 max-w-[calc(100vw-2rem)] border border-rule bg-surface text-foreground shadow-[0_12px_32px_-16px_rgb(11_42_91/0.35)]"
       >
         <FlagBand thickness={3} />
         <div className="px-4 pb-2 pt-3">

@@ -87,7 +87,7 @@ function NeedLedger({
   isDemo: boolean;
   pledges: ReviewPledge[];
 }) {
-  const { t, pick } = useI18n();
+  const { t, pick, u } = useI18n();
   const { sessionToken, user } = useSession();
   const record = useMutation(api.coordinator.recordMaterialEvent);
   const commitEvidence = useCommitEvidence();
@@ -143,7 +143,7 @@ function NeedLedger({
         <MaterialIcon itemKey={need.itemKey} label={name} size={48} />
         <div className="min-w-0 flex-1">
           <h3 className="font-display text-2xl font-normal leading-tight">{name}</h3>
-          <p className="text-[13px] text-muted">{need.unit}</p>
+          <p className="text-[13px] text-muted">{u(need.unit)}</p>
         </div>
         {need.status === "fulfilled" && <Chip tone="navy">{t("coord.need.fulfilled")}</Chip>}
         {need.needsConfirmation && <Chip tone="gold">{t("ledger.needsConfirmation")}</Chip>}

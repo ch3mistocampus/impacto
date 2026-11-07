@@ -39,7 +39,7 @@ export function SwipeCard({
   onPass: () => void;
   onHelp: () => void;
 }) {
-  const { t, pick, locale } = useI18n();
+  const { t, pick, locale, u } = useI18n();
   const [dx, setDx] = useState(0);
   const [dragging, setDragging] = useState(false);
   const start = useRef<{ x: number; y: number; id: number } | null>(null);
@@ -134,7 +134,7 @@ export function SwipeCard({
                 {nf.format(L.availableToPledge)}
               </span>{" "}
               <span className="block sm:inline mt-1 sm:mt-0 text-base text-muted">
-                {t("donate.card.of")} {nf.format(L.requested ?? 0)} {card.unit} {t("donate.card.unpledged")}
+                {t("donate.card.of")} {nf.format(L.requested ?? 0)} {u(card.unit)} {t("donate.card.unpledged")}
               </span>
             </p>
           ) : (

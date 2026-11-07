@@ -26,14 +26,23 @@ type I18nCtx = {
   tn: (base: PluralBase, count: number) => string;
   /** Pick the right side of a bilingual DB pair, e.g. pick(p.titleEs, p.titleEn) */
   pick: (es: string | undefined, en: string | undefined) => string;
+  /** Display a stored (Spanish) unit in the current locale, e.g. u("bolsas") → "bags" in EN. */
+  u: (unit: string | undefined) => string;
+};
+
+/** Material units are stored in Spanish in the DB; translate the common ones for display. */
+const UNIT_EN: Record<string, string> = {
+  unidades: "units", unidad: "unit", bolsas: "bags", bultos: "sacks", sacos: "sacks", cajas: "boxes",
+  galones: "gallons", kits: "kits", libras: "pounds", metros: "meters", piezas: "pieces",
+  planchas: "sheets", láminas: "sheets", rollos: "rolls", sobres: "packets", tejas: "roof tiles",
 };
 
 const Ctx = createContext<I18nCtx | null>(null);
 const STORAGE_KEY = "impacto.locale";
 
 export function I18nProvider({ children }: { children: ReactNode }) {
-  // Spanish-first.
-  const [locale, setLocaleState] = useState<Locale>("es");
+  // English by default; a saved choice (ES | EN toggle) wins.
+  const [locale, setLocaleState] = useState<Locale>("en");
 
   useEffect(() => {
     try {
@@ -61,7 +70,7 @@ export function I18nProvider({ children }: { children: ReactNode }) {
       const form = pluralRules[locale].select(count) === "one" ? "one" : "other";
       const key = `${base}.${form}` as DictKey;
       const str = dict[key]?.[locale] ?? key;
-      return str.replace("{n}", count.toLocaleString(locale === "es" ? "es-PR" : "en-US"));
+      return str.replace("{n}", count.toLocaleString(locale === "es" ? "es-CO" : "en-US"));
     },
     [locale],
   );
@@ -70,7 +79,15 @@ export function I18nProvider({ children }: { children: ReactNode }) {
     [locale],
   );
 
-  return <Ctx.Provider value={{ locale, setLocale, t, tn, pick }}>{children}</Ctx.Provider>;
+  const u = useCallback(
+    (unit: string | undefined) => {
+      if (!unit) return "";
+      return locale === "en" ? (UNIT_EN[unit.trim().toLowerCase()] ?? unit) : unit;
+    },
+    [locale],
+  );
+
+  return <Ctx.Provider value={{ locale, setLocale, t, tn, pick, u }}>{children}</Ctx.Provider>;
 }
 
 export function useI18n() {

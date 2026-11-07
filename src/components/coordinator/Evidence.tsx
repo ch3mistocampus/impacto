@@ -54,7 +54,7 @@ export function EvidencePanel({ reports, photos }: { reports: ReviewReport[]; ph
 }
 
 function ReportView({ r }: { r: ReviewReport }) {
-  const { t, pick, locale } = useI18n();
+  const { t, pick, locale, u } = useI18n();
   const draft = (r.draftExtraction ?? null) as Draft | null;
   const questions: string[] =
     draft?.missingQuestions && draft.missingQuestions.length > 0
@@ -116,7 +116,7 @@ function ReportView({ r }: { r: ReviewReport }) {
                     {m.confidence && m.confidence !== "high" && <Chip>{m.confidence}</Chip>}
                     <span aria-hidden className="min-w-4 flex-1 translate-y-[-4px] border-b border-dotted border-muted/60" />
                     <span className={`shrink-0 whitespace-nowrap ${q === null ? "text-gold-ink" : ""}`}>
-                      <span className="font-display text-lg tabular-nums">{q ?? "?"}</span> <span className="text-muted">{m.unit}</span>
+                      <span className="font-display text-lg tabular-nums">{q ?? "?"}</span> <span className="text-muted">{u(m.unit)}</span>
                     </span>
                   </div>
                   {m.sourceQuote && <p className="mt-0.5 font-display text-[15px] italic text-muted">“{m.sourceQuote}”</p>}

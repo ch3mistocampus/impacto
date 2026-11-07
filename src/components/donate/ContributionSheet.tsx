@@ -41,7 +41,7 @@ export function ContributionSheet({
   initialMode?: Mode;
   onClose: (pledged: boolean) => void;
 }) {
-  const { t, pick } = useI18n();
+  const { t, pick, u } = useI18n();
   const { user, sessionToken } = useSession();
   // Signed-in donors: pledge is tied to their account (pledges.donorUserId); contact is optional.
   const donor = user?.role === "donor" && sessionToken ? user : null;
@@ -82,7 +82,7 @@ export function ContributionSheet({
     if (!card && d.open) d.close();
   }, [card]);
 
-  const unit = card?.unit ?? "";
+  const unit = u(card?.unit);
   const itemName = card ? pick(card.nameEs, card.nameEn) : "";
   const max = Math.max(0, available);
   const clamp = (n: number) => Math.max(1, Math.min(max || 1, Math.round(n) || 1));

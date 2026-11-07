@@ -26,7 +26,7 @@ export function LedgerBar({
   showAvailable?: boolean;
   showLegend?: boolean;
 }) {
-  const { t, locale } = useI18n();
+  const { t, locale, u } = useI18n();
   const nf = (n: number) => n.toLocaleString(intlLocale(locale));
   const req = ledger.requested;
 
@@ -84,7 +84,7 @@ export function LedgerBar({
           <strong className={`font-display font-normal tabular-nums text-foreground ${compact ? "text-[15px]" : "text-lg"}`}>
             {nf(ledger.availableToPledge)}
           </strong>
-          {unit && <span className="text-muted">{unit}</span>}
+          {unit && <span className="text-muted">{u(unit)}</span>}
         </p>
       )}
       {showLegend && <StageLegend className="mt-4" />}

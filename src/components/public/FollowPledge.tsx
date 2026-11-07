@@ -18,7 +18,7 @@ import { ConfirmDialog } from "../ConfirmDialog";
 
 export function FollowPledge() {
   const { token } = useParams<{ token: string }>();
-  const { t, pick, locale } = useI18n();
+  const { t, pick, locale, u } = useI18n();
   const data = useQuery(api.public.followPledge, { followToken: token });
   const cancel = useMutation(api.pledges.cancel);
   const [busy, setBusy] = useState(false);
@@ -87,7 +87,7 @@ export function FollowPledge() {
               {nf.format(data.qty)}
             </p>
             <p className="mt-2 text-lg">
-              {data.need.unit} <span className="text-muted">· {name}</span>
+              {u(data.need.unit)} <span className="text-muted">· {name}</span>
             </p>
             <p
               role="status"
