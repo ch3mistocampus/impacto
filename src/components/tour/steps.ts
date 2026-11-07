@@ -19,8 +19,10 @@ export type TourStep = {
   titleKey: DictKey;
   bodyKey: DictKey;
   tryKey?: DictKey;
-  /** Flip ES ⇄ EN when the step opens. */
+  /** Flip ES ⇄ EN while the step is open (the visitor's language comes back when it closes). */
   flipLocale?: boolean;
+  /** Only meaningful while a modal is open (the pledge sheet): Back skips it when none is. */
+  needsDialog?: boolean;
   /** Autoplay dwell in ms. */
   ms?: number;
 };
@@ -57,6 +59,7 @@ export const TOUR_STEPS: TourStep[] = [
   {
     id: "fieldPrivate",
     role: "field_worker",
+    path: (ids) => (ids.liveId ? `/field/${ids.liveId}` : null),
     target: 'section[aria-labelledby="pv-private"]',
     titleKey: "tour.s.fieldPrivate.title",
     bodyKey: "tour.s.fieldPrivate.body",
@@ -73,6 +76,7 @@ export const TOUR_STEPS: TourStep[] = [
   {
     id: "coordPrivate",
     role: "coordinator",
+    path: (ids) => (ids.liveId ? `/coordinator/${ids.liveId}` : "/coordinator"),
     target: '[data-tour="coord-private"]',
     titleKey: "tour.s.coordPrivate.title",
     bodyKey: "tour.s.coordPrivate.body",
@@ -81,6 +85,7 @@ export const TOUR_STEPS: TourStep[] = [
   {
     id: "publish",
     role: "coordinator",
+    path: (ids) => (ids.liveId ? `/coordinator/${ids.liveId}` : "/coordinator"),
     target: '[data-tour="coord-publish"]',
     titleKey: "tour.s.publish.title",
     bodyKey: "tour.s.publish.body",
@@ -98,7 +103,9 @@ export const TOUR_STEPS: TourStep[] = [
   {
     id: "sheet",
     role: "donor",
+    path: () => "/donate?category=reconstruction",
     target: "dialog[open]",
+    needsDialog: true,
     titleKey: "tour.s.sheet.title",
     bodyKey: "tour.s.sheet.body",
     tryKey: "tour.s.sheet.try",
@@ -116,6 +123,7 @@ export const TOUR_STEPS: TourStep[] = [
   },
   {
     id: "timeline",
+    role: "community",
     path: (ids) => {
       const id = followId(ids);
       return id ? `/p/${id}` : "/transparency";
@@ -126,6 +134,7 @@ export const TOUR_STEPS: TourStep[] = [
   },
   {
     id: "counters",
+    role: "community",
     path: () => "/transparency",
     target: 'section[aria-labelledby="counters-title"]',
     titleKey: "tour.s.counters.title",

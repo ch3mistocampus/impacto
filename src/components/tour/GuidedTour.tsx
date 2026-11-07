@@ -5,7 +5,7 @@ import { createPortal } from "react-dom";
 import { usePathname, useRouter } from "next/navigation";
 import { useQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
-import { useI18n } from "@/lib/i18n";
+import { useI18n, type Locale } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
 import type { DictKey } from "@/lib/dict";
 import { TOUR_STEPS, type TourIds } from "./steps";
@@ -23,7 +23,8 @@ import { TOUR_STEPS, type TourIds } from "./steps";
 const KEY = "impacto.tour";
 export const TOUR_EVENT = "impacto:tour";
 
-type Stored = { i: number; auto: boolean };
+/** `restore`: the visitor's own language while a flipLocale step has it flipped. */
+type Stored = { i: number; auto: boolean; restore?: Locale };
 type Rect = { top: number; left: number; width: number; height: number };
 
 function load(): Stored | null {
@@ -50,6 +51,29 @@ function visible<T extends Element>(selector: string): T | null {
   return null;
 }
 
+/**
+ * Close any open modal <dialog> the way its owner expects (a cancel event, as Esc would), so a sheet
+ * left open doesn't keep the next page inert. Falls back to a plain close() if nobody handles it.
+ */
+function closeDialogs() {
+  for (const d of document.querySelectorAll<HTMLDialogElement>("dialog[open]")) {
+    const ev = new Event("cancel", { cancelable: true });
+    if (d.dispatchEvent(ev)) d.close();
+  }
+}
+
+/** Widgets that use ←/→ themselves (tabs, the donate deck…): the tour leaves those keys alone. */
+function ownsArrows(target: HTMLElement | null) {
+  if (target?.closest('[role="tab"], [role="radio"], [role="slider"], [role="menuitem"], [role="option"]')) return true;
+  return Boolean(visible('[aria-keyshortcuts~="ArrowLeft"], [aria-keyshortcuts~="ArrowRight"]'));
+}
+
+/** Height of the sticky header, so scrolled-to targets don't end up underneath it. */
+function headerOffset() {
+  const h = document.querySelector<HTMLElement>("header.sticky");
+  return (h?.offsetHeight ?? 0) + 16;
+}
+
 /** Open the tour from anywhere (e.g. a button). */
 export function startTour(auto = false) {
   window.dispatchEvent(new CustomEvent(TOUR_EVENT, { detail: { auto } }));
@@ -57,6 +81,8 @@ export function startTour(auto = false) {
 
 export function GuidedTour() {
   const [state, setState] = useState<Stored | null>(null);
+  // Bumped on every (re)start so the runner remounts fresh (not minimized, focus on the card).
+  const [run, setRun] = useState(0);
 
   // Restore after navigation / reload; open from ?tour= or the start event.
   useEffect(() => {
@@ -73,9 +99,12 @@ export function GuidedTour() {
       setState(load());
     }
     const onStart = (e: Event) => {
-      const s = { i: 0, auto: Boolean((e as CustomEvent<{ auto?: boolean }>).detail?.auto) };
+      // Restarting mid-tour keeps the language the visitor came with.
+      const restore = load()?.restore;
+      const s: Stored = { i: 0, auto: Boolean((e as CustomEvent<{ auto?: boolean }>).detail?.auto), restore };
       save(s);
       setState(s);
+      setRun((r) => r + 1);
     };
     window.addEventListener(TOUR_EVENT, onStart);
     return () => window.removeEventListener(TOUR_EVENT, onStart);
@@ -87,7 +116,7 @@ export function GuidedTour() {
   }, []);
 
   if (!state) return null;
-  return <TourRunner state={state} update={update} />;
+  return <TourRunner key={run} state={state} update={update} />;
 }
 
 function useTourIds(): TourIds | undefined {
@@ -116,20 +145,38 @@ function TourRunner({ state, update }: { state: Stored; update: (s: Stored | nul
   const [rect, setRect] = useState<Rect | null>(null);
   const [mini, setMini] = useState(false);
   const [busy, setBusy] = useState(false);
+  // Step index whose target never showed up (e.g. the sheet step with no sheet open): card centers instead.
+  const [lostAt, setLostAt] = useState(-1);
   const prepared = useRef<string>("");
-  const flipped = useRef<number>(-1);
+  const nextBtn = useRef<HTMLButtonElement>(null);
 
+  const [modal, setModal] = useState<HTMLDialogElement | null>(null);
+
+  const finish = useCallback(() => {
+    if (state.restore) setLocale(state.restore);
+    update(null);
+  }, [state.restore, setLocale, update]);
   const go = useCallback(
     (n: number) => {
-      if (n >= total) return update(null);
+      if (n >= total) return finish();
       update({ ...state, i: Math.max(0, n) });
     },
-    [state, total, update],
+    [state, total, update, finish],
   );
   const next = useCallback(() => go(i + 1), [go, i]);
-  const back = useCallback(() => go(i - 1), [go, i]);
-  const stop = useCallback(() => update(null), [update]);
+  // A dialog-only step makes no sense to go back to once its dialog is closed.
+  const back = useCallback(() => {
+    let n = i - 1;
+    while (n > 0 && TOUR_STEPS[n].needsDialog && !modal) n--;
+    go(n);
+  }, [go, i, modal]);
+  const stop = finish;
   const toggleAuto = useCallback(() => update({ ...state, auto: !state.auto }), [state, update]);
+
+  // Focus the card when the tour (re)starts, so keyboard and screen-reader users land in it.
+  useEffect(() => {
+    nextBtn.current?.focus({ preventScroll: true });
+  }, []);
 
   // 1. Put the app where the step happens: role, page, language.
   useEffect(() => {
@@ -146,6 +193,10 @@ function TourRunner({ state, update }: { state: Stored; update: (s: Stored | nul
         setBusy(true);
         try {
           await signInAs(step.role);
+        } catch (err) {
+          console.error("[tour] demo sign-in failed", err);
+          if (prepared.current === key) prepared.current = ""; // let the next render retry
+          return;
         } finally {
           setBusy(false);
         }
@@ -153,18 +204,25 @@ function TourRunner({ state, update }: { state: Stored; update: (s: Stored | nul
       if (prepared.current !== key) return;
       if (target) {
         const here = window.location.pathname + window.location.search;
-        if (here !== target) router.push(target);
+        if (here !== target) {
+          closeDialogs(); // a sheet left open would keep the next page inert
+          router.push(target);
+        }
       }
     })();
   }, [i, step, ids, user, signInAs, router]);
 
+  // Language demo: flip on the way in, put the visitor's language back on the way out (either direction,
+  // or on exit). The original is stored with the tour, so a reload on that step doesn't flip it twice.
   useEffect(() => {
-    if (step.flipLocale && flipped.current !== i) {
-      flipped.current = i;
+    if (step.flipLocale && !state.restore) {
+      update({ ...state, restore: locale });
       setLocale(locale === "es" ? "en" : "es");
+    } else if (!step.flipLocale && state.restore) {
+      setLocale(state.restore);
+      update({ ...state, restore: undefined });
     }
-    if (!step.flipLocale) flipped.current = -1;
-  }, [i, step.flipLocale, locale, setLocale]);
+  }, [step.flipLocale, state, locale, setLocale, update]);
 
   // 2. Find the target (keep looking while the step is open: it may appear after a click), scroll to it, track it.
   useLayoutEffect(() => {
@@ -178,8 +236,16 @@ function TourRunner({ state, update }: { state: Stored; update: (s: Stored | nul
       if (el && r && r.width > 0 && r.height > 0) {
         if (!scrolled) {
           scrolled = true;
-          const tall = r.height > window.innerHeight * 0.7;
-          el.scrollIntoView({ block: tall ? "start" : "center", behavior: reduceMotion() ? "auto" : "smooth" });
+          // Elements inside a modal dialog don't move with the page; leave the page scroll alone.
+          if (!el.closest("dialog")) {
+            const offset = headerOffset();
+            const room = window.innerHeight - offset;
+            // Phones: target to the top, the card docks at the bottom. Wide screens: center it,
+            // unless it's too tall to fit, then show its top under the sticky header.
+            const toTop = narrow() || r.height > room * 0.8;
+            const y = window.scrollY + r.top - offset - (toTop ? 0 : Math.max(0, (room - r.height) / 2));
+            window.scrollTo({ top: Math.max(0, y), behavior: reduceMotion() ? "auto" : "smooth" });
+          }
         }
         const sig = `${r.top}|${r.left}|${r.width}|${r.height}`;
         if (sig !== last) {
@@ -197,23 +263,41 @@ function TourRunner({ state, update }: { state: Stored; update: (s: Stored | nul
     return () => cancelAnimationFrame(raf);
   }, [i, step.target, pathname]);
 
-  // 3. Autoplay.
-  const dwell = step.ms ?? 9000;
+  // Give a missing target a moment once we're on the right page (data loading, a dialog opening),
+  // then stop waiting and show the card centered.
+  const dest = step.path && ids ? step.path(ids) : null;
+  const arrived = !dest || pathname === dest.split("?")[0];
+  const waiting = Boolean(step.target) && !rect;
   useEffect(() => {
-    if (!state.auto || busy) return;
+    if (!waiting || busy || !arrived) return;
+    const id = setTimeout(() => setLostAt(i), 2500);
+    return () => clearTimeout(id);
+  }, [waiting, busy, arrived, i]);
+  const lost = waiting && lostAt === i;
+
+  // 3. Autoplay. The clock starts once the step is actually on screen (signed in, page loaded,
+  //    target found), so slow navigations don't eat into the reading time.
+  const dwell = step.ms ?? 9000;
+  const ready = !busy && !(waiting && !lost);
+  useEffect(() => {
+    if (!state.auto || !ready) return;
     const id = setTimeout(next, dwell);
     return () => clearTimeout(id);
-  }, [state.auto, busy, next, dwell, i]);
+  }, [state.auto, ready, next, dwell, i]);
 
   // 4. Keyboard (never while typing).
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       const el = e.target as HTMLElement | null;
       if (el && (el.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName))) return;
-      if (visible('dialog[open], [role="dialog"]') && e.key === "Escape") return; // let the dialog close first
-      if (e.key === "ArrowRight") next();
-      else if (e.key === "ArrowLeft") back();
-      else if (e.key === "Escape") stop();
+      if (e.defaultPrevented || e.altKey || e.ctrlKey || e.metaKey) return;
+      if (e.key === "Escape") {
+        if (!visible('dialog[open], [role="dialog"]')) stop(); // otherwise let the dialog close first
+      } else if (e.key === "ArrowRight" || e.key === "ArrowLeft") {
+        if (ownsArrows(el)) return; // e.g. ← on the donate deck passes a card; don't also rewind the tour
+        if (e.key === "ArrowRight") next();
+        else back();
+      }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
@@ -221,12 +305,15 @@ function TourRunner({ state, update }: { state: Stored; update: (s: Stored | nul
 
   // 5. Scripting hook for recordings.
   useEffect(() => {
-    (window as unknown as { __impactoTour?: unknown }).__impactoTour = { next, back, go, stop, step: step.id, index: i };
+    const w = window as unknown as { __impactoTour?: unknown };
+    w.__impactoTour = { next, back, go, stop, step: step.id, index: i };
+    return () => {
+      delete w.__impactoTour;
+    };
   }, [next, back, go, stop, step.id, i]);
 
   // 6. A native modal <dialog> sits in the top layer and makes everything else inert, so while one is
   //    open the narration moves *inside* it (portaled, first in its flex column).
-  const [modal, setModal] = useState<HTMLDialogElement | null>(null);
   useEffect(() => {
     const id = setInterval(() => {
       const d = visible<HTMLDialogElement>("dialog[open]");
@@ -234,23 +321,31 @@ function TourRunner({ state, update }: { state: Stored; update: (s: Stored | nul
     }, 200);
     return () => clearInterval(id);
   }, []);
-  // Opening the pledge sheet from the deck step is the "try it" — move on to the sheet step.
+  // Opening the pledge sheet from the deck step is the "try it": move on to the sheet step. Closing it
+  // again on the sheet step means they're done there. Only on the open/close *transition*, so going
+  // Back to the deck with the sheet still open doesn't bounce straight forward again.
+  const prevModal = useRef<HTMLDialogElement | null>(null);
   useEffect(() => {
-    if (modal && step.id === "deck") next();
-  }, [modal, step.id, next]);
+    const was = prevModal.current;
+    prevModal.current = modal;
+    if (!was && modal && step.id === "deck") next();
+    else if (was && !modal && step.needsDialog) next();
+  }, [modal, step.id, step.needsDialog, next]);
 
+  // Spotlight = the target's box (padded), clipped to the viewport on every side.
   const pad = 10;
-  const spot = rect
-    ? {
-        top: Math.max(rect.top - pad, 4),
-        left: Math.max(rect.left - pad, 4),
-        width: Math.min(rect.width + pad * 2, window.innerWidth - 8),
-        height: Math.min(rect.height + pad * 2, window.innerHeight - Math.max(rect.top - pad, 4) - 4),
-      }
-    : null;
-  // Dock the card on the side away from the target.
+  let spot: Rect | null = null;
+  if (rect) {
+    const top = Math.max(rect.top - pad, 4);
+    const left = Math.max(rect.left - pad, 4);
+    const bottom = Math.min(rect.top + rect.height + pad, window.innerHeight - 4);
+    const right = Math.min(rect.left + rect.width + pad, window.innerWidth - 4);
+    if (bottom - top > 8 && right - left > 8) spot = { top, left, width: right - left, height: bottom - top };
+  }
+  // Dock the card away from the target: the other side on wide screens, top/bottom on phones.
   const dockLeft = spot ? spot.left + spot.width / 2 > window.innerWidth * 0.55 : false;
-  const centered = !step.target;
+  const dockTop = spot ? narrow() && spot.top + spot.height / 2 > window.innerHeight * 0.55 : false;
+  const centered = !step.target || lost;
   const roleLabel = step.role ? t(`role.${step.role}` as DictKey) : null;
 
   const stepLabel = t("tour.stepOf").replace("{n}", String(i + 1)).replace("{total}", String(total));
@@ -272,6 +367,12 @@ function TourRunner({ state, update }: { state: Stored; update: (s: Stored | nul
             </p>
             <p className="mt-0.5 font-display text-[1.2rem] leading-tight text-navy">{t(step.titleKey)}</p>
             <p className="mt-1 text-[13.5px] leading-snug text-foreground/85">{t(step.bodyKey)}</p>
+            {step.tryKey && (
+              <p className="mt-1.5 text-[13px] text-gold-ink">
+                <span className="font-semibold">{t("tour.tryIt")}: </span>
+                {t(step.tryKey)}
+              </p>
+            )}
           </div>
           <button
             type="button"
@@ -303,7 +404,11 @@ function TourRunner({ state, update }: { state: Stored; update: (s: Stored | nul
   }
 
   return (
-    <div className="tour-root" aria-live="polite">
+    <div className="tour-root">
+      {/* Stable live region (the card itself remounts per step, which screen readers can miss). */}
+      <p className="sr-only" aria-live="polite">
+        {stepLabel}. {t(step.titleKey)}. {t(step.bodyKey)}
+      </p>
       {/* Dim + spotlight (visual only). */}
       {centered ? (
         <div aria-hidden className="tour-dim fixed inset-0 z-[60] pointer-events-none" />
@@ -324,7 +429,7 @@ function TourRunner({ state, update }: { state: Stored; update: (s: Stored | nul
         className={`tour-card fixed z-[70] w-[calc(100vw-2rem)] max-w-[25rem] border border-border bg-surface text-foreground shadow-[0_18px_50px_-12px_rgba(8,22,48,0.45)] ${
           centered
             ? "inset-0 m-auto h-fit max-w-[30rem]"
-            : `bottom-4 ${dockLeft ? "left-4 sm:left-6" : "right-4 sm:right-6"} sm:bottom-6`
+            : `${dockTop ? "top-4" : "bottom-4"} ${dockLeft ? "left-4 sm:left-6" : "right-4 sm:right-6"} sm:bottom-6 sm:top-auto`
         }`}
       >
         {/* Tricolor band doubles as the autoplay progress bar. */}
@@ -332,7 +437,7 @@ function TourRunner({ state, update }: { state: Stored; update: (s: Stored | nul
           <span className="flex-[2] bg-gold" />
           <span className="flex-1 bg-navy" />
           <span className="flex-1 bg-red" />
-          {state.auto && !busy && (
+          {state.auto && ready && (
             <span
               key={`p-${i}`}
               className="tour-progress absolute inset-y-0 left-0 bg-white/60"
@@ -409,6 +514,7 @@ function TourRunner({ state, update }: { state: Stored; update: (s: Stored | nul
                 </button>
               )}
               <button
+                ref={nextBtn}
                 type="button"
                 onClick={next}
                 data-tour-next
@@ -423,6 +529,10 @@ function TourRunner({ state, update }: { state: Stored; update: (s: Stored | nul
       </aside>
     </div>
   );
+}
+
+function narrow() {
+  return window.innerWidth < 640;
 }
 
 function reduceMotion() {
