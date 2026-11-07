@@ -7,7 +7,7 @@ import { ConvexError } from "convex/values";
 import { api } from "../../../convex/_generated/api";
 import { useI18n } from "@/lib/i18n";
 import type { DictKey } from "@/lib/dict";
-import { MaterialGlyph } from "@/components/ui/MaterialGlyph";
+import { MaterialImage } from "@/components/public/MaterialImage";
 import {
   DoubleRule,
   FlagBand,
@@ -151,7 +151,7 @@ export function ContributionSheet({
     >
       <FlagBand thickness={5} className="shrink-0" />
       <div className="flex items-start gap-3 px-5 sm:px-7 pt-4 pb-4 border-b border-border">
-        {card && <MaterialGlyph itemKey={card.itemKey} className="mt-1 size-10 shrink-0 text-foreground" />}
+        {card && <MaterialImage itemKey={card.itemKey} alt="" className="mt-1 size-14 shrink-0 rounded-[2px]" />}
         <div className="min-w-0 flex-1">
           <h2 id={titleId} className="font-display text-2xl font-normal leading-tight">
             {done ? t("donate.successTitle") : t("donate.sheetTitle")}

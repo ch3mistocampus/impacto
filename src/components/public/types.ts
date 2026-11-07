@@ -23,25 +23,23 @@ export type PublicStatus = "published" | "paused" | "completed";
 /**
  * Category → token classes. Tricolor: programs are told apart by SHAPE, never colour, so every
  * category maps to the same neutral ink/paper classes. Render `<CategoryMark category=… />`
- * (src/components/ui/tricolor.tsx) next to the label to distinguish programs. `emoji` is kept
- * for API compatibility and is always empty (never render emoji). `image` paths have no assets;
- * `MaterialImage` draws an emblem for them instead.
+ * (src/components/ui/tricolor.tsx) next to the label to distinguish programs. `image` points
+ * to a generated program illustration, used only when no approved cover photo is available.
  */
 const NEUTRAL = {
   text: "text-foreground",
   bg: "bg-foreground",
   soft: "bg-paper",
   border: "border-rule",
-  emoji: "",
 } as const;
 
 export const CATEGORY_STYLE: Record<
   Category,
-  { text: string; bg: string; soft: string; border: string; image: string; emoji: string }
+  { text: string; bg: string; soft: string; border: string; image: string }
 > = {
-  roof_shelter: { ...NEUTRAL, image: "/brand/roof_shelter.png" },
-  reconstruction: { ...NEUTRAL, image: "/brand/reconstruction.png" },
-  heal_sow: { ...NEUTRAL, image: "/brand/heal_sow.png" },
+  roof_shelter: { ...NEUTRAL, image: "/brand/roof_shelter.webp" },
+  reconstruction: { ...NEUTRAL, image: "/brand/reconstruction.webp" },
+  heal_sow: { ...NEUTRAL, image: "/brand/heal_sow.webp" },
 };
 
 export function isCategory(x: unknown): x is Category {

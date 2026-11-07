@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRef, useState, type PointerEvent } from "react";
 import { useI18n } from "@/lib/i18n";
-import { MaterialGlyph } from "@/components/ui/MaterialGlyph";
+import { MaterialImage } from "@/components/public/MaterialImage";
 import {
   CategoryMark,
   DoubleRule,
@@ -120,9 +120,15 @@ export function SwipeCard({
             </span>
           </p>
 
-          <div className="mt-3 flex items-center justify-center gap-3 text-foreground">
-            <MaterialGlyph itemKey={card.itemKey} className="size-11 shrink-0" />
-            <h2 className="font-display text-[2.1rem] sm:text-[2.5rem] font-normal leading-none">{name}</h2>
+          <div className="mt-3 flex flex-col items-center gap-2 text-foreground">
+            <MaterialImage
+              itemKey={card.itemKey}
+              alt=""
+              className="size-28 sm:size-32 shrink-0 rounded-[2px]"
+              sizes="(min-width: 640px) 128px, 112px"
+              loading="eager"
+            />
+            <h2 className="text-center font-display text-[2.1rem] sm:text-[2.5rem] font-normal leading-none">{name}</h2>
           </div>
 
           {/* the figure */}

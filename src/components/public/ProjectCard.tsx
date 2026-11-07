@@ -38,8 +38,9 @@ export function ProjectCard({ p, hrefBase = "/p" }: { p: ProjectCardData; hrefBa
         <MaterialImage
           src={p.coverPhotoUrl ?? s.image}
           alt=""
-          emoji={s.emoji}
-          className={`size-full ${p.coverPhotoUrl ? "object-cover" : "p-2"}`}
+          fallbackSrc={s.image}
+          className="size-full"
+          sizes="(min-width: 640px) 72px, 60px"
         />
       </div>
       <div className="min-w-0">
