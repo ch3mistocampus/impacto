@@ -3,7 +3,7 @@ import type { MutationCtx } from "./_generated/server";
 import { v, ConvexError } from "convex/values";
 import type { Doc } from "./_generated/dataModel";
 import { computeLedger } from "./lib/ledger";
-import { audit } from "./lib/auth";
+import { audit, getUser } from "./lib/auth";
 import { materialMilestoneText, pledgeModeValidator } from "./projects";
 
 const DAY = 24 * 60 * 60 * 1000;
@@ -24,14 +24,21 @@ export const create = mutation({
     mode: pledgeModeValidator,
     donorName: v.string(),
     donorContact: v.string(),
+    /** Optional: when the caller is a signed-in donor, the pledge is tied to their account. */
+    sessionToken: v.optional(v.string()),
   },
   returns: v.object({ pledgeId: v.id("pledges"), followToken: v.string() }),
   handler: async (ctx, args) => {
     if (!Number.isInteger(args.qty) || args.qty < 1 || args.qty > MAX_QTY) {
       throw new ConvexError({ code: "INVALID_QTY" });
     }
-    const donorName = args.donorName.trim();
-    const donorContact = args.donorContact.trim();
+    // Unknown/expired tokens or non-donor roles simply pledge anonymously (no error).
+    const caller = await getUser(ctx, args.sessionToken);
+    const donorUser = caller?.role === "donor" ? caller : null;
+    const donorName = args.donorName.trim() || (donorUser?.name ?? "");
+    // Signed-in donors may omit contact: the nonprofit reaches them through the account.
+    const donorContact =
+      args.donorContact.trim() || (donorUser ? (donorUser.email ?? `cuenta demo: ${donorUser.name}`) : "");
     if (!donorName || donorName.length > 120 || !donorContact || donorContact.length > 200) {
       throw new ConvexError({ code: "INVALID_DONOR" });
     }
@@ -62,6 +69,7 @@ export const create = mutation({
       status: "active",
       followToken,
       expiresAt: now + PLEDGE_TTL,
+      ...(donorUser ? { donorUserId: donorUser._id } : {}),
     });
     // Public timeline entry: a pledge is a promise, explicitly NOT a delivery.
     const text = materialMilestoneText("pledge", args.qty, need);
@@ -73,7 +81,14 @@ export const create = mutation({
       publicDescriptionEs: text.es,
       publicDescriptionEn: text.en,
     });
-    await audit(ctx, undefined, "pledge", pledgeId, "create", `need=${need._id} qty=${args.qty} mode=${args.mode}`);
+    await audit(
+      ctx,
+      donorUser?._id,
+      "pledge",
+      pledgeId,
+      "create",
+      `need=${need._id} qty=${args.qty} mode=${args.mode}${donorUser ? " donorAccount=1" : ""}`,
+    );
     return { pledgeId, followToken };
   },
 });

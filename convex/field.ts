@@ -9,6 +9,8 @@ import {
 } from "./_generated/server";
 import type { Doc, Id } from "./_generated/dataModel";
 import { audit, requireRole } from "./lib/auth";
+import { computeLedger } from "./lib/ledger";
+import { isPublicStatus, publicEvidenceList } from "./projects";
 import { category, locale, urgency } from "./schema";
 
 /**
@@ -542,6 +544,7 @@ export const getMyDraft = query({
             aiError: report.aiError ?? null,
             draftExtraction: (report.draftExtraction ?? null) as typeof extractionValidator.type | null,
             reviewStatus: report.reviewStatus,
+            coordinatorNotes: coordinatorNotesOf(report),
           }
         : null,
       needs: needs.map((n) => ({
@@ -582,6 +585,32 @@ export const listMyProjects = query({
           .query("materialNeeds")
           .withIndex("by_project", (q) => q.eq("projectId", p._id))
           .take(100);
+        // Progress hints (additive). Only computed for projects past review; drafts keep it cheap.
+        let needsPublished = 0;
+        let needsVerified = 0;
+        let needsReceiving = 0;
+        let activePledges = 0;
+        let pendingFollowUps = 0;
+        if (p.status !== "draft" && p.status !== "in_review") {
+          for (const n of needs) {
+            if (n.status !== "approved" && n.status !== "fulfilled") continue;
+            needsPublished++;
+            const l = await computeLedger(ctx, n._id);
+            if (l.requested !== null && l.requested > 0 && l.verified >= l.requested) needsVerified++;
+            if (l.received > 0) needsReceiving++;
+          }
+          const pledges = await ctx.db
+            .query("pledges")
+            .withIndex("by_project", (q) => q.eq("projectId", p._id))
+            .take(500);
+          activePledges = pledges.filter((x) => x.status === "active").length;
+          const fus = await ctx.db
+            .query("fieldFollowUps")
+            .withIndex("by_project", (q) => q.eq("projectId", p._id))
+            .take(100);
+          pendingFollowUps = fus.filter((f) => f.status === "pending").length;
+        }
+        const report = p.status === "draft" ? await reportForProject(ctx, p._id) : null;
         return {
           _id: p._id,
           publicAlias: p.publicAlias,
@@ -593,9 +622,299 @@ export const listMyProjects = query({
           _creationTime: p._creationTime,
           needsCount: needs.length,
           needsToConfirm: needs.filter((n) => n.needsConfirmation).length,
+          changesRequested: report?.reviewStatus === "changes_requested",
+          needsPublished,
+          needsVerified,
+          needsReceiving,
+          activePledges,
+          pendingFollowUps,
         };
       }),
     );
+  },
+});
+
+// ---------- progress view (non-draft projects) ----------
+
+/**
+ * Coordinator notes = fieldReports.missingQuestions entries that are NOT the AI's own questions
+ * (storeExtraction writes AI questions as "es / en"; coordinator.requestChanges appends raw notes).
+ */
+function coordinatorNotesOf(report: Doc<"fieldReports">): string[] {
+  const ex = report.draftExtraction as typeof extractionValidator.type | undefined;
+  const ai = new Set((ex?.missingQuestions ?? []).map((q) => `${q.es} / ${q.en}`));
+  return (report.missingQuestions ?? []).filter((q) => !ai.has(q));
+}
+
+const norm = (s: string) => s.trim().toLowerCase();
+
+/** Full read-only view of a project the field worker created (any status). Creator only. */
+export const getMyProject = query({
+  args: { sessionToken: v.string(), projectId: v.id("projects") },
+  handler: async (ctx, args) => {
+    const user = await requireRole(ctx, args.sessionToken, [...FIELD]);
+    const project = await ctx.db.get(args.projectId);
+    if (!project || project.createdBy !== user._id) return null;
+    const report = await reportForProject(ctx, project._id);
+    const ex = (report?.draftExtraction ?? null) as typeof extractionValidator.type | null;
+    const approver = project.approvedBy ? await ctx.db.get(project.approvedBy) : null;
+
+    // Needs as published, compared with the AI draft (matched by itemKey, first unused).
+    const needDocs = await ctx.db
+      .query("materialNeeds")
+      .withIndex("by_project", (q) => q.eq("projectId", project._id))
+      .take(100);
+    const draftMaterials = ex?.materials ?? [];
+    const used = new Set<number>();
+    const needs = [];
+    for (const n of needDocs) {
+      const idx = draftMaterials.findIndex((m, i) => !used.has(i) && m.itemKey === n.itemKey);
+      if (idx >= 0) used.add(idx);
+      const d = idx >= 0 ? draftMaterials[idx] : null;
+      const draftQty = d && d.quantity !== null && d.quantity > 0 ? d.quantity : null;
+      const qty = n.requestedQty ?? null;
+      const diff = d
+        ? draftQty !== qty || norm(d.nameEs) !== norm(n.nameEs) || norm(d.nameEn) !== norm(n.nameEn)
+          ? ("edited" as const)
+          : ("same" as const)
+        : ("added" as const);
+      // Was it touched by a coordinator? (audit rows written by coordinator.updateNeed/addNeed)
+      const coordAudit = await ctx.db
+        .query("auditEvents")
+        .withIndex("by_entity", (q) => q.eq("entityType", "materialNeed").eq("entityId", n._id))
+        .first();
+      needs.push({
+        _id: n._id,
+        itemKey: n.itemKey,
+        nameEs: n.nameEs,
+        nameEn: n.nameEn,
+        unit: n.unit,
+        requestedQty: qty,
+        needsConfirmation: n.needsConfirmation,
+        aiSuggested: n.aiSuggested,
+        status: n.status,
+        verified: n.verifiedBy !== undefined,
+        ledger: await computeLedger(ctx, n._id),
+        draft: d ? { nameEs: d.nameEs, nameEn: d.nameEn, quantity: draftQty, unit: d.unit } : null,
+        diff,
+        // Audit proves a coordinator edit; otherwise a diff with no worker edits can only come from review.
+        editedByCoordinator: coordAudit !== null || (diff !== "same" && !!ex && !ex.editedByWorker && !!project.approvedBy),
+      });
+    }
+    const removedFromDraft = draftMaterials
+      .filter((_, i) => !used.has(i))
+      .map((m) => ({ itemKey: m.itemKey, nameEs: m.nameEs, nameEn: m.nameEn, quantity: m.quantity, unit: m.unit }));
+
+    // Photos (creator may see private originals of their own project).
+    const followUpDocs = await ctx.db
+      .query("fieldFollowUps")
+      .withIndex("by_project", (q) => q.eq("projectId", project._id))
+      .order("desc")
+      .take(100);
+    const followUpPhotoIds = new Set(followUpDocs.map((f) => f.photoId).filter(Boolean));
+    const photoDocs = await ctx.db
+      .query("photos")
+      .withIndex("by_project", (q) => q.eq("projectId", project._id))
+      .take(60);
+    const photos = await Promise.all(
+      photoDocs.map(async (p) => ({
+        _id: p._id,
+        url: await ctx.storage.getUrl(p.storageId),
+        visibility: p.visibility,
+        reviewStatus: p.reviewStatus,
+        captionEs: p.captionEs ?? null,
+        captionEn: p.captionEn ?? null,
+        isCover: project.coverPhotoId === p._id,
+        fromFollowUp: followUpPhotoIds.has(p._id),
+        createdAt: p._creationTime,
+      })),
+    );
+    const photoUrl = new Map(photos.map((p) => [p._id as string, p.url] as const));
+
+    // Timeline: verified + pending milestones (pending is for the worker's eyes only).
+    const ms = await ctx.db
+      .query("milestones")
+      .withIndex("by_project_time", (q) => q.eq("projectId", project._id))
+      .take(300);
+    const timeline = ms.map((m) => ({
+      milestoneId: m._id,
+      type: m.type,
+      status: m.status,
+      occurredAt: m.occurredAt,
+      descriptionEs: m.publicDescriptionEs,
+      descriptionEn: m.publicDescriptionEn,
+      photoUrl: m.photoId ? (photoUrl.get(m.photoId) ?? null) : null,
+    }));
+
+    const pledges = await ctx.db
+      .query("pledges")
+      .withIndex("by_project", (q) => q.eq("projectId", project._id))
+      .take(500);
+
+    const priv = await ctx.db
+      .query("projectPrivate")
+      .withIndex("by_project", (q) => q.eq("projectId", project._id))
+      .unique();
+
+    const followUps = await Promise.all(followUpDocs.map((f) => followUpRow(ctx, f)));
+
+    return {
+      project: {
+        _id: project._id,
+        publicAlias: project.publicAlias,
+        category: project.category,
+        titleEs: project.titleEs,
+        titleEn: project.titleEn,
+        summaryEs: project.summaryEs,
+        summaryEn: project.summaryEn,
+        urgency: project.urgency,
+        status: project.status,
+        region: project.region ?? null,
+        // Seeded/backdated projects carry the real report date on the need_reported milestone.
+        createdAt: Math.min(
+          project._creationTime,
+          ...ms.filter((m) => m.type === "need_reported").map((m) => m.occurredAt),
+        ),
+        approvedAt: project.approvedAt ?? null,
+        publishedAt: project.publishedAt ?? null,
+        approvedByName: approver?.name ?? null,
+        safetyPauseReasonPublic: project.status === "paused" ? (project.safetyPauseReasonPublic ?? null) : null,
+        isPublic: isPublicStatus(project.status),
+      },
+      feedback: {
+        reviewStatus: report?.reviewStatus ?? null,
+        coordinatorNotes: report ? coordinatorNotesOf(report) : [],
+        aiQuestions: ex?.missingQuestions ?? [],
+      },
+      report: report
+        ? {
+            transcriptOriginal: report.transcriptOriginal,
+            transcriptTranslated: report.transcriptTranslated ?? null,
+            language: report.language,
+            hasAudio: !!report.audioStorageId,
+            draft: ex
+              ? {
+                  source: ex.source,
+                  model: ex.model ?? null,
+                  titleEs: ex.titleEs,
+                  titleEn: ex.titleEn,
+                  summaryEs: ex.summaryEs,
+                  summaryEn: ex.summaryEn,
+                  category: ex.category,
+                  urgency: ex.urgency,
+                  damageDescriptionEs: ex.damageDescriptionEs ?? null,
+                  damageDescriptionEn: ex.damageDescriptionEn ?? null,
+                  materials: ex.materials.map((m) => ({
+                    itemKey: m.itemKey,
+                    nameEs: m.nameEs,
+                    nameEn: m.nameEn,
+                    quantity: m.quantity,
+                    unit: m.unit,
+                  })),
+                  proposedMilestones: ex.proposedMilestones ?? [],
+                  redactions: ex.redactions,
+                }
+              : null,
+          }
+        : null,
+      needs,
+      removedFromDraft,
+      timeline,
+      photos,
+      evidence: await publicEvidenceList(ctx, project._id),
+      pledges: {
+        active: pledges.filter((p) => p.status === "active").length,
+        fulfilled: pledges.filter((p) => p.status === "fulfilled").length,
+      },
+      // Creator-only (checked above). Never public, never sent to AI.
+      private: priv
+        ? {
+            beneficiaryName: priv.beneficiaryName ?? "",
+            privateAddress: priv.privateAddress ?? "",
+            contact: priv.contact ?? "",
+            privateNotes: priv.privateNotes ?? "",
+          }
+        : null,
+      followUps,
+    };
+  },
+});
+
+async function followUpRow(ctx: QueryCtx, f: Doc<"fieldFollowUps">) {
+  const photo = f.photoId ? await ctx.db.get(f.photoId) : null;
+  return {
+    _id: f._id,
+    noteEs: f.noteEs ?? null,
+    noteEn: f.noteEn ?? null,
+    status: f.status,
+    createdAt: f._creationTime,
+    photo: photo
+      ? {
+          _id: photo._id,
+          url: await ctx.storage.getUrl(photo.storageId),
+          visibility: photo.visibility,
+          reviewStatus: photo.reviewStatus,
+        }
+      : null,
+  };
+}
+
+const FOLLOW_UP_STATUSES = ["published", "paused", "completed"] as const;
+
+/** Progress note and/or photo on a published/paused/completed project. Private until reviewed. */
+export const addFollowUp = mutation({
+  args: {
+    sessionToken: v.string(),
+    projectId: v.id("projects"),
+    noteEs: v.optional(v.string()),
+    noteEn: v.optional(v.string()),
+    photoStorageId: v.optional(v.id("_storage")),
+  },
+  returns: v.id("fieldFollowUps"),
+  handler: async (ctx, args) => {
+    const user = await requireRole(ctx, args.sessionToken, [...FIELD]);
+    const project = await loadOwnProject(ctx, user, args.projectId);
+    if (!(FOLLOW_UP_STATUSES as readonly string[]).includes(project.status))
+      throw new ConvexError({ code: "INVALID_STATUS", status: project.status });
+    const noteEs = clean(args.noteEs)?.slice(0, 2000);
+    const noteEn = clean(args.noteEn)?.slice(0, 2000);
+    if (!noteEs && !noteEn && !args.photoStorageId) throw new ConvexError({ code: "EMPTY_FOLLOW_UP" });
+    // Photo is private + pending until a coordinator approves it for public view.
+    const photoId = args.photoStorageId
+      ? await ctx.db.insert("photos", {
+          projectId: project._id,
+          storageId: args.photoStorageId,
+          visibility: "private",
+          reviewStatus: "pending",
+          uploadedBy: user._id,
+        })
+      : undefined;
+    const id = await ctx.db.insert("fieldFollowUps", {
+      projectId: project._id,
+      noteEs,
+      noteEn,
+      photoId,
+      status: "pending",
+      createdBy: user._id,
+    });
+    // Audit without note text (may contain private details before review).
+    await audit(ctx, user._id, "fieldFollowUp", id, "field.addFollowUp", `project=${project._id} photo=${photoId ? "yes" : "no"}`);
+    return id;
+  },
+});
+
+export const listFollowUps = query({
+  args: { sessionToken: v.string(), projectId: v.id("projects") },
+  handler: async (ctx, args) => {
+    const user = await requireRole(ctx, args.sessionToken, [...FIELD]);
+    const project = await ctx.db.get(args.projectId);
+    if (!project || project.createdBy !== user._id) return [];
+    const rows = await ctx.db
+      .query("fieldFollowUps")
+      .withIndex("by_project", (q) => q.eq("projectId", project._id))
+      .order("desc")
+      .take(100);
+    return await Promise.all(rows.map((f) => followUpRow(ctx, f)));
   },
 });
 

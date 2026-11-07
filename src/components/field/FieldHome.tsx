@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useQuery } from "convex/react";
+import type { FunctionReturnType } from "convex/server";
 import { api } from "../../../convex/_generated/api";
 import { useI18n } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
@@ -66,6 +67,7 @@ export function FieldHome() {
                       )}
                       <span className="tabular-nums">{fmtDate.format(new Date(p._creationTime))}</span>
                     </div>
+                    <ProgressHint p={p} />
                   </div>
                 </Link>
               </li>
@@ -74,5 +76,36 @@ export function FieldHome() {
         )}
       </section>
     </div>
+  );
+}
+
+type Row = FunctionReturnType<typeof api.field.listMyProjects>[number];
+
+/** One-line progress hint per project (changes requested, review, verified materials, pledges). */
+function ProgressHint({ p }: { p: Row }) {
+  const { t } = useI18n();
+  const parts: { text: string; tone: string }[] = [];
+  if (p.status === "draft" && p.changesRequested) parts.push({ text: t("field.hint.changes"), tone: "text-gold-ink font-semibold" });
+  if (p.status === "in_review") parts.push({ text: t("field.hint.inReview"), tone: "text-gold-ink" });
+  if (p.needsPublished > 0) {
+    parts.push({
+      text: `${p.needsVerified}/${p.needsPublished} ${t("field.hint.verified")}`,
+      tone: p.needsVerified > 0 ? "text-emerald font-semibold" : "text-foreground",
+    });
+    if (p.needsReceiving > 0 && p.needsVerified < p.needsPublished)
+      parts.push({ text: `${p.needsReceiving} ${t("field.hint.receiving")}`, tone: "text-foreground" });
+  }
+  if (p.activePledges > 0) parts.push({ text: `${p.activePledges} ${t("field.hint.pledges")}`, tone: "text-gold-ink" });
+  if (p.pendingFollowUps > 0) parts.push({ text: `${p.pendingFollowUps} ${t("field.hint.followUps")}`, tone: "text-muted" });
+  if (parts.length === 0) return null;
+  return (
+    <p className="flex flex-wrap gap-x-3 gap-y-1 text-sm tabular-nums">
+      {parts.map((x, i) => (
+        <span key={i} className={x.tone}>
+          {i > 0 && <span aria-hidden className="mr-3 text-border">·</span>}
+          {x.text}
+        </span>
+      ))}
+    </p>
   );
 }

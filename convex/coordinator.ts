@@ -923,3 +923,154 @@ export {
   financials,
 } from "./financials";
 export { generateWeeklyReport, updateWeeklyReport, publishWeeklyReport, listWeeklyReports } from "./weekly";
+
+// ---- Field follow-ups (ROADMAP #29): field workers post progress notes/photos; coordinator reviews ----
+
+const followUpRowValidator = v.object({
+  followUpId: v.id("fieldFollowUps"),
+  projectId: v.id("projects"),
+  publicAlias: v.string(),
+  noteEs: v.union(v.string(), v.null()),
+  noteEn: v.union(v.string(), v.null()),
+  status: v.union(v.literal("pending"), v.literal("approved"), v.literal("rejected")),
+  createdAt: v.number(),
+  createdByName: v.union(v.string(), v.null()),
+  reviewedByName: v.union(v.string(), v.null()),
+  photo: v.union(
+    v.null(),
+    v.object({
+      photoId: v.id("photos"),
+      privateUrl: v.union(v.string(), v.null()), // coordinator-only original
+      visibility: v.union(v.literal("private"), v.literal("publicApproved")),
+      reviewStatus: v.union(v.literal("pending"), v.literal("approved"), v.literal("rejected")),
+    }),
+  ),
+});
+
+async function followUpForCoordinator(ctx: QueryCtx, f: Doc<"fieldFollowUps">, p: Doc<"projects">) {
+  const photo = f.photoId ? await ctx.db.get(f.photoId) : null;
+  const author = await ctx.db.get(f.createdBy);
+  const reviewer = f.reviewedBy ? await ctx.db.get(f.reviewedBy) : null;
+  return {
+    followUpId: f._id,
+    projectId: p._id,
+    publicAlias: p.publicAlias,
+    noteEs: f.noteEs ?? null,
+    noteEn: f.noteEn ?? null,
+    status: f.status,
+    createdAt: f._creationTime,
+    createdByName: author?.name ?? null,
+    reviewedByName: reviewer?.name ?? null,
+    photo: photo
+      ? {
+          photoId: photo._id,
+          privateUrl: await ctx.storage.getUrl(photo.storageId),
+          visibility: photo.visibility,
+          reviewStatus: photo.reviewStatus,
+        }
+      : null,
+  };
+}
+
+export const listFollowUps = query({
+  args: { ...tokenArg, projectId: v.optional(v.id("projects")) },
+  returns: v.array(followUpRowValidator),
+  handler: async (ctx, args) => {
+    if (args.projectId) {
+      const { project } = await requireCoordinatorFor(ctx, args.sessionToken, args.projectId);
+      const rows = await ctx.db
+        .query("fieldFollowUps")
+        .withIndex("by_project", (q) => q.eq("projectId", project._id))
+        .order("desc")
+        .take(100);
+      return await Promise.all(rows.map((f) => followUpForCoordinator(ctx, f, project)));
+    }
+    const user = await requireRole(ctx, args.sessionToken, ["coordinator"]);
+    const rows = await ctx.db.query("fieldFollowUps").order("desc").take(200);
+    const out = [];
+    for (const f of rows) {
+      const p = await ctx.db.get(f.projectId);
+      if (!p || p.nonprofitId !== user.nonprofitId) continue;
+      out.push(await followUpForCoordinator(ctx, f, p));
+    }
+    return out;
+  },
+});
+
+export const reviewFollowUp = mutation({
+  args: {
+    ...tokenArg,
+    followUpId: v.id("fieldFollowUps"),
+    approve: v.boolean(),
+    /** Also approve the attached photo for public view (requires privacyConfirmed). */
+    publishPhoto: v.optional(v.boolean()),
+    /** Coordinator ticked the privacy checklist (no faces, house numbers, names, exact location). */
+    privacyConfirmed: v.optional(v.boolean()),
+    /** Optional public-safe rewrite of the note before it becomes a public milestone. */
+    noteEs: v.optional(v.string()),
+    noteEn: v.optional(v.string()),
+  },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const f = await ctx.db.get(args.followUpId);
+    if (!f) throw new ConvexError({ code: "NOT_FOUND", entity: "followUp" });
+    const { user, project } = await requireCoordinatorFor(ctx, args.sessionToken, f.projectId);
+    if (f.status !== "pending") throw new ConvexError({ code: "INVALID_STATUS", status: f.status });
+    const photo = f.photoId ? await ctx.db.get(f.photoId) : null;
+
+    if (!args.approve) {
+      await ctx.db.patch("fieldFollowUps", f._id, { status: "rejected", reviewedBy: user._id });
+      if (photo) await ctx.db.patch("photos", photo._id, { visibility: "private", reviewStatus: "rejected" });
+      await audit(ctx, user._id, "fieldFollowUp", f._id, "reject");
+      return null;
+    }
+
+    const publishPhoto = !!args.publishPhoto && !!photo;
+    if (publishPhoto && !args.privacyConfirmed) throw new ConvexError({ code: "PRIVACY_CHECK_REQUIRED" });
+    const rawEs = (args.noteEs ?? f.noteEs ?? "").trim();
+    const rawEn = (args.noteEn ?? f.noteEn ?? "").trim();
+    const es = rawEs || rawEn || "Avance reportado desde campo";
+    const en = rawEn || rawEs || "Progress update from the field";
+    const priv = await ctx.db
+      .query("projectPrivate")
+      .withIndex("by_project", (q) => q.eq("projectId", project._id))
+      .first();
+    const leak = findPrivateLeak(priv?.beneficiaryName, { noteEs: es, noteEn: en });
+    if (leak) throw new ConvexError({ code: "ALIAS_CONTAINS_PRIVATE", field: leak });
+
+    if (photo) {
+      await ctx.db.patch(
+        "photos",
+        photo._id,
+        publishPhoto
+          ? { visibility: "publicApproved", reviewStatus: "approved" }
+          : { visibility: "private", reviewStatus: "rejected" },
+      );
+    }
+    const milestoneId = await ctx.db.insert("milestones", {
+      projectId: project._id,
+      type: "outcome",
+      status: "verified",
+      verifiedBy: user._id,
+      occurredAt: Date.now(),
+      publicDescriptionEs: es,
+      publicDescriptionEn: en,
+      photoId: publishPhoto ? photo!._id : undefined,
+    });
+    await ctx.db.patch("fieldFollowUps", f._id, {
+      status: "approved",
+      reviewedBy: user._id,
+      ...(args.noteEs !== undefined ? { noteEs: rawEs || undefined } : {}),
+      ...(args.noteEn !== undefined ? { noteEn: rawEn || undefined } : {}),
+    });
+    await audit(
+      ctx,
+      user._id,
+      "fieldFollowUp",
+      f._id,
+      "approve",
+      `milestone=${milestoneId} photo=${photo ? (publishPhoto ? "public" : "private") : "none"}`,
+    );
+    return null;
+  },
+});

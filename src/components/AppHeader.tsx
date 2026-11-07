@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useId, useRef, useState } from "react";
+import { Suspense, useEffect, useId, useRef, useState } from "react";
 import { useI18n } from "@/lib/i18n";
 import { useSession, type Role } from "@/lib/session";
 import type { DictKey } from "@/lib/dict";
@@ -12,24 +12,48 @@ const ROLES: Role[] = ["field_worker", "coordinator", "donor", "community"];
 
 type NavItem = { href: string; key: DictKey };
 
+/** Each demo role's home. The signed-in role's home is listed first and marked in the nav. */
+const ROLE_HOME: Record<Role, string> = {
+  field_worker: "/field",
+  coordinator: "/coordinator",
+  donor: "/donations",
+  community: "/community",
+};
+
 /**
  * Two parts:
  *  1. Flag band + slim demo bar (scrolls away). Holds the demo-mode notice and the demo role
  *     switcher, so "this is synthetic" is stated once, globally.
  *  2. Main bar (sticky): wordmark, primary nav with an underline-rule active state, ES | EN.
  */
+/**
+ * usePathname() in the root layout must sit under <Suspense> with Cache Components on,
+ * otherwise every route logs a blocking-route error.
+ */
 export function AppHeader() {
+  return (
+    <Suspense fallback={null}>
+      <AppHeaderInner />
+    </Suspense>
+  );
+}
+
+function AppHeaderInner() {
   const { t, locale, setLocale } = useI18n();
   const { user } = useSession();
   const pathname = usePathname() ?? "/";
 
-  const items: NavItem[] = [
+  const home = user ? ROLE_HOME[user.role] : null;
+  const base: NavItem[] = [
     { href: "/donate", key: "nav.donate" },
     { href: "/transparency", key: "nav.transparency" },
+    { href: "/community", key: "nav.community" },
     { href: "/donations", key: "nav.donations" },
     ...(user?.role === "field_worker" ? [{ href: "/field", key: "nav.field" as DictKey }] : []),
     ...(user?.role === "coordinator" ? [{ href: "/coordinator", key: "nav.coordinator" as DictKey }] : []),
   ];
+  // Role home first so it's obvious where this role "lives".
+  const items = home ? [...base.filter((i) => i.href === home), ...base.filter((i) => i.href !== home)] : base;
   const isActive = (href: string) => pathname === href || pathname.startsWith(href + "/");
 
   return (
@@ -61,7 +85,7 @@ export function AppHeader() {
 
           <nav aria-label={t("nav.primary")} className="hidden items-stretch gap-6 sm:flex">
             {items.map((it) => (
-              <NavLink key={it.href} href={it.href} active={isActive(it.href)}>
+              <NavLink key={it.href} href={it.href} active={isActive(it.href)} home={it.href === home} homeLabel={t("nav.yourHome")}>
                 {t(it.key)}
               </NavLink>
             ))}
@@ -75,7 +99,14 @@ export function AppHeader() {
         {/* Mobile nav: same links, scrollable row, 44px targets. */}
         <nav aria-label={t("nav.primary")} className="flex gap-5 overflow-x-auto border-t border-border px-4 sm:hidden">
           {items.map((it) => (
-            <NavLink key={it.href} href={it.href} active={isActive(it.href)} mobile>
+            <NavLink
+              key={it.href}
+              href={it.href}
+              active={isActive(it.href)}
+              home={it.href === home}
+              homeLabel={t("nav.yourHome")}
+              mobile
+            >
               {t(it.key)}
             </NavLink>
           ))}
@@ -89,11 +120,16 @@ function NavLink({
   href,
   active,
   mobile = false,
+  home = false,
+  homeLabel,
   children,
 }: {
   href: string;
   active: boolean;
   mobile?: boolean;
+  /** This link is the signed-in role's home: gold marker + "(your home)" for screen readers. */
+  home?: boolean;
+  homeLabel?: string;
   children: React.ReactNode;
 }) {
   return (
@@ -108,7 +144,9 @@ function NavLink({
           : "text-muted hover:text-foreground"
       }`}
     >
+      {home && <span aria-hidden className="mr-1.5 size-1.5 shrink-0 rotate-45 bg-gold" />}
       {children}
+      {home && <span className="sr-only"> ({homeLabel})</span>}
     </Link>
   );
 }
@@ -153,6 +191,7 @@ function LangSwitch({
 function DemoRoleSwitcher() {
   const { t } = useI18n();
   const { user, signInAs, signOut } = useSession();
+  const pathname = usePathname() ?? "/";
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
@@ -182,6 +221,20 @@ function DemoRoleSwitcher() {
       <div className="flex items-center gap-2">
         <span className="hidden text-white/75 sm:inline">{t("nav.viewingAs")}</span>
         <span className="font-semibold">{t(`role.${user.role}`)}</span>
+        {!pathname.startsWith(ROLE_HOME[user.role]) && (
+          <>
+            <span aria-hidden className="text-white/50">
+              ·
+            </span>
+            <Link
+              href={ROLE_HOME[user.role]}
+              className="flex min-h-11 items-center gap-1.5 font-semibold text-gold underline decoration-1 underline-offset-4 hover:decoration-2"
+            >
+              {t("nav.goHome")}
+              <span aria-hidden>→</span>
+            </Link>
+          </>
+        )}
         <span aria-hidden className="text-white/50">
           ·
         </span>

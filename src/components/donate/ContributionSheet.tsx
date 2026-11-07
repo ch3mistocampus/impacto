@@ -6,6 +6,7 @@ import { useMutation } from "convex/react";
 import { ConvexError } from "convex/values";
 import { api } from "../../../convex/_generated/api";
 import { useI18n } from "@/lib/i18n";
+import { useSession } from "@/lib/session";
 import type { DictKey } from "@/lib/dict";
 import { MaterialGlyph } from "@/components/ui/MaterialGlyph";
 import {
@@ -41,6 +42,9 @@ export function ContributionSheet({
   onClose: (pledged: boolean) => void;
 }) {
   const { t, pick } = useI18n();
+  const { user, sessionToken } = useSession();
+  // Signed-in donors: pledge is tied to their account (pledges.donorUserId); contact is optional.
+  const donor = user?.role === "donor" && sessionToken ? user : null;
   const ref = useRef<HTMLDialogElement>(null);
   const create = useMutation(api.pledges.create);
   const titleId = useId();
@@ -63,6 +67,7 @@ export function ContributionSheet({
     if (cardId) {
       setQty(Math.max(1, Math.min(10, available)));
       setMode(initialMode);
+      if (donor && !name) setName(donor.name);
       setError(null);
       setLiveAvail(null);
       setDone(null);
@@ -86,7 +91,7 @@ export function ContributionSheet({
   async function submit(e: FormEvent) {
     e.preventDefault();
     if (!card || busy) return;
-    if (!name.trim() || !contact.trim()) {
+    if (!name.trim() || (!donor && !contact.trim())) {
       setError(t("donate.required"));
       return;
     }
@@ -104,6 +109,7 @@ export function ContributionSheet({
         mode,
         donorName: name.trim(),
         donorContact: contact.trim(),
+        ...(donor && sessionToken ? { sessionToken } : {}),
       });
       const saved = savePledge({
         token: res.followToken,
@@ -283,7 +289,7 @@ export function ContributionSheet({
               <label className="block">
                 <span className={labelCls}>{t("donate.contact")}</span>
                 <input
-                  required
+                  required={!donor}
                   autoComplete="email"
                   value={contact}
                   maxLength={200}
@@ -291,7 +297,9 @@ export function ContributionSheet({
                   className={inputCls}
                 />
               </label>
+              {donor && <p className="text-sm text-muted">{t("donate.contactOptional")}</p>}
               <p className="text-sm text-muted">{t("donate.privacy")}</p>
+              {donor && <p className="text-sm font-semibold text-foreground">{t("donate.linkedToAccount")}</p>}
             </fieldset>
 
             {error && (

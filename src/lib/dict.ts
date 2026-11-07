@@ -7,6 +7,7 @@ import { donate } from "./dict/donate";
 import { project } from "./dict/project";
 import { field } from "./dict/field";
 import { coord } from "./dict/coord";
+import { community } from "./dict/community";
 
 const d = <T extends Record<string, { es: string; en: string }>>(x: T) => x;
 
@@ -73,6 +74,7 @@ export const dict = d({
   ...project,
   ...field,
   ...coord,
+  ...community,
 });
 
 export type DictKey = keyof typeof dict;

@@ -26,17 +26,19 @@ import { LockGlyph } from "./CoordinatorGate";
 import { ConfirmDialog } from "../ConfirmDialog";
 import { FinancialsPanel } from "./Financials";
 import { WeeklyReportsPanel } from "./WeeklyReports";
+import { CommunityModeration } from "./CommunityModeration";
 import type { InboxItem } from "./types";
 import { MaterialIcon } from "./MaterialIcon";
 
-type Tab = "inbox" | "published" | "pledges" | "financials" | "reports";
-const TABS: Tab[] = ["inbox", "published", "pledges", "financials", "reports"];
+type Tab = "inbox" | "published" | "pledges" | "financials" | "reports" | "community";
+const TABS: Tab[] = ["inbox", "published", "pledges", "financials", "reports", "community"];
 
 export function CoordinatorDesk() {
   const { t } = useI18n();
   const { sessionToken, user } = useSession();
   const [tab, setTab] = useState<Tab>("inbox");
   const inbox = useQuery(api.coordinator.inbox, sessionToken ? { sessionToken } : "skip");
+  const feedback = useQuery(api.community.listForModeration, sessionToken ? { sessionToken } : "skip");
 
   const counts: Record<Tab, number | undefined> = {
     inbox: inbox?.counts.inReview,
@@ -44,6 +46,7 @@ export function CoordinatorDesk() {
     pledges: inbox?.counts.activePledges,
     financials: undefined,
     reports: undefined,
+    community: feedback?.pendingCount,
   };
 
   return (
@@ -51,7 +54,7 @@ export function CoordinatorDesk() {
       <header>
         <FlagBand />
         <div className="flex flex-wrap items-end gap-x-8 gap-y-3 pt-6">
-          <div className="min-w-0 flex-1">
+          <div className="min-w-[min(100%,22rem)] flex-1">
             <Kicker>{t("coord.desk.kicker")}</Kicker>
             <h1 className="mt-1 font-display text-4xl font-normal leading-[1.05] sm:text-5xl">{t("coord.gate.title")}</h1>
           </div>
@@ -94,6 +97,8 @@ export function CoordinatorDesk() {
           <FinancialsPanel />
         ) : tab === "reports" ? (
           <WeeklyReportsPanel />
+        ) : tab === "community" ? (
+          <CommunityModeration />
         ) : tab === "published" ? (
           <ProjectList items={[...inbox.active, ...inbox.completed]} empty={t("coord.published.empty")} mode="manage" />
         ) : (

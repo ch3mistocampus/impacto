@@ -15,11 +15,11 @@ import { MaterialsEditor, type NeedRow } from "./MaterialsEditor";
 import { PhotoPicker } from "./PhotoPicker";
 import { PhotoAnalysis, type SuggestedMaterial } from "./PhotoAnalysis";
 import { PrivateDetails, type PrivateState } from "./PrivateDetails";
-import { CategoryMark, Chip, DoubleRule, FlagBand, btn } from "@/components/ui/tricolor";
+import { ProgressView } from "./ProgressView";
+import { CategoryMark, Chip, btn } from "@/components/ui/tricolor";
 import {
   AiBadge,
   Card,
-  CategoryLabel,
   DEMO_TRANSCRIPT,
   LockIcon,
   Sparkle,
@@ -86,7 +86,7 @@ export function ProjectScreen({ projectId }: { projectId: string }) {
     );
   if (analyzing || data.report.aiStatus === "pending")
     return <AnalyzingPanel withAudio={data.report.hasAudio && !data.report.transcriptOriginal} />;
-  if (data.project.status !== "draft") return <SubmittedView data={data} />;
+  if (data.project.status !== "draft") return <ProgressLoader projectId={data.project._id} />;
   if (!data.report.draftExtraction)
     return <TextFallback data={data} onAnalyze={(text, lang) => void runAnalysis(text, lang)} />;
   return <Editor key={epoch} data={data} onReanalyze={(text) => void runAnalysis(text)} />;
@@ -157,44 +157,26 @@ function TextFallback({ data, onAnalyze }: { data: Draft; onAnalyze: (text: stri
 
 // ---------------------------------------------------------------------------
 
-function SubmittedView({ data }: { data: Draft }) {
-  const { t, pick } = useI18n();
-  const submitted = data.project.status === "in_review";
-  return (
-    <section className="mx-auto mt-10 max-w-md border border-border bg-surface text-center">
-      <FlagBand />
-      <div className="px-6 pb-8 pt-8">
-        {submitted ? (
-          <>
-            <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full border border-emerald text-emerald">
-              <svg aria-hidden viewBox="0 0 24 24" className="h-7 w-7" fill="none" stroke="currentColor" strokeWidth={1.75}>
-                <path d="M5 12.5l4.5 4.5L19 7.5" strokeLinecap="square" />
-              </svg>
-            </span>
-            <h1 className="mt-5 font-display text-[30px] font-normal leading-tight">{t("field.success.title")}</h1>
-            <p className="mt-3 text-[15px] leading-relaxed text-muted">{t("field.success.body")}</p>
-          </>
-        ) : (
-          <p className="font-display text-xl italic text-muted">{t("field.readonly")}</p>
-        )}
-        <DoubleRule className="mt-6" />
-        <div className="flex flex-col items-center gap-2 py-5">
-          <p className="font-display text-xl leading-snug">{pick(data.project.titleEs, data.project.titleEn) || t("field.untitled")}</p>
-          <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-sm text-muted">
-            <CategoryLabel category={data.project.category} />
-            <span className="tabular-nums">
-              {data.needs.length} {t("field.needsCount")}
-            </span>
-            <StatusChip status={data.project.status} />
-          </div>
-        </div>
-        <DoubleRule />
-        <Link href="/field" className={`${btnPrimary} mt-6 w-full`}>
+function ProgressLoader({ projectId }: { projectId: Id<"projects"> }) {
+  const { t } = useI18n();
+  const { sessionToken } = useSession();
+  const data = useQuery(api.field.getMyProject, sessionToken ? { sessionToken, projectId } : "skip");
+  if (data === undefined)
+    return (
+      <div className="flex items-center gap-2 py-16 text-muted">
+        <Spinner /> {t("common.loading")}
+      </div>
+    );
+  if (data === null)
+    return (
+      <Card className="mx-auto mt-10 max-w-md text-center">
+        <p className="font-display text-xl">{t("field.notFound")}</p>
+        <Link href="/field" className={`${btnSecondary} mt-4`}>
           {t("field.success.back")}
         </Link>
-      </div>
-    </section>
-  );
+      </Card>
+    );
+  return <ProgressView data={data} />;
 }
 
 function BackLink() {
@@ -208,7 +190,7 @@ function BackLink() {
 
 // ---------------------------------------------------------------------------
 
-export function Editor({ data, onReanalyze }: { data: Draft; onReanalyze: (transcript?: string) => void }) {
+function Editor({ data, onReanalyze }: { data: Draft; onReanalyze: (transcript?: string) => void }) {
   const { t, pick } = useI18n();
   const { sessionToken } = useSession();
   const report = data.report!;
@@ -377,6 +359,24 @@ export function Editor({ data, onReanalyze }: { data: Draft; onReanalyze: (trans
         <h1 className="font-display text-[34px] font-normal leading-tight">{t("field.step3")}</h1>
         <p className="mt-2 max-w-prose text-base leading-relaxed text-muted">{t("field.review.intro")}</p>
       </div>
+
+      {report.reviewStatus === "changes_requested" && (
+        <section role="alert" className="border border-gold border-l-4 bg-gold-soft px-4 py-4 sm:px-5">
+          <h2 className="font-display text-xl font-normal text-gold-ink">{t("field.changes.title")}</h2>
+          {report.coordinatorNotes.length > 0 ? (
+            <ul className="mt-2 space-y-1.5">
+              {report.coordinatorNotes.map((n, i) => (
+                <li key={i} className="text-[16px] font-semibold leading-relaxed text-foreground">
+                  “{n}”
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="mt-1 text-[15px] italic text-muted">{t("field.changes.noNote")}</p>
+          )}
+          <p className="mt-2 text-sm text-gold-ink">{t("field.changes.body")}</p>
+        </section>
+      )}
 
       {/* Source / provenance */}
       {ex && (

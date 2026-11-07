@@ -9,9 +9,11 @@
  */
 
 import type * as ai from "../ai.js";
+import type * as community from "../community.js";
 import type * as coordinator from "../coordinator.js";
 import type * as crons from "../crons.js";
 import type * as demo from "../demo.js";
+import type * as donor from "../donor.js";
 import type * as evidence from "../evidence.js";
 import type * as field from "../field.js";
 import type * as financials from "../financials.js";
@@ -21,6 +23,7 @@ import type * as pledges from "../pledges.js";
 import type * as projects from "../projects.js";
 import type * as public_ from "../public.js";
 import type * as seed from "../seed.js";
+import type * as seedData from "../seedData.js";
 import type * as sessions from "../sessions.js";
 import type * as weekly from "../weekly.js";
 
@@ -32,9 +35,11 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   ai: typeof ai;
+  community: typeof community;
   coordinator: typeof coordinator;
   crons: typeof crons;
   demo: typeof demo;
+  donor: typeof donor;
   evidence: typeof evidence;
   field: typeof field;
   financials: typeof financials;
@@ -44,6 +49,7 @@ declare const fullApi: ApiFromModules<{
   projects: typeof projects;
   public: typeof public_;
   seed: typeof seed;
+  seedData: typeof seedData;
   sessions: typeof sessions;
   weekly: typeof weekly;
 }>;
