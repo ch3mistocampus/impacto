@@ -9,9 +9,10 @@ import type { DictKey } from "@/lib/dict";
 import { CategoryMark, DoubleRule, Kicker, btn, intlLocale } from "@/components/ui/tricolor";
 import { StatTile } from "./StatTile";
 import { ProjectCard } from "./ProjectCard";
+import { MaterialImage } from "./MaterialImage";
 import { StageLegend } from "./LedgerBar";
 import { DemoStamp } from "./PublicMeta";
-import { CATEGORIES, STAGES, type Category } from "./types";
+import { CATEGORIES, CATEGORY_STYLE, STAGES, type Category } from "./types";
 
 export function Landing() {
   const { t, tn, locale } = useI18n();
@@ -85,6 +86,12 @@ export function Landing() {
                 aria-labelledby={`prog-${c}`}
                 className="flex flex-col border-b border-border py-8 last:border-b-0 md:border-b-0 md:px-8 md:first:pl-0 md:last:pr-0"
               >
+                <MaterialImage
+                  src={CATEGORY_STYLE[c].image}
+                  alt=""
+                  className="mb-6 h-44 w-full rounded-[2px]"
+                  sizes="(min-width: 768px) 320px, 640px"
+                />
                 <div className="flex items-center gap-2.5">
                   <CategoryMark category={c} size={14} />
                   <span className="text-[13px] text-muted">

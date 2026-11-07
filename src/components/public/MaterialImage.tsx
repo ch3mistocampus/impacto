@@ -1,64 +1,69 @@
-import { MaterialGlyph } from "@/components/ui/MaterialGlyph";
-import { CategoryMark } from "@/components/ui/tricolor";
-import { isCategory } from "./types";
+"use client";
 
-/**
- * Material / program imagery. Tricolor has no raster assets: materials are drawn as fine line
- * glyphs (MaterialGlyph) and `/brand/<category>.png` paths become a line-drawn program emblem on
- * paper. Props are unchanged from the original image component (`emoji` is accepted and ignored).
- */
-export function MaterialImage({
-  itemKey,
-  src,
-  alt,
-  className = "",
-}: {
+import Image from "next/image";
+import { useState } from "react";
+import { MaterialGlyph } from "@/components/ui/MaterialGlyph";
+
+const MATERIALS = new Set([
+  "bricks", "cement_bag", "zinc_sheet", "wood_beam", "nails", "tarp",
+  "paint", "rebar", "seeds", "soil", "water_tank", "tools",
+]);
+
+type Props = {
   itemKey?: string;
   src?: string;
+  /** Program illustration to show when an approved project cover cannot load. */
+  fallbackSrc?: string;
   alt: string;
   className?: string;
-  emoji?: string;
-}) {
-  const brand = src?.match(/^\/brand\/([a-z_]+)\.png$/)?.[1];
-  const a11y = alt ? { role: "img" as const, "aria-label": alt } : { "aria-hidden": true as const };
-  const cls = className.replace(/\bobject-\S+/g, "");
+  sizes?: string;
+  loading?: "eager" | "lazy";
+};
 
-  if (src && brand !== undefined) {
+/** Shared, decorative artwork; approved project photos take precedence over illustrations. */
+export function MaterialImage(props: Props) {
+  const src = props.src || (props.itemKey && MATERIALS.has(props.itemKey)
+    ? `/materials/${props.itemKey}.webp`
+    : undefined);
+
+  // A new source gets a fresh loading attempt (e.g. after a project cover is updated).
+  return <ImageWithFallback key={`${src ?? ""}:${props.fallbackSrc ?? ""}`} {...props} src={src} />;
+}
+
+function ImageWithFallback({
+  itemKey, src, fallbackSrc, alt, className = "", sizes = "64px", loading = "lazy",
+}: Props) {
+  const [failed, setFailed] = useState<string[]>([]);
+  const imageSrc = [src, fallbackSrc].find((candidate) => candidate && !failed.includes(candidate));
+
+  if (!imageSrc) {
     return (
-      <span {...a11y} className={`grid place-items-center bg-paper text-foreground select-none [container-type:size] ${cls}`}>
-        <Emblem category={isCategory(brand) ? brand : undefined} />
+      <span
+        role={alt ? "img" : undefined}
+        aria-label={alt || undefined}
+        aria-hidden={alt ? undefined : true}
+        className={`inline-grid place-items-center text-foreground select-none ${className}`}
+      >
+        <MaterialGlyph itemKey={itemKey} className="size-full max-h-full max-w-full" />
       </span>
     );
   }
 
+  const isLocalIllustration = imageSrc.startsWith("/materials/") || imageSrc.startsWith("/brand/");
   return (
-    <span {...a11y} className={`inline-grid place-items-center text-foreground select-none ${cls}`}>
-      <MaterialGlyph itemKey={itemKey ?? materialFromSrc(src)} className="size-full max-h-full max-w-full" />
-    </span>
-  );
-}
-
-function materialFromSrc(src?: string) {
-  return src?.match(/^\/materials\/([a-z_]+)\.png$/)?.[1];
-}
-
-/** A hairline double ring with the program's shape at its centre — or all three for the hero. */
-function Emblem({ category }: { category?: Parameters<typeof CategoryMark>[0]["category"] }) {
-  return (
-    <span
-      aria-hidden
-      className="relative grid aspect-square w-[clamp(1.5rem,52cqmin,9rem)] place-items-center rounded-full border border-rule"
-      style={{ boxShadow: "inset 0 0 0 4px var(--paper), inset 0 0 0 5px var(--gold)" }}
-    >
-      {category ? (
-        <CategoryMark category={category} size={48} className="h-[34%] w-[34%]" />
-      ) : (
-        <span className="flex items-end gap-[8%] w-[56%] justify-center">
-          <CategoryMark category="roof_shelter" size={24} className="h-auto w-[28%]" />
-          <CategoryMark category="reconstruction" size={24} className="h-auto w-[28%]" />
-          <CategoryMark category="heal_sow" size={24} className="h-auto w-[28%]" />
-        </span>
-      )}
+    <span className={`relative inline-block overflow-hidden align-middle bg-[#f6f7fa] select-none ${className}`}>
+      <Image
+        src={imageSrc}
+        alt={alt}
+        fill
+        sizes={sizes}
+        loading={loading}
+        // Convex cover URLs are already browser-ready; do not proxy them through the optimizer.
+        unoptimized={!isLocalIllustration}
+        draggable={false}
+        className={isLocalIllustration ? "object-contain" : "object-cover"}
+        onError={() => setFailed((previous) => [...previous, imageSrc])}
+      />
     </span>
   );
 }
