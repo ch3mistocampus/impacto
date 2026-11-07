@@ -8,6 +8,7 @@ import { project } from "./dict/project";
 import { field } from "./dict/field";
 import { coord } from "./dict/coord";
 import { community } from "./dict/community";
+import { demo } from "./dict/demo";
 
 const d = <T extends Record<string, { es: string; en: string }>>(x: T) => x;
 
@@ -29,6 +30,12 @@ export const dict = d({
   "nav.viewAs": { es: "Ver como", en: "View as" },
   "nav.viewingAs": { es: "Viendo como", en: "Viewing as" },
   "nav.chooseRole": { es: "Elige un rol ficticio", en: "Choose a fictional role" },
+  "nav.switchRole": { es: "Cambiar rol", en: "Switch role" },
+  "nav.currentRole": { es: "Rol actual", en: "Current role" },
+  "nav.roleLandsHome": {
+    es: "Cada rol abre su propio inicio. Al salir vuelves a la página pública.",
+    en: "Each role opens its own home. Signing out returns you to the public page.",
+  },
   "lang.label": { es: "Idioma", en: "Language" },
   "nav.home": { es: "Inicio", en: "Home" },
   "nav.donate": { es: "Donar materiales", en: "Donate materials" },
@@ -75,6 +82,7 @@ export const dict = d({
   ...field,
   ...coord,
   ...community,
+  ...demo,
 });
 
 export type DictKey = keyof typeof dict;

@@ -20,6 +20,7 @@ import type * as financials from "../financials.js";
 import type * as lib_auth from "../lib/auth.js";
 import type * as lib_ledger from "../lib/ledger.js";
 import type * as pledges from "../pledges.js";
+import type * as presenter from "../presenter.js";
 import type * as projects from "../projects.js";
 import type * as public_ from "../public.js";
 import type * as seed from "../seed.js";
@@ -46,6 +47,7 @@ declare const fullApi: ApiFromModules<{
   "lib/auth": typeof lib_auth;
   "lib/ledger": typeof lib_ledger;
   pledges: typeof pledges;
+  presenter: typeof presenter;
   projects: typeof projects;
   public: typeof public_;
   seed: typeof seed;

@@ -32,17 +32,18 @@ export function Landing() {
     <div className="pt-10 sm:pt-16">
       {/* Hero: a centred, certificate-like title page */}
       <section className="mx-auto max-w-3xl text-center" aria-labelledby="hero-title">
-        <Kicker>{t("landing.kicker")}</Kicker>
+        <Kicker className="motion-rise">{t("landing.kicker")}</Kicker>
         <h1
           id="hero-title"
-          className="mx-auto mt-3 max-w-[14ch] font-display text-[2.75rem] font-normal leading-[1.06] tracking-[-0.01em] text-balance sm:text-[5rem]"
+          style={{ animationDelay: "60ms" }}
+          className="motion-rise mx-auto mt-3 max-w-[14ch] font-display text-[2.75rem] font-normal leading-[1.06] tracking-[-0.01em] text-balance sm:text-[5rem]"
         >
           {t("landing.heroShort")}
         </h1>
-        <p className="mx-auto mt-6 max-w-[36rem] text-[17px] leading-relaxed text-muted sm:text-lg">
+        <p style={{ animationDelay: "140ms" }} className="motion-rise mx-auto mt-6 max-w-[36rem] text-[17px] leading-relaxed text-muted sm:text-lg">
           {t("landing.mission")}
         </p>
-        <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
+        <div style={{ animationDelay: "220ms" }} className="motion-rise mt-8 flex flex-col justify-center gap-3 sm:flex-row">
           <Link href="/donate" className={btn("primary", "lg")}>
             {t("landing.ctaDonate")}
           </Link>
@@ -54,7 +55,8 @@ export function Landing() {
         {/* Three figures, verified impact first */}
         <h2 className="sr-only">{t("landing.figuresLabel")}</h2>
         <dl
-          className="mt-12 grid grid-cols-3 divide-x divide-border border-y border-border sm:mt-14"
+          style={{ animationDelay: "300ms" }}
+          className="motion-rise mt-12 grid grid-cols-3 divide-x divide-border border-y border-border sm:mt-14"
           aria-live="polite"
         >
           <Figure value={num(verified)} label={tn("landing.fig.verified", verified ?? 0)} tone="text-emerald" />
@@ -105,7 +107,7 @@ export function Landing() {
                 <p className="mt-1.5 text-[15px] leading-snug text-muted">{t(`landing.desc.${c}` as DictKey)}</p>
 
                 <p className="mt-6 flex items-baseline gap-3">
-                  <span className="font-display text-[3.25rem] font-normal leading-none tabular-nums text-emerald">
+                  <span key={num(row?.totals.verified)} className="motion-count font-display text-[3.25rem] font-normal leading-none tabular-nums text-emerald">
                     {num(row?.totals.verified)}
                   </span>
                   <span className="text-[15px] font-semibold text-emerald">{t("landing.programVerified")}</span>
@@ -196,7 +198,7 @@ function Figure({ value, label, tone = "text-foreground" }: { value: string; lab
   return (
     <div className="flex flex-col-reverse items-center justify-end px-2 py-6 sm:px-6 sm:py-8">
       <dt className="mt-2.5 text-[13px] leading-snug text-muted sm:text-[15px]">{label}</dt>
-      <dd className={`font-display text-[2.4rem] font-normal leading-none tabular-nums sm:text-[3.5rem] ${tone}`}>
+      <dd key={value} className={`motion-count font-display text-[2.4rem] font-normal leading-none tabular-nums sm:text-[3.5rem] ${tone}`}>
         {value}
       </dd>
     </div>

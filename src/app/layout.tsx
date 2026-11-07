@@ -1,12 +1,12 @@
 import type { Metadata, Viewport } from "next";
-import { Bodoni_Moda, Karla } from "next/font/google";
+import { Karla, Source_Serif_4 } from "next/font/google";
 import { Suspense } from "react";
 import "./globals.css";
 import { Providers } from "./providers";
 import { AppHeader } from "@/components/AppHeader";
 
 const sans = Karla({ variable: "--font-sans-src", subsets: ["latin"] });
-const display = Bodoni_Moda({
+const display = Source_Serif_4({
   variable: "--font-display-src",
   subsets: ["latin"],
   style: ["normal", "italic"],

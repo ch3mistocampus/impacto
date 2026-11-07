@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRef, useState, type PointerEvent } from "react";
+import { useEffect, useLayoutEffect, useRef, type PointerEvent } from "react";
 import { useI18n } from "@/lib/i18n";
 import { MaterialImage } from "@/components/public/MaterialImage";
 import {
@@ -17,14 +17,20 @@ import {
 import type { DeckCard } from "./types";
 
 const THRESHOLD = 110;
+/** A quick flick counts even if it hasn't travelled the full threshold (px per ms). */
+const FLICK_VELOCITY = 0.55;
+const FLICK_MIN = 40;
+export const EXIT_MS = 300;
 const STAGES: Stage[] = ["requested", "pledged", "received", "delivered", "used", "verified"];
-
-export type SwipeCardHandle = { flyOut: (dir: "left" | "right") => void };
 
 /**
  * Top card of the deck, set as a Tricolor certificate. Drag with pointer (mouse/touch/pen):
- * left past the threshold = pass, right past the threshold = help. Buttons and arrow keys in
- * the parent do the same thing.
+ * left past the threshold (or a flick) = pass, right = help. Buttons and arrow keys in the
+ * parent do the same thing.
+ *
+ * Dragging never re-renders React: position, tilt and the intent stamps are written straight
+ * to the DOM once per animation frame, and `onProgress` (0..1) lets the parent ease the cards
+ * underneath forward in step with the finger.
  */
 export function SwipeCard({
   card,
@@ -32,44 +38,106 @@ export function SwipeCard({
   reducedMotion,
   onPass,
   onHelp,
+  onProgress,
 }: {
   card: DeckCard;
   exiting: "left" | "right" | null;
   reducedMotion: boolean;
   onPass: () => void;
   onHelp: () => void;
+  onProgress?: (p: number) => void;
 }) {
   const { t, pick, locale, u } = useI18n();
-  const [dx, setDx] = useState(0);
-  const [dragging, setDragging] = useState(false);
-  const start = useRef<{ x: number; y: number; id: number } | null>(null);
   const nf = new Intl.NumberFormat(intlLocale(locale));
 
-  function down(e: PointerEvent<HTMLDivElement>) {
-    if ((e.target as HTMLElement).closest("a,button")) return;
-    if (e.pointerType === "mouse" && e.button !== 0) return;
-    start.current = { x: e.clientX, y: e.clientY, id: e.pointerId };
-    e.currentTarget.setPointerCapture(e.pointerId);
-    setDragging(true);
-  }
-  function move(e: PointerEvent<HTMLDivElement>) {
-    if (!start.current || start.current.id !== e.pointerId) return;
-    setDx(e.clientX - start.current.x);
-  }
-  function up(e: PointerEvent<HTMLDivElement>) {
-    if (!start.current || start.current.id !== e.pointerId) return;
-    start.current = null;
-    setDragging(false);
-    const d = dx;
-    setDx(0);
-    if (d <= -THRESHOLD) onPass();
-    else if (d >= THRESHOLD) onHelp();
+  const el = useRef<HTMLDivElement>(null);
+  const helpStamp = useRef<HTMLSpanElement>(null);
+  const passStamp = useRef<HTMLSpanElement>(null);
+  const drag = useRef<{ x0: number; id: number; dx: number; lastX: number; lastT: number; v: number } | null>(null);
+  const frame = useRef(0);
+
+  /** Paint a drag offset: card position + tilt, stamp opacity, and stack progress. */
+  function paint(dx: number, animate: boolean) {
+    const node = el.current;
+    if (!node) return;
+    node.style.transition = animate
+      ? `transform 420ms var(--ease-spring), opacity ${EXIT_MS}ms var(--ease-out)`
+      : "none";
+    node.style.transform = reducedMotion ? "" : `translate3d(${dx}px,0,0) rotate(${dx / 20}deg)`;
+    const p = Math.min(1, Math.abs(dx) / THRESHOLD);
+    const stamp = (s: HTMLSpanElement | null, on: boolean) => {
+      if (!s) return;
+      s.style.transition = animate ? "opacity 200ms var(--ease-out), scale 200ms var(--ease-out)" : "none";
+      s.style.opacity = on ? String(Math.min(1, Math.max(0, (p - 0.25) / 0.5))) : "0";
+      s.style.scale = on ? String(1.15 - 0.15 * p) : "1.15";
+    };
+    stamp(helpStamp.current, dx > 0);
+    stamp(passStamp.current, dx < 0);
+    onProgress?.(reducedMotion ? 0 : p * 0.6);
   }
 
-  const exitX = exiting === "left" ? -600 : exiting === "right" ? 600 : 0;
-  const x = exiting ? exitX : dx;
-  const rot = reducedMotion ? 0 : x / 18;
-  const intent = dx <= -THRESHOLD / 2 ? "pass" : dx >= THRESHOLD / 2 ? "help" : null;
+  function down(e: PointerEvent<HTMLDivElement>) {
+    if (exiting) return;
+    if ((e.target as HTMLElement).closest("a,button")) return;
+    if (e.pointerType === "mouse" && e.button !== 0) return;
+    drag.current = { x0: e.clientX, id: e.pointerId, dx: 0, lastX: e.clientX, lastT: e.timeStamp, v: 0 };
+    e.currentTarget.setPointerCapture(e.pointerId);
+    paint(0, false);
+  }
+  function move(e: PointerEvent<HTMLDivElement>) {
+    const d = drag.current;
+    if (!d || d.id !== e.pointerId) return;
+    const dt = e.timeStamp - d.lastT;
+    if (dt > 0) d.v = 0.7 * ((e.clientX - d.lastX) / dt) + 0.3 * d.v; // smoothed px/ms
+    d.lastX = e.clientX;
+    d.lastT = e.timeStamp;
+    d.dx = e.clientX - d.x0;
+    if (!frame.current) {
+      frame.current = requestAnimationFrame(() => {
+        frame.current = 0;
+        if (drag.current) paint(drag.current.dx, false);
+      });
+    }
+  }
+  function up(e: PointerEvent<HTMLDivElement>) {
+    const d = drag.current;
+    if (!d || d.id !== e.pointerId) return;
+    drag.current = null;
+    cancelAnimationFrame(frame.current);
+    frame.current = 0;
+    const flick = Math.abs(d.v) >= FLICK_VELOCITY && Math.abs(d.dx) >= FLICK_MIN;
+    if (e.type !== "pointercancel" && (d.dx <= -THRESHOLD || (flick && d.v < 0))) {
+      paint(d.dx, false); // hold here; the exit effect flies it out from this spot
+      onPass();
+    } else if (e.type !== "pointercancel" && (d.dx >= THRESHOLD || (flick && d.v > 0))) {
+      paint(0, true); // spring home, the pledge sheet opens over it
+      onHelp();
+    } else {
+      paint(0, true);
+    }
+  }
+
+  // Fly out (button, key or swipe). Continues from wherever the drag left the card.
+  useLayoutEffect(() => {
+    const node = el.current;
+    if (!exiting || !node) return;
+    const dir = exiting === "left" ? -1 : 1;
+    if (reducedMotion) {
+      node.style.transition = `opacity ${EXIT_MS / 2}ms linear`;
+      node.style.opacity = "0";
+      return;
+    }
+    const w = node.offsetWidth || 400;
+    // Read layout so the starting transform is committed before we transition away from it.
+    void node.getBoundingClientRect();
+    node.style.transition = `transform ${EXIT_MS}ms cubic-bezier(.4,0,.9,.6), opacity ${EXIT_MS}ms ease-in`;
+    node.style.transform = `translate3d(${dir * w * 1.25}px, 24px, 0) rotate(${dir * 16}deg)`;
+    node.style.opacity = "0";
+    onProgress?.(1);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- run once per exit
+  }, [exiting]);
+
+  useEffect(() => () => cancelAnimationFrame(frame.current), []);
 
   const L = card.ledger;
   const name = pick(card.nameEs, card.nameEn);
@@ -77,40 +145,38 @@ export function SwipeCard({
 
   return (
     <div
+      ref={el}
       onPointerDown={down}
       onPointerMove={move}
       onPointerUp={up}
       onPointerCancel={up}
-      className="absolute inset-0 touch-pan-y select-none cursor-grab active:cursor-grabbing"
-      style={{
-        transform: reducedMotion && !dragging ? undefined : `translateX(${x}px) rotate(${rot}deg)`,
-        opacity: exiting && reducedMotion ? 0 : 1,
-        transition: dragging ? "none" : reducedMotion ? "opacity 120ms linear" : "transform 280ms cubic-bezier(.2,.8,.2,1)",
-      }}
+      className="absolute inset-0 touch-pan-y select-none cursor-grab active:cursor-grabbing will-change-transform"
     >
       <article
-        className="relative h-full flex flex-col rounded-[2px] bg-surface border border-border overflow-hidden"
+        className="relative h-full flex flex-col rounded-[2px] bg-surface border border-border overflow-hidden shadow-[0_18px_40px_-28px_rgb(11_42_91/0.45)]"
         aria-roledescription={t("donate.swipeHelp")}
       >
         <FlagBand thickness={5} />
 
         {/* intent stamps: outlined, like a rubber stamp on a certificate */}
         <span
+          ref={helpStamp}
           aria-hidden
-          className="pointer-events-none absolute top-6 left-5 z-10 -rotate-[8deg] rounded-[2px] border border-gold-ink bg-surface/90 px-3 py-1 font-display italic text-2xl text-gold-ink outline outline-1 outline-offset-2 outline-gold-ink transition-opacity"
-          style={{ opacity: intent === "help" ? 1 : 0 }}
+          className="pointer-events-none absolute top-6 left-5 z-10 -rotate-[8deg] rounded-[2px] border border-gold-ink bg-surface/90 px-3 py-1 font-display italic text-2xl text-gold-ink outline outline-1 outline-offset-2 outline-gold-ink"
+          style={{ opacity: 0 }}
         >
           {t("donate.stamp.pledge")}
         </span>
         <span
+          ref={passStamp}
           aria-hidden
-          className="pointer-events-none absolute top-6 right-5 z-10 rotate-[8deg] rounded-[2px] border border-muted bg-surface/90 px-3 py-1 font-display italic text-2xl text-muted outline outline-1 outline-offset-2 outline-muted transition-opacity"
-          style={{ opacity: intent === "pass" ? 1 : 0 }}
+          className="pointer-events-none absolute top-6 right-5 z-10 rotate-[8deg] rounded-[2px] border border-muted bg-surface/90 px-3 py-1 font-display italic text-2xl text-muted outline outline-1 outline-offset-2 outline-muted"
+          style={{ opacity: 0 }}
         >
           {t("donate.pass")}
         </span>
 
-        <div className="flex-1 min-h-0 overflow-y-auto px-5 sm:px-8 pt-5 pb-5 flex flex-col">
+        <div className="motion-fade flex-1 min-h-0 overflow-y-auto px-5 sm:px-8 pt-5 pb-5 flex flex-col">
           {/* caption */}
           <p className="flex items-center justify-center gap-1.5 text-center text-[13px] text-muted">
             <CategoryMark category={card.category} size={10} className="text-foreground" />

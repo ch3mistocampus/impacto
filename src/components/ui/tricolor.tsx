@@ -161,7 +161,7 @@ export type BtnVariant = "primary" | "secondary" | "quiet" | "danger" | "verify"
 export type BtnSize = "sm" | "md" | "lg";
 
 const BTN_BASE =
-  "inline-flex items-center justify-center gap-2 rounded-[2px] font-sans font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-50";
+  "press inline-flex items-center justify-center gap-2 rounded-[2px] font-sans font-semibold disabled:cursor-not-allowed disabled:opacity-50";
 const BTN_VARIANT: Record<BtnVariant, string> = {
   primary: "bg-navy text-on-navy hover:bg-navy-hover",
   secondary: "bg-surface text-foreground shadow-[inset_0_0_0_1px_var(--rule)] hover:bg-paper",

@@ -64,7 +64,7 @@ export function ConfirmDialog({
         // Click on the backdrop (the dialog element itself, outside the panel) cancels.
         if (e.target === e.currentTarget && !busy) onCancel();
       }}
-      className="m-auto w-[min(28rem,calc(100vw-2rem))] rounded-2xl border border-border bg-surface p-0 text-foreground shadow-xl backdrop:bg-black/40"
+      className="motion-dialog m-auto w-[min(28rem,calc(100vw-2rem))] rounded-2xl border border-border bg-surface p-0 text-foreground shadow-xl backdrop:bg-black/40"
     >
       <div className="p-5 sm:p-6">
         <h2 id={titleId} className="font-display text-xl font-semibold">
@@ -81,7 +81,7 @@ export function ConfirmDialog({
             type="button"
             onClick={onCancel}
             disabled={busy}
-            className="rounded-md bg-surface px-4 py-2 text-sm font-medium ring-1 ring-border hover:bg-background disabled:opacity-50"
+            className="press rounded-md bg-surface px-4 py-2 text-sm font-medium ring-1 ring-border hover:bg-background disabled:opacity-50"
           >
             {cancelLabel}
           </button>
@@ -90,7 +90,7 @@ export function ConfirmDialog({
             onClick={onConfirm}
             disabled={busy}
             aria-busy={busy || undefined}
-            className={`inline-flex items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-medium text-white hover:brightness-110 disabled:opacity-50 ${
+            className={`press inline-flex items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-medium text-white hover:brightness-110 disabled:opacity-50 ${
               tone === "danger" ? "bg-brick" : "bg-clay"
             }`}
           >
