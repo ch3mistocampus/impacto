@@ -22,7 +22,19 @@ export type Canonical = {
 /** Reset demo data and assert the canonical starting state. Returns the canonical report. */
 export function resetAndCheck(label: string): Canonical {
   const t0 = Date.now();
-  convexRun("seed:resetDemo");
+  // A reset schedules a background action that attaches demo photos; a reset that starts while it
+  // is still writing hits an OCC conflict. Wait and retry instead of failing the run.
+  for (let attempt = 1; ; attempt++) {
+    try {
+      convexRun("seed:resetDemo");
+      break;
+    } catch (e) {
+      const msg = String((e as { stderr?: string }).stderr ?? e);
+      if (attempt >= 4 || !msg.includes("OptimisticConcurrencyControlFailure")) throw e;
+      console.log(`[e2e] ${label}: reset hit an OCC conflict with demo photo attach, retrying (${attempt})`);
+      execFileSync("sleep", ["5"]);
+    }
+  }
   const ms = Date.now() - t0;
   const c = convexRun<Canonical>("demo:checkCanonical");
   const failed = Object.entries(c.checks)
