@@ -254,6 +254,10 @@ export const coord = {
   "coord.ms.expense": { es: "Gasto", en: "Expense" },
   "coord.ms.outcome": { es: "Resultado", en: "Outcome" },
   "coord.ms.paused": { es: "Pausa", en: "Paused" },
+  "coord.err.NO_APPROVED_NEEDS": {
+    es: "Aprueba al menos un material antes de publicar.",
+    en: "Approve at least one material before publishing.",
+  },
   "coord.err.ALIAS_CONTAINS_PRIVATE": {
     es: "El texto público contiene el nombre privado del beneficiario.",
     en: "The public text contains the beneficiary's private name.",

@@ -559,6 +559,12 @@ export const approveAndPublish = mutation({
       .query("materialNeeds")
       .withIndex("by_project", (q) => q.eq("projectId", project._id))
       .take(100);
+    // A published project must offer at least one approved material need (throwing rolls back
+    // the status patch above — mutations are transactional).
+    const approvable = needs.filter(
+      (n) => n.status === "approved" || (args.approveDraftNeeds && n.status === "draft"),
+    );
+    if (approvable.length === 0) throw new ConvexError({ code: "NO_APPROVED_NEEDS" });
     if (args.approveDraftNeeds) {
       for (const n of needs) {
         if (n.status === "draft") await ctx.db.patch("materialNeeds", n._id, { status: "approved", verifiedBy: user._id });
