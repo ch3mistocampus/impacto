@@ -1,8 +1,13 @@
 /**
  * Bilingual UI strings. Every visible string goes here — Spanish first.
- * Agents: add keys under your own section prefix (landing.*, donate.*, field.*, coord.*, project.*)
- * to avoid merge conflicts. Keep keys sorted within your section.
+ * Lane-specific keys live in src/lib/dict/<lane>.ts (landing, donate, project, field, coord) to avoid conflicts.
  */
+import { landing } from "./dict/landing";
+import { donate } from "./dict/donate";
+import { project } from "./dict/project";
+import { field } from "./dict/field";
+import { coord } from "./dict/coord";
+
 const d = <T extends Record<string, { es: string; en: string }>>(x: T) => x;
 
 export const dict = d({
@@ -50,6 +55,11 @@ export const dict = d({
   "common.loading": { es: "Cargando…", en: "Loading…" },
   "common.back": { es: "Atrás", en: "Back" },
   "common.next": { es: "Siguiente", en: "Next" },
+  ...landing,
+  ...donate,
+  ...project,
+  ...field,
+  ...coord,
 });
 
 export type DictKey = keyof typeof dict;
