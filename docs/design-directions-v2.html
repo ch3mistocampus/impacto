@@ -1,0 +1,619 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Impacto Directions II</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Karla:wght@400;500;600;700&family=Lora:ital,wght@0,400;0,500;0,600;1,400&family=Libre+Caslon+Text:ital,wght@0,400;0,700;1,400&family=Bodoni+Moda:ital,opsz,wght@0,6..96,400;0,6..96,500;0,6..96,600;1,6..96,400&family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;1,6..72,300&display=swap" rel="stylesheet">
+<style>
+:root{--ink:#1c2422;--muted:#5d6b67;--line:#d8e0dc;color-scheme:light}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+body{margin:0;background:#fff;color:var(--ink);font:16px/1.6 Karla,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+:focus-visible{outline:2px solid #2c6360;outline-offset:3px}
+button{font:inherit;cursor:pointer}
+.wrap{max-width:1160px;margin:0 auto;padding:0 16px}
+
+/* frame */
+.intro{padding:72px 0 48px}
+.intro h1{font:400 clamp(2.2rem,5vw,3.6rem)/1.08 Lora,serif;margin:0;max-width:20ch;letter-spacing:-.01em}
+.intro p{max-width:60ch;color:var(--muted);margin:20px 0 0;font-size:17px}
+.intro .src{margin-top:28px;display:flex;flex-wrap:wrap;gap:10px}
+.intro .src span{display:inline-flex;align-items:center;gap:8px;font-size:14px;color:var(--muted)}
+.intro .src i{width:16px;height:16px;border-radius:50%;display:inline-block}
+.toc{position:sticky;top:0;z-index:20;background:rgba(255,255,255,.94);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+.toc .wrap{display:flex;gap:28px;overflow-x:auto;padding-top:14px;padding-bottom:14px}
+.toc a{flex:none;text-decoration:none;color:var(--muted);font-size:15px}
+.toc a:hover{color:var(--ink)}
+
+.dir{padding:88px 0}
+.d-head{display:grid;gap:16px 56px;grid-template-columns:1fr;align-items:end}
+@media(min-width:900px){.d-head{grid-template-columns:1fr 1fr}}
+.d-name{margin:0;font-weight:400;line-height:1}
+.d-thesis{margin:0;max-width:52ch;font-size:17px}
+.d-stage{display:grid;gap:40px;margin-top:48px;grid-template-columns:1fr;align-items:start}
+@media(min-width:980px){.d-stage{grid-template-columns:minmax(0,1.45fr) minmax(0,1fr)}}
+.d-foot{display:grid;gap:24px 48px;margin-top:48px;padding-top:28px;grid-template-columns:1fr;font-size:14px}
+@media(min-width:820px){.d-foot{grid-template-columns:1.3fr 1fr 1fr}}
+.d-foot h3{font:600 14px Karla;margin:0 0 10px}
+.d-foot p{margin:0}
+.pal{display:flex;flex-wrap:wrap;gap:14px}
+.pal div{display:flex;align-items:center;gap:8px;font-size:13px;line-height:1.25}
+.pal i{width:28px;height:28px;border-radius:50%;box-shadow:inset 0 0 0 1px rgba(0,0,0,.1);flex:none}
+.phone{width:100%;max-width:350px;margin:0 auto;border-radius:44px;padding:9px;background:#1c2422;box-shadow:0 30px 60px -30px rgba(28,36,34,.45)}
+.scr{border-radius:36px;overflow:hidden;min-height:660px;display:flex;flex-direction:column}
+
+/* ================== 1 · AGUA QUIETA ================== */
+.aq{background:#e9efec;color:#1c2422}
+.aq .d-name{font:400 clamp(3.2rem,8vw,5.8rem)/1 Lora,serif;color:#16403e;letter-spacing:-.02em}
+.aq .d-name em{font-style:italic}
+.aq .d-foot{border-top:1px solid #bcd6cd}
+.aq-hero{background:#16403e;color:#e9efec;border-radius:20px;padding:56px 48px 0;overflow:hidden;position:relative}
+.aq-hero h3{font:400 clamp(2.4rem,5vw,4rem)/1.04 Lora,serif;margin:0;letter-spacing:-.015em}
+.aq-hero p{max-width:40ch;margin:20px 0 32px;color:#bcd6cd;font-size:17px}
+.aq-btn{border:none;border-radius:99px;padding:14px 26px;font:600 16px Karla}
+.aq-btn.p{background:#e9efec;color:#16403e}
+.aq-btn.s{background:transparent;color:#e9efec;box-shadow:inset 0 0 0 1px rgba(233,239,236,.45)}
+.aq-water{display:block;width:calc(100% + 96px);margin:56px -48px 0}
+.aq-figs{display:grid;grid-template-columns:repeat(3,1fr);margin-top:28px;border-top:1px solid #bcd6cd}
+.aq-figs div{padding:20px 20px 0 0}
+.aq-figs b{display:block;font:400 40px/1 Lora,serif;color:#16403e;font-variant-numeric:oldstyle-nums}
+.aq-figs span{font-size:14px;color:#3d4d49}
+.aq .scr{background:#fbfcfb}
+.aq-ph{height:200px;background:linear-gradient(180deg,#2c6360 0%,#16403e 100%);position:relative;display:grid;place-items:center}
+.aq-ph svg{opacity:.95}
+.aq-tag{position:absolute;left:18px;bottom:16px;display:flex;gap:8px}
+.aq-tag span{background:rgba(233,239,236,.16);color:#e9efec;border-radius:99px;padding:4px 12px;font-size:13px;backdrop-filter:blur(4px)}
+.aq-body{padding:22px 22px 8px;flex:1}
+.aq-body h4{font:400 34px/1.05 Lora,serif;margin:0;color:#16403e}
+.aq-body .sub{color:#5d6b67;font-size:14px;margin:6px 0 18px}
+.ledger{list-style:none;margin:0;padding:0}
+.aq .ledger li{display:grid;grid-template-columns:92px 1fr 34px;gap:12px;align-items:center;padding:7px 0;font-size:14px}
+.aq .trk{height:2px;background:#d8e3df;position:relative}
+.aq .trk i{position:absolute;left:0;top:-1px;height:4px;border-radius:2px;background:#2c6360}
+.aq .trk i.pl{background:none;border-top:2px dashed #b44d22;top:-1px;height:0}
+.aq .ledger b{font:500 17px Lora,serif;text-align:right;font-variant-numeric:lining-nums tabular-nums}
+.aq .ledger .v{color:#16403e;font-weight:700}
+.aq .ledger .v i{background:#16403e}
+.aq-note{font:italic 400 14px/1.5 Lora,serif;color:#7c3a20;margin:14px 0 0}
+.aq-act{display:grid;grid-template-columns:1fr 1.5fr;gap:10px;padding:16px 22px 22px}
+.aq-act button{height:54px;border-radius:99px;border:none;font:600 16px Karla}
+.aq-act .a{background:#e9efec;color:#16403e}
+.aq-act .b{background:#16403e;color:#fff}
+
+/* ================== 2 · BAHAREQUE ================== */
+.bh{background:#f4f1ea;color:#2b2622;font-family:Karla}
+.bh .d-name{font:400 clamp(3.2rem,8vw,5.8rem)/1 "Libre Caslon Text",serif;letter-spacing:-.02em}
+.bh .d-foot{border-top:1px solid #d9d1c2}
+.zocalo{height:8px;background:linear-gradient(90deg,#1f4e79 0 34%,#c9962b 34% 52%,#7a1f2b 52% 76%,#4f6b4a 76%)}
+.bh-hero{background:#fff;border-radius:2px;display:grid;grid-template-columns:1fr;overflow:hidden}
+@media(min-width:700px){.bh-hero{grid-template-columns:minmax(0,1.35fr) minmax(0,.9fr)}}
+.bh-hero .txt{padding:52px 44px}
+.bh-hero h3{font:400 clamp(2.1rem,3.8vw,3.1rem)/1.1 "Libre Caslon Text",serif;margin:0}
+.bh-hero p{max-width:38ch;margin:20px 0 30px;color:#5a5149;font-size:17px}
+.bh-btn{border:none;border-radius:3px;padding:14px 24px;font:600 16px Karla}
+.bh-btn.p{background:#1f4e79;color:#fff}
+.bh-btn.s{background:transparent;color:#1f4e79;text-decoration:underline;text-underline-offset:5px}
+.bh-arches{background:#ebe5d8;display:flex;align-items:flex-end;justify-content:center;gap:14px;padding:40px 24px 0;min-height:320px}
+.bh-arches div{width:30%;border-radius:999px 999px 0 0;position:relative}
+.bh-arches div::after{content:"";position:absolute;inset:10px 10px 0;border-radius:999px 999px 0 0;border:1px solid rgba(255,255,255,.4);border-bottom:none}
+.bh .scr{background:#fff}
+.bh-door{margin:18px 18px 0;height:210px;border-radius:999px 999px 0 0;background:#1f4e79;display:grid;place-items:center;position:relative}
+.bh-door::after{content:"";position:absolute;inset:12px 12px 0;border-radius:999px 999px 0 0;border:1px solid rgba(255,255,255,.35);border-bottom:none}
+.bh-body{padding:20px 22px 8px;flex:1}
+.bh-meta{font-size:13px;color:#7a6f63;display:flex;gap:14px}
+.bh-body h4{font:400 32px/1.1 "Libre Caslon Text",serif;margin:8px 0 4px}
+.bh-body .sub{font-size:14px;color:#5a5149;margin:0 0 16px}
+.bh .ledger li{display:flex;align-items:baseline;gap:10px;padding:6px 0;border-bottom:1px solid #eee7da;font-size:14px}
+.bh .ledger li span{flex:1}
+.bh .ledger li b{font:400 18px "Libre Caslon Text",serif}
+.bh .ledger li i{width:10px;height:10px;flex:none;transform:translateY(1px)}
+.bh .ledger li.v{font-weight:700}
+.bh .ledger li.v b{font-weight:700;color:#4f6b4a}
+.bh-act{display:grid;grid-template-columns:1fr 1.5fr;gap:10px;padding:14px 22px 20px}
+.bh-act button{height:54px;border-radius:3px;border:1px solid #d9d1c2;background:#fff;font:600 16px Karla;color:#2b2622}
+.bh-act .b{background:#1f4e79;border-color:#1f4e79;color:#fff}
+
+/* ================== 3 · TRICOLOR ================== */
+.tc{background:#fff;color:#0b2a5b}
+.tc .d-name{font:400 clamp(3.2rem,8vw,5.8rem)/1 "Bodoni Moda",serif;letter-spacing:-.01em}
+.tc .d-foot{border-top:1px solid #e3e6ee}
+.flag{height:6px;background:linear-gradient(90deg,#e8b70b 0 50%,#0b2a5b 50% 75%,#b3122a 75%)}
+.tc-hero{border:1px solid #e3e6ee;text-align:center;padding:64px 32px 56px;position:relative}
+.tc-hero .flag{position:absolute;top:0;left:0;right:0}
+.tc-hero small{font:italic 400 18px "Bodoni Moda",serif;color:#5b6b8c}
+.tc-hero h3{font:400 clamp(2.6rem,5.2vw,4.4rem)/1.02 "Bodoni Moda",serif;margin:12px auto 0;max-width:14ch}
+.tc-hero p{max-width:44ch;margin:20px auto 30px;color:#3f4f70;font-size:17px}
+.tc-btn{border:none;padding:14px 26px;font:600 16px Karla;border-radius:0}
+.tc-btn.p{background:#0b2a5b;color:#fff}
+.tc-btn.s{background:#fff;color:#0b2a5b;box-shadow:inset 0 0 0 1px #0b2a5b}
+.tc-tot{display:grid;grid-template-columns:repeat(3,1fr);margin-top:48px;border-top:1px solid #e3e6ee;border-bottom:1px solid #e3e6ee}
+.tc-tot div{padding:22px 10px}
+.tc-tot div+div{border-left:1px solid #e3e6ee}
+.tc-tot b{display:block;font:400 44px/1 "Bodoni Moda",serif}
+.tc-tot span{font-size:13px;color:#5b6b8c}
+.tc .scr{background:#fff}
+.tc-card{padding:30px 24px 10px;flex:1;text-align:center;position:relative}
+.tc-card .flag{position:absolute;top:0;left:0;right:0;height:5px}
+.tc-card small{font-size:13px;color:#5b6b8c}
+.tc-card h4{font:400 40px/1 "Bodoni Moda",serif;margin:10px 0 4px}
+.tc-big{font:400 76px/1 "Bodoni Moda",serif;margin:18px 0 0}
+.tc-big span{font-size:20px;color:#5b6b8c}
+.tc-rule{border:none;border-top:1px solid #0b2a5b;border-bottom:1px solid #0b2a5b;height:4px;margin:18px 30px}
+.tc .ledger{text-align:left}
+.tc .ledger li{display:flex;gap:8px;padding:5px 0;font-size:14px;align-items:baseline}
+.tc .ledger li span:nth-child(2){flex:1;border-bottom:1px dotted #9aa6c0;transform:translateY(-4px)}
+.tc .ledger li b{font:400 17px "Bodoni Moda",serif}
+.tc .ledger li.pl{color:#8a6a00}
+.tc .ledger li.v{font-weight:700}
+.tc-seal{display:inline-grid;place-items:center;width:64px;height:64px;border-radius:50%;border:1px solid #0b2a5b;box-shadow:inset 0 0 0 4px #fff,inset 0 0 0 5px #e8b70b;font:italic 400 12px/1.1 "Bodoni Moda",serif;margin-top:14px}
+.tc-act{display:grid;grid-template-columns:1fr 1.5fr;gap:0;border-top:1px solid #e3e6ee}
+.tc-act button{height:62px;border:none;background:#fff;font:600 16px Karla;color:#0b2a5b}
+.tc-act .b{background:#0b2a5b;color:#fff}
+
+/* ================== 4 · CAFÉ DE ORIGEN ================== */
+.co{background:#efe8dc;color:#2a1b14}
+.co .d-name{font:500 clamp(3.4rem,8.5vw,6.2rem)/.95 "Cormorant Garamond",serif;letter-spacing:-.01em}
+.co .d-name em{font-style:italic}
+.co .d-foot{border-top:1px solid #d6c9b4}
+.co-hero{background:#2a1b14;color:#efe8dc;padding:56px 48px;border-radius:2px;display:grid;gap:36px;grid-template-columns:1fr}
+@media(min-width:760px){.co-hero{grid-template-columns:1.2fr 1fr;align-items:center}}
+.co-hero h3{font:500 clamp(2.4rem,4.8vw,3.9rem)/1.02 "Cormorant Garamond",serif;margin:0}
+.co-hero p{color:#c9b8a0;max-width:38ch;margin:18px 0 30px;font-size:17px}
+.co-btn{border:none;border-radius:2px;padding:14px 24px;font:600 16px Karla}
+.co-btn.p{background:#8e1b1b;color:#fff}
+.co-btn.s{background:transparent;color:#efe8dc;box-shadow:inset 0 0 0 1px rgba(239,232,220,.4)}
+.label{background:#f8f3ea;color:#2a1b14;padding:10px;border-radius:2px}
+.label .in{border:1px solid #2a1b14;padding:20px 22px;text-align:center}
+.label .in h5{font:italic 500 30px/1 "Cormorant Garamond",serif;margin:0}
+.label dl{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;text-align:left;margin:16px 0 0;font-size:13px}
+.label dt{color:#7a6552}
+.label dd{margin:0}
+.co .scr{background:#f8f3ea}
+.co-card{padding:24px 22px 8px;flex:1}
+.co-card .label{padding:0;background:none}
+.co-card h4{font:500 40px/1 "Cormorant Garamond",serif;margin:2px 0}
+.co-card .sub{font-size:14px;color:#7a6552;margin:0}
+.co-scale{margin:22px 0 4px;position:relative;height:56px}
+.co-scale .base{position:absolute;left:0;right:0;top:22px;height:1px;background:#2a1b14}
+.co-scale .mk{position:absolute;top:14px;width:1px;height:17px;background:#2a1b14}
+.co-scale .lb{position:absolute;top:36px;font-size:11px;transform:translateX(-50%);white-space:nowrap;color:#7a6552}
+.co-scale .dot{position:absolute;top:17px;width:11px;height:11px;border-radius:50%;transform:translateX(-50%)}
+.co .ledger li{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #e6dccb;font-size:14px}
+.co .ledger li b{font:600 18px "Cormorant Garamond",serif}
+.co .ledger li.v{font-weight:700}
+.co .ledger li.v b{color:#2f4a2e;font-weight:700}
+.co-proof{margin:20px 0 0;padding:14px 16px;border:1px solid #d6c9b4;font:italic 500 17px/1.35 "Cormorant Garamond",serif}
+.co-proof small{display:block;font:400 12px Karla;color:#7a6552;margin-top:6px;font-style:normal}
+.co-act{display:grid;grid-template-columns:1fr 1.5fr;gap:10px;padding:14px 22px 22px}
+.co-act button{height:54px;border-radius:2px;border:1px solid #d6c9b4;background:transparent;font:600 16px Karla;color:#2a1b14}
+.co-act .b{background:#8e1b1b;border-color:#8e1b1b;color:#fff}
+
+/* ================== 5 · PALMA DE CERA ================== */
+.pc{background:linear-gradient(180deg,#f2f5f4 0%,#e1e9e8 100%);color:#22302c}
+.pc .d-name{font:300 clamp(3.4rem,8.5vw,6.2rem)/1 Newsreader,serif;letter-spacing:-.025em}
+.pc .d-name em{font-style:italic}
+.pc .d-foot{border-top:1px solid #c9d6d3}
+.pc-hero{position:relative;border-radius:4px;overflow:hidden;background:linear-gradient(180deg,#dfe8ea 0%,#f4f6f3 60%,#e7ece6 100%);min-height:440px;padding:56px 48px}
+.pc-hero h3{font:300 clamp(2.4rem,4.8vw,3.9rem)/1.04 Newsreader,serif;margin:0;max-width:13ch;position:relative;z-index:1}
+.pc-hero p{max-width:34ch;margin:18px 0 28px;color:#47605a;font-size:17px;position:relative;z-index:1}
+.pc-palms{position:absolute;right:0;bottom:0;width:62%;height:100%}
+.pc-btn{border:none;border-radius:99px;padding:13px 24px;font:500 16px Karla;position:relative;z-index:1}
+.pc-btn.p{background:#22302c;color:#f2f5f4}
+.pc-btn.s{background:rgba(255,255,255,.6);color:#22302c}
+.pc .scr{background:#f7f9f8}
+.pc-card{padding:28px 24px 8px;flex:1}
+.pc-card small{font-size:13px;color:#6b7e79}
+.pc-card h4{font:300 42px/1 Newsreader,serif;margin:8px 0 2px}
+.pc-card .sub{font-size:14px;color:#6b7e79;margin:0}
+.stems{display:grid;grid-template-columns:repeat(6,1fr);align-items:end;height:230px;margin:26px 0 0;border-bottom:1px solid #22302c}
+.stems div{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%}
+.stems b{font:400 18px Newsreader,serif;margin-bottom:6px}
+.stems i{display:block;width:2px;background:#8aa49e}
+.stems .req i{background:none;border-left:1px solid #b8c7c3}
+.stems .pl i{background:none;border-left:2px dashed #b07a3c}
+.stems .v i{background:#2f5d50;width:3px}
+.stems .v b{color:#2f5d50;font-weight:600}
+.stems .v::before{content:"";width:16px;height:9px;border-top:2px solid #2f5d50;border-radius:50% 50% 0 0;margin-bottom:-2px;order:1}
+.stem-l{display:grid;grid-template-columns:repeat(6,1fr);font-size:12px;color:#6b7e79;margin-top:10px}
+.stem-l span{writing-mode:vertical-rl;transform:rotate(180deg);justify-self:center;height:76px;text-align:right}
+.stem-l span:last-child{color:#2f5d50;font-weight:600}
+.pc-note{font:italic 300 15px/1.45 Newsreader,serif;color:#47605a;margin:18px 0 0}
+.pc-act{display:grid;grid-template-columns:1fr 1.5fr;gap:10px;padding:14px 22px 22px}
+.pc-act button{height:54px;border-radius:99px;border:none;font:500 16px Karla;background:#e4ebe9;color:#22302c}
+.pc-act .b{background:#22302c;color:#f2f5f4}
+
+/* closing */
+.close{padding:88px 0 96px}
+.close h2{font:400 clamp(2rem,4vw,2.8rem)/1.1 Lora,serif;margin:0;max-width:22ch}
+.close p{max-width:62ch;color:var(--muted);font-size:17px}
+.close .grid{display:grid;gap:28px;margin-top:36px;grid-template-columns:1fr}
+@media(min-width:820px){.close .grid{grid-template-columns:repeat(3,1fr)}}
+.close h3{font:600 16px Karla;margin:0 0 6px}
+.close .grid p{font-size:15px;margin:0}
+footer{border-top:1px solid var(--line);padding:24px 0 40px;font-size:14px;color:var(--muted)}
+</style>
+</head>
+<body>
+
+<header class="intro">
+  <div class="wrap">
+    <h1>Cinco direcciones para Impacto, desde Espejo de Agua y Colombia</h1>
+    <p>A second round, quieter than the first. Each direction starts from something real: Espejo de Agua's own palette and type, the bahareque towns of Quindío, the flag, the coffee landscape and the wax palms of Cocora. Every mock uses the same need, 200 bricks with 80 pledged, 50 received and delivered, 40 used and 30 verified, so the comparison is fair.</p>
+    <div class="src">
+      <span><i style="background:#16403e"></i>#16403e agua</span>
+      <span><i style="background:#2c6360"></i>#2c6360 río</span>
+      <span><i style="background:#bcd6cd"></i>#bcd6cd salvia</span>
+      <span><i style="background:#b44d22"></i>#b44d22 barro</span>
+      <span>Lora y Karla, from espejodeagua.org</span>
+    </div>
+  </div>
+</header>
+
+<nav class="toc" aria-label="Direcciones">
+  <div class="wrap">
+    <a href="#agua">Agua quieta</a><a href="#bahareque">Bahareque</a><a href="#tricolor">Tricolor</a><a href="#cafe">Café de origen</a><a href="#palma">Palma de cera</a><a href="#cierre">Recomendación</a>
+  </div>
+</nav>
+
+<!-- ================== AGUA QUIETA ================== -->
+<section class="dir aq" id="agua">
+  <div class="wrap">
+    <div class="d-head">
+      <h2 class="d-name">Agua <em>quieta</em></h2>
+      <p class="d-thesis">The nonprofit's own identity, carried into the product. Deep water teal, sage mist and one clay accent reserved for promises. Lora sets the voice, Karla does the work. The ledger is drawn as a still surface: hairline tracks that fill slowly, with nothing louder than it needs to be.</p>
+    </div>
+
+    <div class="d-stage">
+      <div>
+        <div class="aq-hero">
+          <h3>Sanar, contar, reconstruir.</h3>
+          <p>Cada material que aportas se sigue desde la necesidad hasta la obra terminada. Solo cuenta como impacto cuando la organización lo verifica.</p>
+          <button class="aq-btn p">Aportar materiales</button>
+          <button class="aq-btn s">Ver el avance</button>
+          <svg class="aq-water" viewBox="0 0 800 120" preserveAspectRatio="none" aria-hidden="true">
+            <g stroke="#bcd6cd" fill="none">
+              <path d="M0 18 H800" stroke-opacity=".55"/>
+              <path d="M40 38 H760" stroke-opacity=".42"/>
+              <path d="M110 56 H690" stroke-opacity=".32"/>
+              <path d="M0 74 H800" stroke-opacity=".24"/>
+              <path d="M200 90 H600" stroke-opacity=".18"/>
+              <path d="M60 104 H740" stroke-opacity=".12"/>
+            </g>
+          </svg>
+        </div>
+        <div class="aq-figs">
+          <div><b>376</b><span>materiales verificados como usados</span></div>
+          <div><b>14</b><span>proyectos activos en Quindío</span></div>
+          <div><b>9</b><span>informes semanales publicados</span></div>
+        </div>
+      </div>
+
+      <div class="phone"><div class="scr">
+        <div class="aq-ph">
+          <svg width="120" height="70" viewBox="0 0 120 70" aria-hidden="true"><g fill="none" stroke="#e9efec" stroke-width="1.4"><rect x="4" y="4" width="52" height="18" rx="2"/><rect x="64" y="4" width="52" height="18" rx="2"/><rect x="34" y="26" width="52" height="18" rx="2"/><rect x="4" y="48" width="52" height="18" rx="2"/><rect x="64" y="48" width="52" height="18" rx="2"/></g></svg>
+          <div class="aq-tag"><span>Reconstrucción</span><span>Verificado</span></div>
+        </div>
+        <div class="aq-body">
+          <h4>Ladrillos</h4>
+          <p class="sub">Proyecto 014, Quindío. Faltan 120 de 200.</p>
+          <ul class="ledger">
+            <li><span>Solicitado</span><span class="trk"><i style="width:100%;background:#bcd6cd"></i></span><b>200</b></li>
+            <li><span>Comprometido</span><span class="trk"><i class="pl" style="width:40%"></i></span><b>80</b></li>
+            <li><span>Recibido</span><span class="trk"><i style="width:25%;background:#9cc4b8"></i></span><b>50</b></li>
+            <li><span>Entregado</span><span class="trk"><i style="width:25%;background:#5f9a8f"></i></span><b>50</b></li>
+            <li><span>Usado</span><span class="trk"><i style="width:20%"></i></span><b>40</b></li>
+            <li class="v"><span>Verificado</span><span class="trk"><i style="width:15%"></i></span><b>30</b></li>
+          </ul>
+          <p class="aq-note">La línea punteada es una promesa: todavía no ha llegado.</p>
+        </div>
+        <div class="aq-act"><button class="a">Pasar</button><button class="b">Aportar</button></div>
+      </div></div>
+    </div>
+
+    <div class="d-foot">
+      <div>
+        <h3>Palette</h3>
+        <div class="pal">
+          <div><i style="background:#16403e"></i>Agua #16403e<br>brand, verified</div>
+          <div><i style="background:#2c6360"></i>Río #2c6360<br>custody</div>
+          <div><i style="background:#9cc4b8"></i>Salvia #9cc4b8<br>received</div>
+          <div><i style="background:#e9efec"></i>Neblina #e9efec<br>ground</div>
+          <div><i style="background:#b44d22"></i>Barro #b44d22<br>promise only</div>
+        </div>
+      </div>
+      <div><h3>Type</h3><p>Lora 400 for headlines and figures, Karla 400–600 for interface text. Both are the nonprofit's fonts.</p></div>
+      <div><h3>Character and risk</h3><p>Instantly feels like Espejo de Agua, so trust carries over. The risk is that a single-hue palette makes the stages harder to tell apart, so the ledger leans on line style (dashed promise, thicker verified) as well as color.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ================== BAHAREQUE ================== -->
+<section class="dir bh" id="bahareque">
+  <div class="wrap">
+    <div class="d-head">
+      <h2 class="d-name">Bahareque</h2>
+      <p class="d-thesis">The towns of the Eje Cafetero, Pijao included: lime-washed walls, painted wooden balconies and doors in deep blue, ochre and oxblood. The colors appear the way they do on a street, as painted trim on white, never as a background. Doorway arches frame the materials, and a painted zócalo closes each surface.</p>
+    </div>
+
+    <div class="d-stage">
+      <div>
+        <div class="bh-hero">
+          <div class="txt">
+            <h3>Paredes que vuelven a levantarse.</h3>
+            <p>Familias del Quindío reconstruyen con materiales que tú eliges. La organización confirma cada entrega y cada uso.</p>
+            <button class="bh-btn p">Aportar materiales</button>
+            <button class="bh-btn s">Ver el avance</button>
+          </div>
+          <div class="bh-arches" aria-hidden="true">
+            <div style="background:#1f4e79;height:230px"></div>
+            <div style="background:#7a1f2b;height:270px"></div>
+            <div style="background:#c9962b;height:210px"></div>
+          </div>
+        </div>
+        <div class="zocalo"></div>
+      </div>
+
+      <div class="phone"><div class="scr">
+        <div class="bh-door">
+          <svg width="110" height="64" viewBox="0 0 120 70" aria-hidden="true"><g fill="none" stroke="#f4f1ea" stroke-width="1.4"><rect x="4" y="4" width="52" height="18" rx="1"/><rect x="64" y="4" width="52" height="18" rx="1"/><rect x="34" y="26" width="52" height="18" rx="1"/><rect x="4" y="48" width="52" height="18" rx="1"/><rect x="64" y="48" width="52" height="18" rx="1"/></g></svg>
+        </div>
+        <div class="zocalo" style="margin:0 18px;height:6px"></div>
+        <div class="bh-body">
+          <div class="bh-meta"><span>Reconstrucción</span><span>Proyecto 014</span></div>
+          <h4>Ladrillos</h4>
+          <p class="sub">Faltan 120 de 200. Verificado por Espejo de Agua.</p>
+          <ul class="ledger">
+            <li><i style="box-shadow:inset 0 0 0 1px #2b2622"></i><span>Solicitado</span><b>200</b></li>
+            <li><i style="background:repeating-linear-gradient(-45deg,#c9962b 0 2px,transparent 2px 4px);box-shadow:inset 0 0 0 1px #c9962b"></i><span>Comprometido</span><b>80</b></li>
+            <li><i style="background:#9fb6cc"></i><span>Recibido</span><b>50</b></li>
+            <li><i style="background:#5b82a8"></i><span>Entregado</span><b>50</b></li>
+            <li><i style="background:#1f4e79"></i><span>Usado</span><b>40</b></li>
+            <li class="v"><i style="background:#4f6b4a"></i><span>Verificado</span><b>30</b></li>
+          </ul>
+        </div>
+        <div class="bh-act"><button>Pasar</button><button class="b">Aportar</button></div>
+      </div></div>
+    </div>
+
+    <div class="d-foot">
+      <div>
+        <h3>Palette</h3>
+        <div class="pal">
+          <div><i style="background:#f4f1ea"></i>Cal #f4f1ea<br>ground</div>
+          <div><i style="background:#1f4e79"></i>Balcón #1f4e79<br>action, custody</div>
+          <div><i style="background:#c9962b"></i>Ocre #c9962b<br>promise</div>
+          <div><i style="background:#7a1f2b"></i>Vino #7a1f2b<br>Roof and Shelter art</div>
+          <div><i style="background:#4f6b4a"></i>Puerta #4f6b4a<br>verified</div>
+        </div>
+      </div>
+      <div><h3>Type</h3><p>Libre Caslon Text for headlines and figures. It has the feel of a town notice board. Karla for interface text.</p></div>
+      <div><h3>Character and risk</h3><p>Rooted in the place without being folkloric, and the most distinctive of the five. The arches and zócalo need restraint: use them once per screen at most.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ================== TRICOLOR ================== -->
+<section class="dir tc" id="tricolor">
+  <div class="wrap">
+    <div class="d-head">
+      <h2 class="d-name">Tricolor</h2>
+      <p class="d-thesis">The Colombian flag, used with the restraint of an official document. Yellow, blue and red appear only in the flag's own 2:1:1 proportions, as a fine band at the top of a page or card. Everything else is white, navy and Bodoni, set with the composure of a certificate. Made for institutional donors and the weekly public report.</p>
+    </div>
+
+    <div class="d-stage">
+      <div>
+        <div class="tc-hero">
+          <div class="flag"></div>
+          <small>Informe público de recuperación</small>
+          <h3>Cada ladrillo, contado.</h3>
+          <p>Lo que se pidió, lo que se prometió, lo que llegó y lo que la organización verificó. Cada número se publica por separado.</p>
+          <button class="tc-btn p">Aportar materiales</button>
+          <button class="tc-btn s">Leer el informe</button>
+          <div class="tc-tot">
+            <div><b>376</b><span>verificados como usados</span></div>
+            <div><b>940</b><span>comprometidos, aún no llegan</span></div>
+            <div><b>9</b><span>informes semanales</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="phone"><div class="scr">
+        <div class="tc-card">
+          <div class="flag"></div>
+          <small>Reconstrucción, proyecto 014</small>
+          <h4>Ladrillos</h4>
+          <p class="tc-big">120 <span>de 200 faltan</span></p>
+          <hr class="tc-rule">
+          <ul class="ledger">
+            <li><span>Solicitado</span><span></span><b>200</b></li>
+            <li class="pl"><span>Comprometido</span><span></span><b>80</b></li>
+            <li><span>Recibido</span><span></span><b>50</b></li>
+            <li><span>Entregado</span><span></span><b>50</b></li>
+            <li><span>Usado</span><span></span><b>40</b></li>
+            <li class="v"><span>Verificado</span><span></span><b>30</b></li>
+          </ul>
+          <div class="tc-seal">Espejo<br>de Agua</div>
+        </div>
+        <div class="tc-act"><button>Pasar</button><button class="b">Aportar</button></div>
+      </div></div>
+    </div>
+
+    <div class="d-foot">
+      <div>
+        <h3>Palette</h3>
+        <div class="pal">
+          <div><i style="background:#0b2a5b"></i>Azul #0b2a5b<br>ink, action</div>
+          <div><i style="background:#e8b70b"></i>Oro #e8b70b<br>seal, flag</div>
+          <div><i style="background:#8a6a00"></i>Oro oscuro #8a6a00<br>promise text</div>
+          <div><i style="background:#b3122a"></i>Rojo #b3122a<br>pauses only</div>
+          <div><i style="background:#fff"></i>Blanco<br>ground</div>
+        </div>
+      </div>
+      <div><h3>Type</h3><p>Bodoni Moda for headlines and large figures, with italics for small captions. Karla for interface text.</p></div>
+      <div><h3>Character and risk</h3><p>The most formal and credible of the five, and well suited to reports and certificates. It can feel governmental or partisan, so it's best as a secondary style for the transparency pages.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ================== CAFÉ DE ORIGEN ================== -->
+<section class="dir co" id="cafe">
+  <div class="wrap">
+    <div class="d-head">
+      <h2 class="d-name">Café <em>de origen</em></h2>
+      <p class="d-thesis">Quindío sits inside the Coffee Cultural Landscape, and specialty coffee has already solved the problem of showing provenance with dignity. Each project gets a label like a single-origin bag, with its lot, program and region. Espresso, parchment and coffee-cherry red, set in Cormorant.</p>
+    </div>
+
+    <div class="d-stage">
+      <div>
+        <div class="co-hero">
+          <div>
+            <h3>Cada aporte, con su origen.</h3>
+            <p>Sabes de dónde viene tu café. Ahora sabes a dónde llegan tus ladrillos, y quién confirmó que se usaron.</p>
+            <button class="co-btn p">Aportar materiales</button>
+            <button class="co-btn s">Ver los proyectos</button>
+          </div>
+          <div class="label"><div class="in">
+            <h5>Lote 014</h5>
+            <dl>
+              <dt>Programa</dt><dd>Reconstrucción</dd>
+              <dt>Región</dt><dd>Quindío, Colombia</dd>
+              <dt>Material</dt><dd>200 ladrillos</dd>
+              <dt>Verificado</dt><dd>30 usados en obra</dd>
+              <dt>Al</dt><dd>7 de noviembre de 2026</dd>
+            </dl>
+          </div></div>
+        </div>
+      </div>
+
+      <div class="phone"><div class="scr">
+        <div class="co-card">
+          <p class="sub">Lote 014, Reconstrucción</p>
+          <h4>Ladrillos</h4>
+          <p class="sub">Quindío. Faltan 120 de 200.</p>
+          <div class="co-scale" aria-hidden="true">
+            <div class="base"></div>
+            <div class="mk" style="left:0"></div><div class="mk" style="left:calc(100% - 1px)"></div>
+            <div class="dot" style="left:40%;background:none;border:2px dashed #8e1b1b"></div>
+            <div class="dot" style="left:25%;background:#c8a27a"></div>
+            <div class="dot" style="left:20%;background:#7a5640"></div>
+            <div class="dot" style="left:15%;background:#2f4a2e;width:13px;height:13px;top:16px"></div>
+            <div class="lb" style="left:15%">30</div><div class="lb" style="left:40%">80</div><div class="lb" style="left:calc(100% - 10px)">200</div>
+          </div>
+          <ul class="ledger">
+            <li><span>Solicitado</span><b>200</b></li>
+            <li><span>Comprometido por donantes</span><b style="color:#8e1b1b">80</b></li>
+            <li><span>Recibido</span><b>50</b></li>
+            <li><span>Entregado al proyecto</span><b>50</b></li>
+            <li><span>Usado en obra</span><b>40</b></li>
+            <li class="v"><span>Verificado</span><b>30</b></li>
+          </ul>
+          <p class="co-proof">“Se levantó la pared norte con 30 ladrillos y mano de obra local.”<small>Nota verificada por Espejo de Agua, con acta de entrega</small></p>
+        </div>
+        <div class="co-act"><button>Pasar</button><button class="b">Aportar</button></div>
+      </div></div>
+    </div>
+
+    <div class="d-foot">
+      <div>
+        <h3>Palette</h3>
+        <div class="pal">
+          <div><i style="background:#2a1b14"></i>Tinto #2a1b14<br>ink</div>
+          <div><i style="background:#efe8dc"></i>Pergamino #efe8dc<br>ground</div>
+          <div><i style="background:#8e1b1b"></i>Cereza #8e1b1b<br>action, promise</div>
+          <div><i style="background:#c8a27a"></i>Crema #c8a27a<br>custody</div>
+          <div><i style="background:#2f4a2e"></i>Cafetal #2f4a2e<br>verified</div>
+        </div>
+      </div>
+      <div><h3>Type</h3><p>Cormorant Garamond 500–600, with italics for lot names. Karla for interface text.</p></div>
+      <div><h3>Character and risk</h3><p>Warm, premium and very legible to international donors. Using the action color for promises too needs care. It could also read as a coffee brand, so keep the coffee motif to the label device, not illustrations.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ================== PALMA DE CERA ================== -->
+<section class="dir pc" id="palma">
+  <div class="wrap">
+    <div class="d-head">
+      <h2 class="d-name">Palma <em>de cera</em></h2>
+      <p class="d-thesis">The wax palm, Colombia's national tree, rising out of the cloud forest of Cocora in Quindío. Mist greys, pale sky and a slender vertical rhythm. The ledger is drawn as six stems whose height is the quantity, and only verified stems get a crown. The lightest and most contemplative direction.</p>
+    </div>
+
+    <div class="d-stage">
+      <div class="pc-hero">
+        <h3>Lo que se promete, lo que llega, lo que queda.</h3>
+        <p>Seguimos cada material hasta que se usa en obra, y lo publicamos solo cuando está verificado.</p>
+        <button class="pc-btn p">Aportar materiales</button>
+        <button class="pc-btn s">Ver el avance</button>
+        <svg class="pc-palms" viewBox="0 0 400 440" preserveAspectRatio="xMaxYMax meet" aria-hidden="true">
+          <defs><linearGradient id="mist" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f4f6f3" stop-opacity="0"/><stop offset=".75" stop-color="#f4f6f3" stop-opacity=".9"/></linearGradient></defs>
+          <g fill="none" stroke-linecap="round">
+            <g stroke="#9fb3ae" stroke-width="1.2" opacity=".7">
+              <path d="M120 440 C118 330 124 230 120 150"/><path d="M120 150 c-14 -8 -30 -6 -40 6 M120 150 c12 -12 28 -12 38 -2 M120 150 c-4 -14 -2 -26 6 -34 M120 150 c-16 2 -28 12 -32 24 M120 150 c16 2 26 12 30 24"/>
+            </g>
+            <g stroke="#6f8b84" stroke-width="1.6">
+              <path d="M250 440 C246 300 256 170 250 70"/><path d="M250 70 c-18 -10 -38 -8 -50 8 M250 70 c16 -16 36 -16 48 -2 M250 70 c-6 -18 -2 -32 8 -42 M250 70 c-20 2 -34 16 -40 30 M250 70 c20 2 32 16 36 30"/>
+            </g>
+            <g stroke="#9fb3ae" stroke-width="1.2" opacity=".8">
+              <path d="M340 440 C338 360 344 280 340 210"/><path d="M340 210 c-14 -8 -28 -6 -38 6 M340 210 c12 -12 26 -12 36 -2 M340 210 c-4 -14 -2 -26 6 -32 M340 210 c-14 2 -26 12 -30 22 M340 210 c14 2 24 12 28 22"/>
+            </g>
+          </g>
+          <rect x="0" y="240" width="400" height="200" fill="url(#mist)"/>
+        </svg>
+      </div>
+
+      <div class="phone"><div class="scr">
+        <div class="pc-card">
+          <small>Reconstrucción, proyecto 014</small>
+          <h4>Ladrillos</h4>
+          <p class="sub">Quindío. Faltan 120 de 200.</p>
+          <div class="stems" aria-hidden="true">
+            <div class="req"><b>200</b><i style="height:160px"></i></div>
+            <div class="pl"><b>80</b><i style="height:64px"></i></div>
+            <div><b>50</b><i style="height:40px"></i></div>
+            <div><b>50</b><i style="height:40px"></i></div>
+            <div><b>40</b><i style="height:32px"></i></div>
+            <div class="v"><b>30</b><i style="height:24px"></i></div>
+          </div>
+          <div class="stem-l"><span>Solicitado</span><span>Prometido</span><span>Recibido</span><span>Entregado</span><span>Usado</span><span>Verificado</span></div>
+          <p class="pc-note">Solo las palmas con copa están verificadas. La línea punteada todavía es una promesa.</p>
+        </div>
+        <div class="pc-act"><button>Pasar</button><button class="b">Aportar</button></div>
+      </div></div>
+    </div>
+
+    <div class="d-foot">
+      <div>
+        <h3>Palette</h3>
+        <div class="pal">
+          <div><i style="background:#22302c"></i>Monte #22302c<br>ink, action</div>
+          <div><i style="background:#e1e9e8"></i>Niebla #e1e9e8<br>ground</div>
+          <div><i style="background:#8aa49e"></i>Tronco #8aa49e<br>custody</div>
+          <div><i style="background:#b07a3c"></i>Cera #b07a3c<br>promise</div>
+          <div><i style="background:#2f5d50"></i>Copa #2f5d50<br>verified</div>
+        </div>
+      </div>
+      <div><h3>Type</h3><p>Newsreader Light for headlines and figures, with optical sizing. Karla for interface text.</p></div>
+      <div><h3>Character and risk</h3><p>The most elegant and calm of the five. The light type and low contrast need care: keep body text at full ink and test the stem chart with screen readers, using a table as the accessible version.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="close" id="cierre">
+  <div class="wrap">
+    <h2>My recommendation: Agua quieta as the system, with Bahareque's doors for the materials</h2>
+    <p>Agua quieta is the one I'd build. Donors arriving from espejodeagua.org will recognize it immediately, it uses the nonprofit's own fonts, and its calm suits a recovery project better than anything louder. Its weakness is a single-hue palette, and Bahareque fixes that: borrow the arched door frame for material cards and the ochre and balcony blue for the stage colors.</p>
+    <div class="grid">
+      <div><h3>Keep across every direction</h3><p>Six ledger stages drawn separately, never stacked. Promises are dashed. Only verified gets the strongest mark.</p></div>
+      <div><h3>Programs by shape, not color</h3><p>Techo is a triangle, Reconstrucción a square, Sanar y sembrar a circle, so green can mean verified and nothing else.</p></div>
+      <div><h3>Tricolor's later role</h3><p>Tricolor's certificate layout would be a good fit for the weekly report and donor certificates, even if it's not the main style.</p></div>
+    </div>
+  </div>
+</section>
+
+<footer><div class="wrap">Impacto, Hack for Humanity, segunda ronda de dirección visual. 7 de noviembre de 2026. Todos los datos son ficticios.</div></footer>
+</body>
+</html>

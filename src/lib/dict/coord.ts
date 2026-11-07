@@ -490,4 +490,11 @@ export const coord = {
     en: "Synthetic demo verification note: staff checked the use at the project.",
   },
   "coord.ev.syntheticVerify": { es: "Usar nota de verificación sintética (demo)", en: "Use synthetic verification note (demo)" },
+  // Tricolor pass
+  "coord.desk.kicker": { es: "Registro de Espejo de Agua · Pijao, Quindío", en: "Espejo de Agua registry · Pijao, Quindío" },
+  "coord.private.restricted": { es: "Acceso restringido: solo coordinación", en: "Restricted: coordinators only" },
+  "coord.wr.certificate": { es: "Informe público de transparencia", en: "Public transparency report" },
+  "coord.wr.preview": { es: "Así se verá el informe publicado", en: "How the published report will read" },
+  "coord.wr.signedBy": { es: "Revisado por el equipo de", en: "Reviewed by the team at" },
+  "coord.ledger.steps": { es: "Registrar movimiento", en: "Record a movement" },
 } satisfies Record<string, { es: string; en: string }>;

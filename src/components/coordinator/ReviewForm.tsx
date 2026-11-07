@@ -59,13 +59,13 @@ export function ReviewForm({ data }: { data: ReviewData }) {
                 onChange={(e) => set("publicAlias")(e.target.value)}
                 aria-invalid={aliasHasName || undefined}
                 aria-describedby="alias-hint"
-                className={`${inputCls} font-display text-base font-semibold ${aliasHasName ? "border-brick ring-2 ring-brick/30" : ""}`}
+                className={`${inputCls} font-display text-xl! font-normal ${aliasHasName ? "border-red! shadow-[inset_0_0_0_1px_var(--red)]" : ""}`}
               />
               <Button type="button" size="sm" onClick={() => set("publicAlias")(suggestAlias(p.category, p.projectId, locale))}>
                 {t("coord.alias.suggest")}
               </Button>
             </div>
-            <p id="alias-hint" className="mt-1 text-xs text-muted">
+            <p id="alias-hint" className="mt-1.5 text-[13px] text-muted">
               {t("coord.alias.hint")}
             </p>
             {aliasHasName && <Warn>{t("coord.alias.warnName")}</Warn>}
@@ -84,8 +84,8 @@ export function ReviewForm({ data }: { data: ReviewData }) {
       <NeedsEditor needs={data.needs} />
 
       {canEdit && (
-        <div className="sticky bottom-3 z-20 rounded-lg border border-border bg-surface/95 p-3 shadow-lg backdrop-blur">
-          {approvedNeeds.length === 0 && <p className="mb-2 text-xs text-amber">{t("coord.need.noneApproved")}</p>}
+        <div className="sticky bottom-3 z-20 rounded-[2px] border border-rule bg-surface/95 p-3 backdrop-blur sm:p-4">
+          {approvedNeeds.length === 0 && <p className="mb-2 text-[13px] font-semibold text-gold-ink">{t("coord.need.noneApproved")}</p>}
           {changesOpen && (
             <div className="mb-3">
               <Label htmlFor="changes">{t("coord.requestChanges")}</Label>
@@ -140,12 +140,12 @@ export function ReviewForm({ data }: { data: ReviewData }) {
                   </Button>
                 </>
               ) : (
-                <Button variant="danger" onClick={() => setChangesOpen(true)}>
+                <Button variant="secondary" onClick={() => setChangesOpen(true)}>
                   {t("coord.requestChanges")}
                 </Button>
               ))}
             {user && (
-              <span className="ml-auto text-xs text-muted">
+              <span className="ml-auto text-[13px] text-muted">
                 {t("coord.youWillSign")} <strong className="text-foreground">{user.name}</strong>
               </span>
             )}
@@ -158,7 +158,7 @@ export function ReviewForm({ data }: { data: ReviewData }) {
 
 function Warn({ children }: { children: React.ReactNode }) {
   return (
-    <p role="alert" className="mt-1.5 rounded-md bg-brick-soft px-2.5 py-1.5 text-xs font-medium text-brick">
+    <p role="alert" className="mt-1.5 rounded-[2px] border-l-2 border-red bg-red-soft px-2.5 py-1.5 text-[13px] font-semibold text-red">
       {children}
     </p>
   );
@@ -182,7 +182,7 @@ function TextField({
   multiline?: boolean;
 }) {
   const { t } = useI18n();
-  const cls = `${inputCls} ${leak ? "border-brick ring-2 ring-brick/30" : ""}`;
+  const cls = `${inputCls} ${leak ? "border-red! shadow-[inset_0_0_0_1px_var(--red)]" : ""}`;
   return (
     <div className={multiline ? "sm:col-span-1" : ""}>
       <Label htmlFor={id}>{label}</Label>
@@ -205,7 +205,7 @@ function NeedsEditor({ needs }: { needs: ReviewNeed[] }) {
       {needs.length === 0 ? (
         <p className="text-sm text-muted">—</p>
       ) : (
-        <ul className="divide-y divide-border">
+        <ul className="-my-2 divide-y divide-border">
           {needs.map((n) => (
             <NeedRow key={n.needId} need={n} />
           ))}
@@ -244,15 +244,20 @@ function NeedRow({ need }: { need: ReviewNeed }) {
     );
 
   return (
-    <li className={`flex flex-col gap-3 py-3 sm:flex-row sm:items-center ${rejected ? "opacity-55" : ""}`}>
+    <li className={`flex flex-col gap-3 py-3.5 xl:flex-row xl:items-center ${rejected ? "opacity-60" : ""}`}>
       <div className="flex min-w-0 flex-1 items-center gap-3">
         <MaterialIcon itemKey={need.itemKey} label={name} />
         <div className="min-w-0">
-          <p className={`font-medium ${rejected ? "line-through" : ""}`}>{name}</p>
+          <p className={`text-[15px] font-semibold ${rejected ? "line-through" : ""}`}>{name}</p>
           <div className="mt-0.5 flex flex-wrap gap-1.5">
-            {need.aiSuggested && <Chip tone="amber">{t("coord.need.aiSuggested")}</Chip>}
-            {need.needsConfirmation && <Chip tone="amber">{t("ledger.needsConfirmation")}</Chip>}
-            <Chip tone={need.status === "approved" ? "leaf" : need.status === "rejected" ? "brick" : "neutral"}>
+            {need.aiSuggested && (
+              <Chip tone="navy">
+                <span aria-hidden className="font-display italic">IA</span>
+                {t("coord.need.aiSuggested")}
+              </Chip>
+            )}
+            {need.needsConfirmation && <Chip tone="gold">{t("ledger.needsConfirmation")}</Chip>}
+            <Chip tone={need.status === "approved" ? "emerald" : "neutral"}>
               {t(`coord.need.${need.status}` as DictKey)}
             </Chip>
           </div>
@@ -275,7 +280,7 @@ function NeedRow({ need }: { need: ReviewNeed }) {
           value={qty}
           placeholder="?"
           onChange={(e) => setQty(e.target.value.replace(/[^\d]/g, ""))}
-          className={`${inputCls} w-20! text-right tabular-nums ${need.needsConfirmation && !qty ? "border-amber" : ""}`}
+          className={`${inputCls} w-20! text-right font-display text-lg! tabular-nums ${need.needsConfirmation && !qty ? "border-gold! shadow-[inset_0_0_0_1px_var(--gold)]" : ""}`}
           disabled={rejected}
         />
         <span className="w-20 truncate text-sm text-muted" title={need.unit}>{need.unit}</span>

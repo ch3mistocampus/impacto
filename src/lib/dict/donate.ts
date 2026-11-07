@@ -131,4 +131,19 @@ export const donate = {
     es: "Los enlaces se guardan solo en este dispositivo. Guarda el enlace de seguimiento si cambias de navegador.",
     en: "Links are stored only on this device. Keep the follow link if you switch browsers.",
   },
+  // --- Tricolor pass ---
+  "donate.kicker": { es: "Materiales para la recuperación", en: "Materials for the recovery" },
+  "donate.act.give": { es: "Aportar", en: "Give" },
+  "donate.act.otherWays": { es: "O di cómo vas a ayudar:", en: "Or say how you'll help:" },
+  "donate.card.of": { es: "de", en: "of" },
+  "donate.card.unpledged": { es: "aún sin comprometer", en: "still unpledged" },
+  "donate.card.toConfirm": { es: "Por confirmar", en: "To be confirmed" },
+  "donate.card.sealTitle": {
+    es: "Necesidad verificada por Espejo de Agua",
+    en: "Need verified by Espejo de Agua",
+  },
+  "donate.card.ledger": { es: "Registro de esta necesidad", en: "Ledger for this need" },
+  "donate.stamp.pledge": { es: "Comprometer", en: "Pledge" },
+  "donate.receipt.kicker": { es: "Constancia de compromiso", en: "Pledge receipt" },
+  "donations.receiptKicker": { es: "Constancia de compromiso", en: "Pledge receipt" },
 } satisfies Record<string, { es: string; en: string }>;

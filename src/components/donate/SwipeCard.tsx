@@ -3,21 +3,28 @@
 import Link from "next/link";
 import { useRef, useState, type PointerEvent } from "react";
 import { useI18n } from "@/lib/i18n";
-import { LedgerBar } from "@/components/public/LedgerBar";
-import { MaterialImage } from "@/components/public/MaterialImage";
-import { CategoryBadge } from "@/components/public/CategoryBadge";
-import { VerifiedBadge } from "@/components/public/VerifiedBadge";
-import { DemoTag } from "@/components/public/PublicMeta";
-import { CATEGORY_STYLE } from "@/components/public/types";
+import { MaterialGlyph } from "@/components/ui/MaterialGlyph";
+import {
+  CategoryMark,
+  DoubleRule,
+  FlagBand,
+  Seal,
+  StageSwatch,
+  STAGE_TEXT,
+  intlLocale,
+  type Stage,
+} from "@/components/ui/tricolor";
 import type { DeckCard } from "./types";
 
 const THRESHOLD = 110;
+const STAGES: Stage[] = ["requested", "pledged", "received", "delivered", "used", "verified"];
 
 export type SwipeCardHandle = { flyOut: (dir: "left" | "right") => void };
 
 /**
- * Top card of the deck. Drag with pointer (mouse/touch/pen): left past the threshold = pass,
- * right past the threshold = help. Buttons and arrow keys in the parent do the same thing.
+ * Top card of the deck, set as a Tricolor certificate. Drag with pointer (mouse/touch/pen):
+ * left past the threshold = pass, right past the threshold = help. Buttons and arrow keys in
+ * the parent do the same thing.
  */
 export function SwipeCard({
   card,
@@ -32,11 +39,11 @@ export function SwipeCard({
   onPass: () => void;
   onHelp: () => void;
 }) {
-  const { t, pick } = useI18n();
+  const { t, pick, locale } = useI18n();
   const [dx, setDx] = useState(0);
   const [dragging, setDragging] = useState(false);
   const start = useRef<{ x: number; y: number; id: number } | null>(null);
-  const s = CATEGORY_STYLE[card.category];
+  const nf = new Intl.NumberFormat(intlLocale(locale));
 
   function down(e: PointerEvent<HTMLDivElement>) {
     if ((e.target as HTMLElement).closest("a,button")) return;
@@ -64,6 +71,10 @@ export function SwipeCard({
   const rot = reducedMotion ? 0 : x / 18;
   const intent = dx <= -THRESHOLD / 2 ? "pass" : dx >= THRESHOLD / 2 ? "help" : null;
 
+  const L = card.ledger;
+  const name = pick(card.nameEs, card.nameEn);
+  const confirmed = L.requested !== null;
+
   return (
     <div
       onPointerDown={down}
@@ -78,57 +89,102 @@ export function SwipeCard({
       }}
     >
       <article
-        className="relative h-full flex flex-col rounded-[1.75rem] bg-surface border border-border shadow-[0_18px_40px_-24px_rgba(60,30,10,0.45)] overflow-hidden"
+        className="relative h-full flex flex-col rounded-[2px] bg-surface border border-border overflow-hidden"
         aria-roledescription={t("donate.swipeHelp")}
       >
-        {/* intent stamps */}
+        <FlagBand thickness={5} />
+
+        {/* intent stamps: outlined, like a rubber stamp on a certificate */}
         <span
           aria-hidden
-          className="pointer-events-none absolute top-5 left-5 z-10 rotate-[-10deg] rounded-lg border-4 border-sky px-3 py-1 font-display text-2xl font-bold text-sky bg-surface/80 transition-opacity"
+          className="pointer-events-none absolute top-6 left-5 z-10 -rotate-[8deg] rounded-[2px] border border-gold-ink bg-surface/90 px-3 py-1 font-display italic text-2xl text-gold-ink outline outline-1 outline-offset-2 outline-gold-ink transition-opacity"
           style={{ opacity: intent === "help" ? 1 : 0 }}
         >
-          {t("donate.act.pledge")}
+          {t("donate.stamp.pledge")}
         </span>
         <span
           aria-hidden
-          className="pointer-events-none absolute top-5 right-5 z-10 rotate-[10deg] rounded-lg border-4 border-muted px-3 py-1 font-display text-2xl font-bold text-muted bg-surface/80 transition-opacity"
+          className="pointer-events-none absolute top-6 right-5 z-10 rotate-[8deg] rounded-[2px] border border-muted bg-surface/90 px-3 py-1 font-display italic text-2xl text-muted outline outline-1 outline-offset-2 outline-muted transition-opacity"
           style={{ opacity: intent === "pass" ? 1 : 0 }}
         >
           {t("donate.pass")}
         </span>
 
-        <div className={`relative ${s.soft} h-[34%] min-h-28 shrink-0 grid place-items-center`}>
-          <MaterialImage
-            itemKey={card.itemKey}
-            alt={pick(card.nameEs, card.nameEn)}
-            className="h-[85%] w-auto max-w-[70%] drop-shadow-md"
-          />
-          <DemoTag className="absolute top-3 right-3" />
-          <div className="absolute inset-x-4 bottom-3 flex flex-wrap items-end justify-between gap-1.5">
-            <CategoryBadge category={card.category} className="bg-surface/90" />
-            {card.verified && <VerifiedBadge />}
-          </div>
-        </div>
-
-        <div className="flex-1 min-h-0 flex flex-col p-5 gap-3 overflow-y-auto">
-          <div>
-            <h2 className="font-display text-3xl font-semibold leading-tight">{pick(card.nameEs, card.nameEn)}</h2>
-            <p className="text-sm text-muted mt-0.5">
-              <span className="font-semibold text-foreground">{card.publicAlias}</span>
+        <div className="flex-1 min-h-0 overflow-y-auto px-5 sm:px-8 pt-5 pb-5 flex flex-col">
+          {/* caption */}
+          <p className="flex items-center justify-center gap-1.5 text-center text-[13px] text-muted">
+            <CategoryMark category={card.category} size={10} className="text-foreground" />
+            <span className="truncate">
+              {t(`category.${card.category}`)}, {card.publicAlias}
               {card.region && <span>, {card.region}</span>}
+            </span>
+          </p>
+
+          <div className="mt-3 flex items-center justify-center gap-3 text-foreground">
+            <MaterialGlyph itemKey={card.itemKey} className="size-11 shrink-0" />
+            <h2 className="font-display text-[2.1rem] sm:text-[2.5rem] font-normal leading-none">{name}</h2>
+          </div>
+
+          {/* the figure */}
+          {confirmed ? (
+            <p className="mt-4 text-center leading-none">
+              <span className="font-display text-[4.25rem] sm:text-[5rem] font-normal tabular-nums">
+                {nf.format(L.availableToPledge)}
+              </span>{" "}
+              <span className="block sm:inline mt-1 sm:mt-0 text-base text-muted">
+                {t("donate.card.of")} {nf.format(L.requested ?? 0)} {card.unit} {t("donate.card.unpledged")}
+              </span>
             </p>
+          ) : (
+            <div className="mt-4 text-center">
+              <p className="font-display italic text-4xl text-muted">{t("donate.card.toConfirm")}</p>
+              <p className="mt-1 text-sm text-muted">{t("stage.needsConfirmation")}</p>
+            </div>
+          )}
+
+          <DoubleRule className="my-4 sm:mx-6" />
+
+          {/* the six measures, dotted leaders */}
+          <ul aria-label={t("donate.card.ledger")} className="text-[15px]">
+            {STAGES.map((s) => {
+              const v = s === "requested" ? L.requested : L[s];
+              return (
+                <li
+                  key={s}
+                  className={`flex items-baseline gap-2 py-[3px] ${STAGE_TEXT[s]} ${s === "verified" ? "font-bold" : ""}`}
+                >
+                  <StageSwatch stage={s} size={9} className="self-center" />
+                  <span>{t(`stage.${s}`)}</span>
+                  <span aria-hidden className="flex-1 -translate-y-1 border-b border-dotted border-muted/60" />
+                  <span className="font-display text-lg font-normal tabular-nums leading-none">
+                    {v === null ? "—" : nf.format(v)}
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
+
+          <div className="mt-auto pt-4 flex items-end gap-4">
+            <div className="min-w-0 flex-1">
+              <p className="text-[15px] leading-snug line-clamp-2">{pick(card.summaryEs, card.summaryEn)}</p>
+              <Link
+                href={`/transparency/projects/${card.projectId}`}
+                className="mt-2 inline-flex min-h-11 items-center text-sm font-semibold underline decoration-1 underline-offset-[5px] hover:decoration-2"
+              >
+                {t("donate.viewProject")}
+              </Link>
+            </div>
+            {card.verified && (
+              <Seal size={68} className="shrink-0" title={t("donate.card.sealTitle")}>
+                <span aria-hidden>
+                  Espejo
+                  <br />
+                  de Agua
+                </span>
+                <span className="sr-only">{t("donate.card.sealTitle")}</span>
+              </Seal>
+            )}
           </div>
-          <p className="text-sm leading-relaxed line-clamp-2">{pick(card.summaryEs, card.summaryEn)}</p>
-          <div className="mt-auto pt-1">
-            <LedgerBar ledger={card.ledger} unit={card.unit} compact />
-            <p className="mt-2 text-xs font-semibold text-amber">{t("stage.pledgeIsNot")}</p>
-          </div>
-          <Link
-            href={`/transparency/projects/${card.projectId}`}
-            className="self-start text-sm font-semibold underline underline-offset-4 decoration-2"
-          >
-            {t("donate.viewProject")}
-          </Link>
         </div>
       </article>
     </div>

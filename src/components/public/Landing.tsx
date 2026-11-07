@@ -6,135 +6,169 @@ import { useQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import { useI18n } from "@/lib/i18n";
 import type { DictKey } from "@/lib/dict";
-import { MaterialImage } from "./MaterialImage";
+import { CategoryMark, DoubleRule, Kicker, btn, intlLocale } from "@/components/ui/tricolor";
 import { StatTile } from "./StatTile";
 import { ProjectCard } from "./ProjectCard";
 import { StageLegend } from "./LedgerBar";
 import { DemoStamp } from "./PublicMeta";
-import { CATEGORIES, CATEGORY_STYLE, STAGES, type Category } from "./types";
+import { CATEGORIES, STAGES, type Category } from "./types";
 
 export function Landing() {
-  const { t, tn } = useI18n();
+  const { t, tn, locale } = useI18n();
   const dash = useQuery(api.public.transparencyDashboard, {});
   const [filter, setFilter] = useState<Category | undefined>(undefined);
   const projects = useQuery(api.public.listPublishedProjects, filter ? { category: filter } : {});
+  const nf = new Intl.NumberFormat(intlLocale(locale));
+  const num = (n: number | undefined) => (n === undefined ? "–" : nf.format(n));
+
+  const sum = (k: "verified" | "pledged") => dash?.categories.reduce((a, c) => a + c.totals[k], 0);
+  const verified = sum("verified");
+  const pledged = sum("pledged");
+  const reports = dash?.transparency.weeklyReportsPublished;
 
   return (
-    <div className="pt-8 sm:pt-12">
-      {/* Hero */}
-      <section className="grid gap-8 md:grid-cols-[1.25fr_1fr] md:items-center">
-        <div>
-          <h1 className="font-display text-[2.4rem] leading-[1.05] sm:text-6xl font-semibold tracking-tight text-balance">
-            {t("landing.heroTitle")}
-          </h1>
-          <p className="mt-5 text-lg leading-relaxed text-muted max-w-[34rem]">{t("landing.mission")}</p>
-          <div className="mt-7 flex flex-wrap gap-3">
-            <Link
-              href="/donate"
-              className="inline-flex items-center justify-center rounded-full bg-clay text-white px-6 py-3.5 text-base font-semibold shadow-[0_2px_0_var(--brick)] active:translate-y-px"
-            >
-              {t("landing.ctaDonate")}
-            </Link>
-            <Link
-              href="/transparency"
-              className="inline-flex items-center justify-center rounded-full border-2 border-foreground/80 px-6 py-3 text-base font-semibold"
-            >
-              {t("landing.ctaTransparency")}
-            </Link>
-          </div>
-          <p className="mt-5 inline-flex items-start gap-2 text-sm text-amber bg-amber-soft rounded-lg px-3 py-2">
-            <span aria-hidden className="mt-1 size-2 shrink-0 rounded-full bg-amber" />
-            {t("landing.demoNotice")}
-          </p>
+    <div className="pt-10 sm:pt-16">
+      {/* Hero: a centred, certificate-like title page */}
+      <section className="mx-auto max-w-3xl text-center" aria-labelledby="hero-title">
+        <Kicker>{t("landing.kicker")}</Kicker>
+        <h1
+          id="hero-title"
+          className="mx-auto mt-3 max-w-[14ch] font-display text-[2.75rem] font-normal leading-[1.06] tracking-[-0.01em] text-balance sm:text-[5rem]"
+        >
+          {t("landing.heroShort")}
+        </h1>
+        <p className="mx-auto mt-6 max-w-[36rem] text-[17px] leading-relaxed text-muted sm:text-lg">
+          {t("landing.mission")}
+        </p>
+        <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
+          <Link href="/donate" className={btn("primary", "lg")}>
+            {t("landing.ctaDonate")}
+          </Link>
+          <Link href="/transparency" className={btn("secondary", "lg")}>
+            {t("landing.ctaTransparency")}
+          </Link>
         </div>
-        <div className="relative aspect-[4/3] md:aspect-square rounded-[2rem] overflow-hidden bg-clay-soft">
-          <MaterialImage src="/brand/hero.png" alt="" emoji="🏡" className="size-full object-cover" />
-        </div>
+
+        {/* Three figures, verified impact first */}
+        <h2 className="sr-only">{t("landing.figuresLabel")}</h2>
+        <dl
+          className="mt-12 grid grid-cols-3 divide-x divide-border border-y border-border sm:mt-14"
+          aria-live="polite"
+        >
+          <Figure value={num(verified)} label={tn("landing.fig.verified", verified ?? 0)} tone="text-emerald" />
+          <Figure value={num(pledged)} label={tn("landing.fig.pledged", pledged ?? 0)} tone="text-gold-ink" />
+          <Figure value={num(reports)} label={tn("tr.counter.weeklyReportsPublished", reports ?? 0)} />
+        </dl>
+        <DemoStamp asOf={dash?.asOf ?? null} className="mt-4 justify-center" />
       </section>
 
-      {/* Three buckets */}
-      <section className="mt-16 sm:mt-20" aria-labelledby="buckets-title">
-        <div className="md:flex md:items-end md:justify-between gap-8">
-          <div className="max-w-xl">
-            <h2 id="buckets-title" className="font-display text-3xl sm:text-4xl font-semibold">
-              {t("landing.bucketsTitle")}
-            </h2>
-            <p className="mt-2 text-muted">{t("landing.bucketsLead")}</p>
-            <DemoStamp asOf={dash?.asOf ?? null} className="mt-3" />
-          </div>
+      {/* Three programs */}
+      <section className="mt-20 sm:mt-28" aria-labelledby="buckets-title">
+        <div className="mx-auto max-w-2xl text-center">
+          <Kicker>{t("landing.programsKicker")}</Kicker>
+          <h2 id="buckets-title" className="mt-2 font-display text-[2rem] font-normal leading-tight sm:text-[2.75rem]">
+            {t("landing.bucketsTitle")}
+          </h2>
+          <p className="mt-3 text-[15px] leading-relaxed text-muted sm:text-base">{t("landing.bucketsLead")}</p>
           <Legend />
         </div>
 
-        <div className="mt-8 grid gap-5 md:grid-cols-3">
+        <DoubleRule className="mt-10" />
+        <div className="grid md:grid-cols-3 md:divide-x md:divide-border">
           {CATEGORIES.map((c) => {
             const row = dash?.categories.find((r) => r.category === c);
-            const s = CATEGORY_STYLE[c];
             return (
-              <article key={c} className={`rounded-3xl border-t-[6px] ${s.border} bg-surface border-x border-b border-x-border border-b-border overflow-hidden`}>
-                <div className={`${s.soft} aspect-[16/9] grid place-items-center`}>
-                  <MaterialImage src={s.image} alt="" emoji={s.emoji} className="h-full w-full object-cover" />
+              <article
+                key={c}
+                aria-labelledby={`prog-${c}`}
+                className="flex flex-col border-b border-border py-8 last:border-b-0 md:border-b-0 md:px-8 md:first:pl-0 md:last:pr-0"
+              >
+                <div className="flex items-center gap-2.5">
+                  <CategoryMark category={c} size={14} />
+                  <span className="text-[13px] text-muted">
+                    {row ? nf.format(row.projects.length) : "–"} {tn("landing.projectsPublished", row?.projects.length ?? 0)}
+                  </span>
                 </div>
-                <div className="p-5">
-                  <h3 className={`font-display text-2xl font-semibold ${s.text}`}>{t(`category.${c}`)}</h3>
-                  <p className="text-sm text-muted mt-1">{t(`landing.desc.${c}` as DictKey)}</p>
-                  <p className="mt-3 text-sm">
-                    <strong className="font-display text-lg tabular-nums">{row?.projects.length ?? "–"}</strong>{" "}
-                    <span className="text-muted">{tn("landing.projectsPublished", row?.projects.length ?? 0)}</span>
-                  </p>
-                  <div className="mt-3 border-t border-border pt-2" aria-live="polite">
-                    {row ? (
-                      STAGES.map((k) => (
-                        <StatTile key={k} tone={k} label={t(`stage.${k}`)} value={row.totals[k]} />
-                      ))
-                    ) : (
-                      <p className="py-6 text-sm text-muted">{t("common.loading")}</p>
-                    )}
-                  </div>
-                  <p className="mt-3 rounded-xl bg-leaf-soft text-leaf px-3 py-2 text-sm font-semibold">
-                    <span className="font-display text-lg tabular-nums mr-1.5">{row?.totals.verified ?? "–"}</span>
-                    {tn("landing.verifiedImpact", row?.totals.verified ?? 0)}
-                  </p>
-                  <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2">
-                    <Link
-                      href={`/donate?category=${c}`}
-                      className={`inline-flex font-semibold ${s.text} underline underline-offset-4 decoration-2`}
-                    >
-                      {t("landing.ctaDonate")}
-                    </Link>
-                    <Link
-                      href={`/transparency#${c}`}
-                      className="inline-flex font-semibold text-foreground underline underline-offset-4 decoration-2"
-                    >
-                      {t("landing.bucketTransparency")}
-                    </Link>
-                  </div>
+                <h3 id={`prog-${c}`} className="mt-3 font-display text-[1.85rem] font-normal leading-tight">
+                  {t(`category.${c}`)}
+                </h3>
+                <p className="mt-1.5 text-[15px] leading-snug text-muted">{t(`landing.desc.${c}` as DictKey)}</p>
+
+                <p className="mt-6 flex items-baseline gap-3">
+                  <span className="font-display text-[3.25rem] font-normal leading-none tabular-nums text-emerald">
+                    {num(row?.totals.verified)}
+                  </span>
+                  <span className="text-[15px] font-semibold text-emerald">{t("landing.programVerified")}</span>
+                </p>
+
+                <div className="mt-5 border-t border-border pt-2" aria-live="polite">
+                  <p className="sr-only">{t("landing.programLedger")}</p>
+                  {row ? (
+                    STAGES.filter((k) => k !== "verified").map((k) => (
+                      <StatTile key={k} tone={k} label={t(`stage.${k}`)} value={row.totals[k]} />
+                    ))
+                  ) : (
+                    <p className="py-6 text-[15px] text-muted">{t("common.loading")}</p>
+                  )}
+                </div>
+
+                <div className="mt-auto flex flex-wrap gap-x-5 gap-y-1 pt-6">
+                  <Link href={`/donate?category=${c}`} className={btn("quiet", "md", "min-h-11")}>
+                    {t("landing.ctaDonate")}
+                  </Link>
+                  <Link href={`/transparency#${c}`} className={btn("quiet", "md", "min-h-11 text-muted")}>
+                    {t("landing.bucketTransparency")}
+                  </Link>
                 </div>
               </article>
             );
           })}
         </div>
+        <DoubleRule />
       </section>
 
       {/* Privacy */}
-      <section className="mt-16 rounded-3xl border-2 border-dashed border-foreground/25 px-6 py-7 sm:px-10 sm:py-9 grid gap-3 sm:grid-cols-[auto_1fr] sm:items-center sm:gap-8">
-        <svg viewBox="0 0 48 48" className="size-14 text-sky" aria-hidden fill="none">
-          <circle cx="24" cy="20" r="9" stroke="currentColor" strokeWidth="3" />
-          <path d="M24 29c-6 8-6 8-6 8M24 29c6 8 6 8 6 8" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
-          <path d="M8 8l32 32" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" />
+      <section
+        className="mx-auto mt-20 grid max-w-4xl gap-6 sm:mt-28 sm:grid-cols-[auto_1fr] sm:items-start sm:gap-10"
+        aria-labelledby="privacy-title"
+      >
+        <svg viewBox="0 0 48 48" className="size-14 text-foreground sm:mt-2 sm:size-16" aria-hidden fill="none">
+          <circle cx="24" cy="24" r="22.5" stroke="currentColor" strokeWidth="1" />
+          <path
+            d="M24 36s-8-8.2-8-14a8 8 0 0 1 16 0c0 5.8-8 14-8 14z"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            strokeLinejoin="round"
+          />
+          <circle cx="24" cy="22" r="2.6" stroke="currentColor" strokeWidth="1.5" />
+          <path d="M12 12l24 24" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
         </svg>
         <div>
-          <h2 className="font-display text-2xl sm:text-3xl font-semibold">{t("landing.privacyTitle")}</h2>
-          <p className="mt-2 text-muted max-w-2xl">{t("landing.privacyBody")}</p>
+          <Kicker>{t("landing.privacyKicker")}</Kicker>
+          <h2 id="privacy-title" className="mt-1 font-display text-[1.85rem] font-normal leading-tight sm:text-[2.25rem]">
+            {t("landing.privacyTitle")}
+          </h2>
+          <p className="mt-3 max-w-2xl text-[17px] leading-relaxed text-muted">{t("landing.privacyBody")}</p>
         </div>
       </section>
 
       {/* Projects */}
-      <section id="proyectos" className="mt-16 scroll-mt-24" aria-labelledby="projects-title">
-        <h2 id="projects-title" className="font-display text-3xl sm:text-4xl font-semibold">
-          {t("landing.projectsTitle")}
-        </h2>
-        <CategoryChips value={filter} onChange={setFilter} allLabel={t("landing.allCategories")} />
-        <div className="mt-2">
+      <section id="proyectos" className="mt-20 scroll-mt-24 sm:mt-28" aria-labelledby="projects-title">
+        <div className="flex flex-col gap-4 border-b border-rule pb-4 md:flex-row md:items-end md:justify-between">
+          <div>
+            <Kicker>{t("landing.projectsKicker")}</Kicker>
+            <h2 id="projects-title" className="mt-1 font-display text-[2rem] font-normal leading-tight sm:text-[2.75rem]">
+              {t("landing.projectsTitle")}
+            </h2>
+          </div>
+          <CategoryChips
+            value={filter}
+            onChange={setFilter}
+            allLabel={t("landing.allCategories")}
+            label={t("landing.filterLabel")}
+          />
+        </div>
+        <div className="mt-1">
           {projects === undefined ? (
             <p className="py-8 text-muted">{t("common.loading")}</p>
           ) : projects.length === 0 ? (
@@ -148,18 +182,33 @@ export function Landing() {
   );
 }
 
+function Figure({ value, label, tone = "text-foreground" }: { value: string; label: string; tone?: string }) {
+  return (
+    <div className="flex flex-col-reverse items-center justify-end px-2 py-6 sm:px-6 sm:py-8">
+      <dt className="mt-2.5 text-[13px] leading-snug text-muted sm:text-[15px]">{label}</dt>
+      <dd className={`font-display text-[2.4rem] font-normal leading-none tabular-nums sm:text-[3.5rem] ${tone}`}>
+        {value}
+      </dd>
+    </div>
+  );
+}
+
 function Legend() {
   const { t } = useI18n();
   return (
-    <details className="mt-4 md:mt-0 md:max-w-sm text-sm group">
-      <summary className="cursor-pointer font-semibold underline underline-offset-4 decoration-dotted">
+    <details className="group mx-auto mt-4 max-w-xl text-left text-[15px]">
+      <summary className="mx-auto flex min-h-11 w-fit cursor-pointer list-none items-center gap-2 font-semibold underline decoration-dotted decoration-1 underline-offset-[5px] [&::-webkit-details-marker]:hidden">
         {t("landing.howTitle")}
+        <svg viewBox="0 0 10 6" className="size-2.5 transition-transform group-open:rotate-180" aria-hidden fill="none">
+          <path d="M1 1l4 4 4-4" stroke="currentColor" strokeWidth="1.4" />
+        </svg>
       </summary>
-      <StageLegend className="mt-3" />
+      <StageLegend className="mt-3 border-y border-border py-4" />
     </details>
   );
 }
 
+/** Program filter: square outlined chips with the shape mark; selected = navy fill. */
 export function CategoryChips({
   value,
   onChange,
@@ -174,24 +223,22 @@ export function CategoryChips({
   const { t } = useI18n();
   const opts: (Category | undefined)[] = [undefined, ...CATEGORIES];
   return (
-    <div role="group" aria-label={label} className="mt-4 -mx-4 px-4 flex gap-2 overflow-x-auto pb-1">
+    <div role="group" aria-label={label} className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 md:mx-0 md:px-0 md:pb-0">
       {opts.map((c) => {
         const active = value === c;
-        const s = c ? CATEGORY_STYLE[c] : null;
         return (
           <button
             key={c ?? "all"}
             type="button"
             aria-pressed={active}
             onClick={() => onChange(c)}
-            className={`shrink-0 rounded-full px-4 py-2 text-sm font-semibold border-2 transition-colors ${
+            className={`inline-flex min-h-11 shrink-0 items-center gap-2 rounded-[2px] px-4 text-[15px] font-semibold transition-colors ${
               active
-                ? s
-                  ? `${s.bg} ${s.border} text-white`
-                  : "bg-foreground border-foreground text-background"
-                : "border-border bg-surface text-foreground"
+                ? "bg-navy text-on-navy"
+                : "bg-surface text-foreground shadow-[inset_0_0_0_1px_var(--border)] hover:shadow-[inset_0_0_0_1px_var(--rule)]"
             }`}
           >
+            {c && <CategoryMark category={c} size={10} />}
             {c ? t(`category.${c}`) : allLabel}
           </button>
         );

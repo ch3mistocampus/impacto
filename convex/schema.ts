@@ -186,10 +186,12 @@ export default defineSchema({
     ),
     followToken: v.string(), // donor follows anonymized timeline with this
     expiresAt: v.number(),
+    donorUserId: v.optional(v.id("users")), // set when a signed-in donor pledges
   })
     .index("by_need_status", ["needId", "status"])
     .index("by_project", ["projectId"])
-    .index("by_follow_token", ["followToken"]),
+    .index("by_follow_token", ["followToken"])
+    .index("by_donor_user", ["donorUserId"]),
 
   materialEvents: defineTable({
     needId: v.id("materialNeeds"),
@@ -296,4 +298,40 @@ export default defineSchema({
     action: v.string(),
     beforeAfterSummary: v.optional(v.string()),
   }).index("by_entity", ["entityType", "entityId"]),
+
+  // Community voice: moderated questions/concerns/thanks. Public sees only approved rows,
+  // never `contactPrivate`. Coordinators moderate and may answer bilingually.
+  communityFeedback: defineTable({
+    projectId: v.optional(v.id("projects")),
+    category: v.optional(category),
+    kind: v.union(
+      v.literal("question"),
+      v.literal("concern"),
+      v.literal("thanks"),
+      v.literal("suggestion"),
+    ),
+    message: v.string(),
+    language: locale,
+    status: v.union(v.literal("pending"), v.literal("approved"), v.literal("hidden")),
+    contactPrivate: v.optional(v.string()),
+    responseEs: v.optional(v.string()),
+    responseEn: v.optional(v.string()),
+    respondedBy: v.optional(v.id("users")),
+    respondedAt: v.optional(v.number()),
+    authorUserId: v.optional(v.id("users")),
+    isDemo: v.boolean(),
+  })
+    .index("by_status", ["status"])
+    .index("by_project_status", ["projectId", "status"]),
+
+  // Field follow-ups on published projects (progress notes/photos). Coordinator reviews before public.
+  fieldFollowUps: defineTable({
+    projectId: v.id("projects"),
+    noteEs: v.optional(v.string()),
+    noteEn: v.optional(v.string()),
+    photoId: v.optional(v.id("photos")),
+    status: v.union(v.literal("pending"), v.literal("approved"), v.literal("rejected")),
+    createdBy: v.id("users"),
+    reviewedBy: v.optional(v.id("users")),
+  }).index("by_project", ["projectId"]),
 });

@@ -2,11 +2,11 @@
 
 import Link from "next/link";
 import { useI18n } from "@/lib/i18n";
-import { CategoryBadge } from "./CategoryBadge";
+import { CategoryMark, intlLocale } from "@/components/ui/tricolor";
 import { MaterialImage } from "./MaterialImage";
-import { DemoTag, StatusBadge } from "./PublicMeta";
+import { ProjectStatusChip } from "./reportKit";
 import { STAGE_TEXT, stageSwatch } from "./ledgerStyles";
-import { CATEGORY_STYLE, STAGES, type Category, type PublicStatus, type StageTotals } from "./types";
+import { CATEGORY_STYLE, type Category, type PublicStatus, type StageTotals } from "./types";
 
 export type ProjectCardData = {
   projectId: string;
@@ -25,58 +25,75 @@ export type ProjectCardData = {
   totals: StageTotals;
 };
 
+/** A ruled list item, like an entry in a printed public register. */
 export function ProjectCard({ p, hrefBase = "/p" }: { p: ProjectCardData; hrefBase?: string }) {
   const { t, pick } = useI18n();
   const s = CATEGORY_STYLE[p.category];
   return (
     <Link
       href={`${hrefBase}/${p.projectId}`}
-      className="group grid grid-cols-[5.5rem_1fr] sm:grid-cols-[7rem_1fr] gap-4 py-4 border-b border-border last:border-b-0"
+      className="group grid grid-cols-[3.75rem_1fr] sm:grid-cols-[4.5rem_1fr] gap-x-4 gap-y-3 border-b border-border py-5 last:border-b-0 hover:bg-paper/60 focus-visible:bg-paper/60 transition-colors"
     >
-      <div className={`aspect-square rounded-xl overflow-hidden ${s.soft}`}>
+      <div className="aspect-square overflow-hidden border border-border bg-surface text-foreground">
         <MaterialImage
           src={p.coverPhotoUrl ?? s.image}
           alt=""
           emoji={s.emoji}
-          className={`size-full ${p.coverPhotoUrl ? "object-cover" : ""}`}
+          className={`size-full ${p.coverPhotoUrl ? "object-cover" : "p-2"}`}
         />
       </div>
       <div className="min-w-0">
-        <div className="flex flex-wrap items-center gap-2">
-          <CategoryBadge category={p.category} />
-          <StatusBadge status={p.status} />
-          {p.isDemo !== false && <DemoTag />}
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
+          <span className="inline-flex items-center gap-1.5 text-[13px] text-muted">
+            <CategoryMark category={p.category} size={10} className="text-foreground" />
+            {t(`category.${p.category}`)}
+          </span>
+          <ProjectStatusChip status={p.status} />
         </div>
-        <h3 className="mt-1.5 font-display text-lg font-semibold leading-snug group-hover:underline underline-offset-4 decoration-2">
+        <h3 className="mt-1.5 font-display text-[1.45rem] font-normal leading-tight group-hover:underline underline-offset-[5px] decoration-1">
           {p.publicAlias}
         </h3>
-        <p className="text-sm text-muted line-clamp-2">{pick(p.titleEs, p.titleEn)}</p>
+        <p className="mt-0.5 text-[15px] text-muted leading-snug line-clamp-2">{pick(p.titleEs, p.titleEn)}</p>
         {p.region && (
-          <p className="text-xs text-muted mt-1">
-            {t("project.region")}: {p.region}
+          <p className="mt-1 text-[13px] text-muted">
+            {t("project.region")}: <span className="text-foreground">{p.region}</span>
           </p>
         )}
-        <StageStrip totals={p.totals} className="mt-2" />
       </div>
+      <StageStrip totals={p.totals} className="col-span-2 sm:col-span-1 sm:col-start-2" />
     </Link>
   );
 }
 
-/** Six tiny separate counters — never a single merged progress bar. */
+const OTHERS = ["requested", "pledged", "received", "delivered", "used"] as const;
+
+/**
+ * Six separate counters — never a single merged progress bar. Verified (impact) leads, in
+ * esmeralda; the other five follow as a small ruled register.
+ */
 export function StageStrip({ totals, className = "" }: { totals: StageTotals; className?: string }) {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
+  const nf = (n: number) => n.toLocaleString(intlLocale(locale));
   return (
-    <dl className={`grid grid-cols-3 gap-x-3 gap-y-1 text-xs max-w-md ${className}`}>
-      {STAGES.map((k) => (
-        <div key={k} className="flex items-center gap-1.5 min-w-0">
-          <span className="size-2.5 shrink-0 rounded-[2px]" style={stageSwatch(k)} aria-hidden />
-          <dt className="sr-only">{t(`stage.${k}`)}</dt>
-          <dd className={`font-semibold tabular-nums ${STAGE_TEXT[k]}`}>{totals[k].toLocaleString()}</dd>
-          <span className="text-muted truncate" aria-hidden>
-            {t(`stage.${k}`)}
-          </span>
-        </div>
-      ))}
+    <dl className={`flex items-stretch gap-4 max-w-lg ${className}`}>
+      <div className="flex shrink-0 flex-col-reverse justify-center border-r border-border pr-4">
+        <dt className="mt-1 flex items-center gap-1.5 text-[13px] font-semibold text-emerald">
+          <span className="size-2.5" style={stageSwatch("verified")} aria-hidden />
+          {t("stage.verified")}
+        </dt>
+        <dd className="font-display text-[1.9rem] font-normal leading-none tabular-nums text-emerald">
+          {nf(totals.verified)}
+        </dd>
+      </div>
+      <div className="grid min-w-0 flex-1 grid-cols-[repeat(auto-fill,minmax(7.75rem,1fr))] content-center gap-x-4 gap-y-1 text-[13px]">
+        {OTHERS.map((k) => (
+          <div key={k} className="flex min-w-0 items-center gap-1.5">
+            <span className="size-2.5 shrink-0" style={stageSwatch(k)} aria-hidden />
+            <dt className={`order-3 truncate ${k === "pledged" ? "text-gold-ink" : "text-muted"}`}>{t(`stage.${k}`)}</dt>
+            <dd className={`order-2 font-display text-[15px] leading-none tabular-nums ${STAGE_TEXT[k]}`}>{nf(totals[k])}</dd>
+          </div>
+        ))}
+      </div>
     </dl>
   );
 }

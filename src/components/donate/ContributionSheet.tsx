@@ -7,10 +7,18 @@ import { ConvexError } from "convex/values";
 import { api } from "../../../convex/_generated/api";
 import { useI18n } from "@/lib/i18n";
 import type { DictKey } from "@/lib/dict";
-import { MaterialImage } from "@/components/public/MaterialImage";
+import { MaterialGlyph } from "@/components/ui/MaterialGlyph";
+import {
+  DoubleRule,
+  FlagBand,
+  Kicker,
+  StageSwatch,
+  btn,
+  inputCls,
+  intlLocale,
+  labelCls,
+} from "@/components/ui/tricolor";
 import { savePledge } from "./followTokens";
-import { PledgeIsNotNote } from "@/components/public/LedgerBar";
-import { DemoTag } from "@/components/public/PublicMeta";
 import type { DeckCard, PledgeMode } from "./types";
 
 type Mode = PledgeMode;
@@ -139,17 +147,16 @@ export function ContributionSheet({
       onClick={(e) => {
         if (e.target === ref.current) close();
       }}
-      className="m-0 mt-auto sm:m-auto w-full max-w-none sm:max-w-lg max-h-[92dvh] rounded-t-[1.75rem] sm:rounded-[1.75rem] bg-surface text-foreground p-0 backdrop:bg-black/50 open:flex flex-col"
+      className="m-0 mt-auto sm:m-auto w-full max-w-none sm:max-w-lg max-h-[92dvh] rounded-t-[6px] sm:rounded-[2px] border border-border bg-surface text-foreground p-0 backdrop:bg-[#081530]/55 open:flex flex-col overflow-hidden"
     >
-      <div className="flex items-center gap-3 px-5 pt-4 pb-3 border-b border-border">
-        <div className="size-12 shrink-0 rounded-xl bg-background grid place-items-center">
-          {card && <MaterialImage itemKey={card.itemKey} alt="" className="size-10" />}
-        </div>
+      <FlagBand thickness={5} className="shrink-0" />
+      <div className="flex items-start gap-3 px-5 sm:px-7 pt-4 pb-4 border-b border-border">
+        {card && <MaterialGlyph itemKey={card.itemKey} className="mt-1 size-10 shrink-0 text-foreground" />}
         <div className="min-w-0 flex-1">
-          <h2 id={titleId} className="font-display text-xl font-semibold leading-tight">
+          <h2 id={titleId} className="font-display text-2xl font-normal leading-tight">
             {done ? t("donate.successTitle") : t("donate.sheetTitle")}
           </h2>
-          <p className="text-sm text-muted truncate">
+          <p className="mt-0.5 text-sm text-muted truncate">
             {itemName}
             {card && <span>, {card.publicAlias}</span>}
           </p>
@@ -157,36 +164,38 @@ export function ContributionSheet({
         <button
           type="button"
           onClick={close}
-          className="size-11 shrink-0 grid place-items-center rounded-full border border-border text-xl"
+          className="-mr-2 size-11 shrink-0 grid place-items-center rounded-[2px] text-2xl leading-none text-muted hover:text-foreground hover:bg-paper"
           aria-label={t("donate.close")}
         >
           <span aria-hidden>×</span>
         </button>
       </div>
 
-      <div className="overflow-y-auto px-5 py-5">
+      <div className="overflow-y-auto px-5 sm:px-7 py-6">
         {!card ? null : done ? (
           <Success done={done} unit={unit} itemName={itemName} onContinue={close} />
         ) : (
-          <form onSubmit={submit} noValidate className="space-y-6">
-            <div className="flex flex-wrap items-center gap-2">
-              <PledgeIsNotNote className="flex-1" />
-              <DemoTag />
-            </div>
+          <form onSubmit={submit} noValidate className="space-y-7">
+            {/* The one place on this screen that says it: the decision happens here. */}
+            <p className="flex items-start gap-2.5 border-l-2 border-gold pl-3 text-[15px] font-semibold text-gold-ink">
+              <StageSwatch stage="pledged" size={12} className="mt-1" />
+              {t("stage.pledgeIsNot")}
+            </p>
+
             {/* Quantity */}
             <fieldset>
-              <legend className="font-semibold">{t("donate.qty")}</legend>
-              <div className="mt-2 flex items-center gap-3">
+              <legend className={labelCls}>{t("donate.qty")}</legend>
+              <div className="mt-1 flex items-stretch border border-rule rounded-[2px]">
                 <button
                   type="button"
                   onClick={() => setQty(clamp(qty - 1))}
                   disabled={qty <= 1}
-                  className="size-14 rounded-2xl border-2 border-border text-2xl font-semibold disabled:opacity-40"
+                  className="w-16 shrink-0 text-3xl font-light hover:bg-paper disabled:opacity-35 disabled:hover:bg-transparent"
                   aria-label={t("donate.decrease")}
                 >
-                  −
+                  <span aria-hidden>−</span>
                 </button>
-                <label className="flex-1">
+                <label className="flex-1 min-w-0 border-x border-border">
                   <span className="sr-only">{t("donate.qty")}</span>
                   <input
                     type="number"
@@ -195,65 +204,50 @@ export function ContributionSheet({
                     max={max}
                     value={qty}
                     onChange={(e) => setQty(clamp(Number(e.target.value)))}
-                    className="w-full h-14 rounded-2xl border-2 border-border bg-background text-center font-display text-3xl font-semibold tabular-nums"
+                    className="w-full h-20 bg-transparent text-center font-display text-5xl font-normal tabular-nums focus:outline-none focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-navy [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                   />
                 </label>
                 <button
                   type="button"
                   onClick={() => setQty(clamp(qty + 1))}
                   disabled={qty >= max}
-                  className="size-14 rounded-2xl border-2 border-border text-2xl font-semibold disabled:opacity-40"
+                  className="w-16 shrink-0 text-3xl font-light hover:bg-paper disabled:opacity-35 disabled:hover:bg-transparent"
                   aria-label={t("donate.increase")}
                 >
-                  +
+                  <span aria-hidden>+</span>
                 </button>
               </div>
               <div className="mt-3 flex flex-wrap gap-2">
                 {QUICK.filter((q) => q < max).map((q) => (
-                  <button
-                    key={q}
-                    type="button"
-                    aria-pressed={qty === q}
-                    onClick={() => setQty(q)}
-                    className={`rounded-full px-4 py-2 text-sm font-semibold border-2 ${
-                      qty === q ? "bg-foreground text-background border-foreground" : "border-border"
-                    }`}
-                  >
+                  <button key={q} type="button" aria-pressed={qty === q} onClick={() => setQty(q)} className={quickCls(qty === q)}>
                     {q}
                   </button>
                 ))}
                 {max > 0 && (
-                  <button
-                    type="button"
-                    aria-pressed={qty === max}
-                    onClick={() => setQty(max)}
-                    className={`rounded-full px-4 py-2 text-sm font-semibold border-2 ${
-                      qty === max ? "bg-foreground text-background border-foreground" : "border-border"
-                    }`}
-                  >
+                  <button type="button" aria-pressed={qty === max} onClick={() => setQty(max)} className={quickCls(qty === max)}>
                     {t("donate.max")} ({max})
                   </button>
                 )}
               </div>
-              <p className="mt-2 text-sm text-muted" aria-live="polite">
+              <p className="mt-3 text-sm text-muted" aria-live="polite">
                 {t("ledger.available")}: <strong className="text-foreground tabular-nums">{max}</strong> {unit}
               </p>
               {liveAvail !== null && (
-                <p role="alert" className="mt-2 rounded-xl bg-amber-soft text-amber px-3 py-2 text-sm font-semibold">
+                <p role="alert" className="mt-2 border-l-2 border-gold bg-gold-soft px-3 py-2 text-sm font-semibold text-gold-ink">
                   {t("donate.overpledge")} {liveAvail} {unit}
                 </p>
               )}
             </fieldset>
 
-            {/* Mode */}
+            {/* Mode: ruled radio rows */}
             <fieldset>
-              <legend className="font-semibold">{t("donate.mode")}</legend>
-              <div className="mt-2 space-y-2">
+              <legend className={labelCls}>{t("donate.mode")}</legend>
+              <div className="mt-1 border-y border-rule divide-y divide-border">
                 {MODES.map((m) => (
                   <label
                     key={m}
-                    className={`flex gap-3 items-start rounded-2xl border-2 p-3 cursor-pointer ${
-                      mode === m ? "border-clay bg-clay-soft" : "border-border"
+                    className={`flex gap-3 items-start py-3 pr-2 pl-3 cursor-pointer border-l-2 transition-colors ${
+                      mode === m ? "border-l-navy bg-paper" : "border-l-transparent hover:bg-paper/60"
                     }`}
                   >
                     <input
@@ -262,7 +256,7 @@ export function ContributionSheet({
                       value={m}
                       checked={mode === m}
                       onChange={() => setMode(m)}
-                      className="mt-1 size-5 accent-[var(--clay)]"
+                      className="mt-0.5 size-5 shrink-0 accent-[var(--navy)]"
                     />
                     <span>
                       <span className="block font-semibold">{t(`donate.mode.${m}` as DictKey)}</span>
@@ -274,44 +268,40 @@ export function ContributionSheet({
             </fieldset>
 
             {/* Contact */}
-            <fieldset className="space-y-3">
+            <fieldset className="space-y-4">
               <label className="block">
-                <span className="font-semibold">{t("donate.name")}</span>
+                <span className={labelCls}>{t("donate.name")}</span>
                 <input
                   required
                   autoComplete="name"
                   value={name}
                   maxLength={120}
                   onChange={(e) => setName(e.target.value)}
-                  className="mt-1 w-full h-12 rounded-xl border-2 border-border bg-background px-3"
+                  className={inputCls}
                 />
               </label>
               <label className="block">
-                <span className="font-semibold">{t("donate.contact")}</span>
+                <span className={labelCls}>{t("donate.contact")}</span>
                 <input
                   required
                   autoComplete="email"
                   value={contact}
                   maxLength={200}
                   onChange={(e) => setContact(e.target.value)}
-                  className="mt-1 w-full h-12 rounded-xl border-2 border-border bg-background px-3"
+                  className={inputCls}
                 />
               </label>
               <p className="text-sm text-muted">{t("donate.privacy")}</p>
             </fieldset>
 
             {error && (
-              <p role="alert" className="rounded-xl bg-brick-soft text-brick px-3 py-2 text-sm font-semibold">
+              <p role="alert" className="border-l-2 border-red bg-red-soft px-3 py-2 text-sm font-semibold text-red">
                 {error}
               </p>
             )}
 
             <div>
-              <button
-                type="submit"
-                disabled={busy || max < 1}
-                className="w-full h-14 rounded-full bg-clay text-white text-lg font-semibold disabled:opacity-50 shadow-[0_2px_0_var(--brick)]"
-              >
+              <button type="submit" disabled={busy || max < 1} aria-busy={busy || undefined} className={btn("primary", "lg", "w-full text-lg")}>
                 {busy ? t("donate.submitting") : `${t("donate.submit")} ${qty} ${unit}`}
               </button>
               <p className="mt-2 text-center text-xs text-muted">{t("donate.noPayment")}</p>
@@ -321,6 +311,12 @@ export function ContributionSheet({
       </div>
     </dialog>
   );
+}
+
+function quickCls(active: boolean) {
+  return `min-h-11 rounded-[2px] px-4 text-sm font-semibold tabular-nums transition-colors ${
+    active ? "bg-navy text-on-navy" : "bg-surface text-foreground shadow-[inset_0_0_0_1px_var(--border)] hover:shadow-[inset_0_0_0_1px_var(--rule)]"
+  }`;
 }
 
 function Success({
@@ -334,36 +330,33 @@ function Success({
   itemName: string;
   onContinue: () => void;
 }) {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   return (
     <div className="text-center">
-      <p className="font-display text-5xl font-semibold tabular-nums">
-        {done.qty} <span className="text-2xl">{unit}</span>
+      <Kicker className="text-base">{t("donate.receipt.kicker")}</Kicker>
+      <p className="mt-2 font-display text-7xl font-normal tabular-nums leading-none">
+        {new Intl.NumberFormat(intlLocale(locale)).format(done.qty)}
       </p>
-      <p className="text-muted">{itemName}</p>
+      <p className="mt-2 text-lg">
+        {unit} <span className="text-muted">· {itemName}</span>
+      </p>
+      <DoubleRule className="my-5 mx-8" />
       <p
-        className="mt-5 inline-flex items-center gap-2 rounded-2xl border-2 border-amber bg-amber-soft text-amber px-5 py-3 font-display text-2xl font-semibold"
+        className="inline-flex -rotate-2 items-center gap-2.5 rounded-[2px] border border-gold-ink px-5 py-2.5 font-display italic text-2xl text-gold-ink outline outline-1 outline-offset-[3px] outline-gold-ink"
         role="status"
       >
-        <span className="size-3 rounded-full border-[3px] border-amber" aria-hidden />
+        <StageSwatch stage="pledged" size={14} />
         {t("ledger.pledgedNotDelivered")}
       </p>
-      <p className="mt-4 text-left text-sm font-semibold text-amber max-w-prose mx-auto">{t("donate.successPledgeNot")}</p>
-      <p className="mt-3 text-left text-sm leading-relaxed max-w-prose mx-auto">{t("donate.successExplain")}</p>
+      <p className="mt-6 text-left text-[15px] leading-relaxed max-w-prose mx-auto">{t("donate.successExplain")}</p>
       <div className="mt-6 grid gap-3">
-        <Link
-          href={`/follow/${done.followToken}`}
-          className="h-14 rounded-full bg-sky text-white text-lg font-semibold grid place-items-center"
-        >
+        <Link href={`/follow/${done.followToken}`} className={btn("primary", "lg", "w-full")}>
           {t("donate.follow")}
         </Link>
-        <Link
-          href="/donations"
-          className="h-12 rounded-full border-2 border-sky text-sky font-semibold grid place-items-center"
-        >
+        <Link href="/donations" className={btn("secondary", "md", "w-full min-h-12")}>
           {t("donate.successDonations")}
         </Link>
-        <button type="button" onClick={onContinue} className="h-12 rounded-full border-2 border-border font-semibold">
+        <button type="button" onClick={onContinue} className={btn("quiet", "md", "min-h-11 justify-self-center")}>
           {t("donate.keepSwiping")}
         </button>
       </div>

@@ -1,86 +1,250 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { useEffect, useId, useRef, useState } from "react";
 import { useI18n } from "@/lib/i18n";
 import { useSession, type Role } from "@/lib/session";
+import type { DictKey } from "@/lib/dict";
+import { FlagBand } from "@/components/ui/tricolor";
 
 const ROLES: Role[] = ["field_worker", "coordinator", "donor", "community"];
 
+type NavItem = { href: string; key: DictKey };
+
+/**
+ * Two parts:
+ *  1. Flag band + slim demo bar (scrolls away). Holds the demo-mode notice and the demo role
+ *     switcher, so "this is synthetic" is stated once, globally.
+ *  2. Main bar (sticky): wordmark, primary nav with an underline-rule active state, ES | EN.
+ */
 export function AppHeader() {
   const { t, locale, setLocale } = useI18n();
-  const { user, signInAs, signOut } = useSession();
+  const { user } = useSession();
+  const pathname = usePathname() ?? "/";
+
+  const items: NavItem[] = [
+    { href: "/donate", key: "nav.donate" },
+    { href: "/transparency", key: "nav.transparency" },
+    { href: "/donations", key: "nav.donations" },
+    ...(user?.role === "field_worker" ? [{ href: "/field", key: "nav.field" as DictKey }] : []),
+    ...(user?.role === "coordinator" ? [{ href: "/coordinator", key: "nav.coordinator" as DictKey }] : []),
+  ];
+  const isActive = (href: string) => pathname === href || pathname.startsWith(href + "/");
 
   return (
-    <header className="sticky top-0 z-30 border-b border-border bg-background/90 backdrop-blur">
-      <div className="bg-amber-soft text-amber text-xs text-center py-1 px-4">{t("app.demoBanner")}</div>
-      <div className="max-w-5xl mx-auto px-4 h-14 flex items-center gap-3">
-        <Link href="/" className="font-display text-xl font-semibold text-clay">
-          {t("app.name")}
-        </Link>
-        <nav className="hidden sm:flex gap-4 text-sm ml-4">
-          <Link href="/donate">{t("nav.donate")}</Link>
-          <Link href="/transparency">{t("nav.transparency")}</Link>
-          <Link href="/donations">{t("nav.donations")}</Link>
-          {user?.role === "field_worker" && <Link href="/field">{t("nav.field")}</Link>}
-          {user?.role === "coordinator" && <Link href="/coordinator">{t("nav.coordinator")}</Link>}
-        </nav>
-        <div className="ml-auto flex items-center gap-2">
-          {user ? (
-            <button
-              onClick={signOut}
-              title={t("nav.signInHint")}
-              className="text-sm px-3 py-1.5 rounded-full border border-border"
-            >
-              {t(`role.${user.role}`)} · {t("nav.signOut")}
-            </button>
-          ) : (
-            <span className="flex items-center gap-1.5">
-              <span
-                aria-hidden
-                title={t("nav.signInHint")}
-                className="hidden sm:inline rounded-full bg-amber-soft px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-amber"
-              >
-                {t("nav.demoTag")}
-              </span>
-              <select
-                aria-label={t("nav.signIn")}
-                aria-describedby="signin-demo-hint"
-                title={t("nav.signInHint")}
-                className="text-sm px-2 py-1.5 rounded-full border border-border bg-surface"
-                value=""
-                onChange={(e) => e.target.value && signInAs(e.target.value as Role)}
-              >
-                <option value="">{t("nav.signIn")}</option>
-                {ROLES.map((r) => (
-                  <option key={r} value={r}>
-                    {t(`role.${r}`)}
-                  </option>
-                ))}
-              </select>
-              <span id="signin-demo-hint" className="sr-only">
-                {t("nav.signInHint")}
-              </span>
-            </span>
-          )}
-          <button
-            onClick={() => setLocale(locale === "es" ? "en" : "es")}
-            className="text-sm px-3 py-1.5 rounded-full bg-clay text-white font-medium"
-            aria-label={locale === "es" ? "Switch to English" : "Cambiar a español"}
-          >
-            {t("lang.toggle")}
-          </button>
+    <>
+      <div>
+        <FlagBand thickness={4} />
+        {/* Fixed navy (not the flipping --navy token) so the bar reads the same in light and dark. */}
+        <div className="bg-[#0b2a5b] text-white dark:border-b dark:border-border">
+          <div className="mx-auto flex min-h-11 max-w-6xl items-center gap-3 px-4 text-[13px]">
+            <p className="flex min-w-0 items-center gap-2">
+              <span aria-hidden className="size-1.5 shrink-0 rounded-full bg-gold" />
+              <span className="truncate">{t("app.demoBar")}</span>
+            </p>
+            <div className="ml-auto shrink-0">
+              <DemoRoleSwitcher />
+            </div>
+          </div>
         </div>
       </div>
-      {/* Mobile nav: same links, horizontally scrollable, large touch targets */}
-      <nav className="sm:hidden border-t border-border flex gap-1 overflow-x-auto px-2 text-sm font-medium">
-        <Link href="/donate" className="shrink-0 px-3 py-2.5">{t("nav.donate")}</Link>
-        <Link href="/transparency" className="shrink-0 px-3 py-2.5">{t("nav.transparency")}</Link>
-        <Link href="/donations" className="shrink-0 px-3 py-2.5">{t("nav.donations")}</Link>
-        {user?.role === "field_worker" && <Link href="/field" className="shrink-0 px-3 py-2.5">{t("nav.field")}</Link>}
-        {user?.role === "coordinator" && (
-          <Link href="/coordinator" className="shrink-0 px-3 py-2.5">{t("nav.coordinator")}</Link>
-        )}
-      </nav>
-    </header>
+
+      <header className="sticky top-0 z-30 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/85">
+        <div className="mx-auto flex h-12 max-w-6xl items-stretch gap-6 px-4 sm:h-16">
+          <Link href="/" className="flex flex-col justify-center leading-none" aria-label={`${t("app.name")} · ${t("app.attribution")}`}>
+            <span className="font-display text-[1.6rem] font-normal tracking-tight sm:text-[1.85rem]">{t("app.name")}</span>
+            <span className="mt-0.5 font-display text-[12px] italic text-muted">
+              {t("app.attributionPrefix")} {t("app.attribution")}
+            </span>
+          </Link>
+
+          <nav aria-label={t("nav.primary")} className="hidden items-stretch gap-6 sm:flex">
+            {items.map((it) => (
+              <NavLink key={it.href} href={it.href} active={isActive(it.href)}>
+                {t(it.key)}
+              </NavLink>
+            ))}
+          </nav>
+
+          <div className="ml-auto flex items-center">
+            <LangSwitch locale={locale} setLocale={setLocale} label={t("lang.label")} />
+          </div>
+        </div>
+
+        {/* Mobile nav: same links, scrollable row, 44px targets. */}
+        <nav aria-label={t("nav.primary")} className="flex gap-5 overflow-x-auto border-t border-border px-4 sm:hidden">
+          {items.map((it) => (
+            <NavLink key={it.href} href={it.href} active={isActive(it.href)} mobile>
+              {t(it.key)}
+            </NavLink>
+          ))}
+        </nav>
+      </header>
+    </>
+  );
+}
+
+function NavLink({
+  href,
+  active,
+  mobile = false,
+  children,
+}: {
+  href: string;
+  active: boolean;
+  mobile?: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <Link
+      href={href}
+      aria-current={active ? "page" : undefined}
+      className={`relative flex shrink-0 items-center whitespace-nowrap text-[15px] transition-colors ${
+        mobile ? "min-h-11" : ""
+      } ${
+        active
+          ? "font-semibold text-foreground after:absolute after:inset-x-0 after:bottom-0 after:h-0.5 after:bg-rule"
+          : "text-muted hover:text-foreground"
+      }`}
+    >
+      {children}
+    </Link>
+  );
+}
+
+function LangSwitch({
+  locale,
+  setLocale,
+  label,
+}: {
+  locale: string;
+  setLocale: (l: "es" | "en") => void;
+  label: string;
+}) {
+  const opts: { v: "es" | "en"; text: string; name: string }[] = [
+    { v: "es", text: "ES", name: "Español" },
+    { v: "en", text: "EN", name: "English" },
+  ];
+  return (
+    <div role="group" aria-label={label} className="flex items-center text-[13px] font-semibold">
+      {opts.map((o, i) => (
+        <span key={o.v} className="flex items-center">
+          {i > 0 && <span aria-hidden className="h-3.5 w-px bg-border" />}
+          <button
+            type="button"
+            lang={o.v}
+            aria-pressed={locale === o.v}
+            aria-label={o.name}
+            onClick={() => setLocale(o.v)}
+            className={`grid min-h-11 min-w-11 place-items-center px-1 ${
+              locale === o.v ? "text-foreground underline decoration-1 underline-offset-[6px]" : "text-muted hover:text-foreground"
+            }`}
+          >
+            {o.text}
+          </button>
+        </span>
+      ))}
+    </div>
+  );
+}
+
+/** Demo sign-in: a disclosure whose options are plain buttons (data-role) — no global <select>. */
+function DemoRoleSwitcher() {
+  const { t } = useI18n();
+  const { user, signInAs, signOut } = useSession();
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const id = useId();
+
+  useEffect(() => {
+    if (!open) return;
+    const onDown = (e: PointerEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setOpen(false);
+        triggerRef.current?.focus();
+      }
+    };
+    document.addEventListener("pointerdown", onDown);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("pointerdown", onDown);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
+
+  if (user) {
+    return (
+      <div className="flex items-center gap-2">
+        <span className="hidden text-white/75 sm:inline">{t("nav.viewingAs")}</span>
+        <span className="font-semibold">{t(`role.${user.role}`)}</span>
+        <span aria-hidden className="text-white/50">
+          ·
+        </span>
+        <button
+          type="button"
+          onClick={signOut}
+          title={t("nav.signInHint")}
+          className="min-h-11 underline decoration-1 underline-offset-4 hover:decoration-2"
+        >
+          {t("nav.signOut")}
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        ref={triggerRef}
+        type="button"
+        aria-expanded={open}
+        aria-controls={`${id}-menu`}
+        aria-describedby={`${id}-hint`}
+        title={t("nav.signInHint")}
+        onClick={() => setOpen((o) => !o)}
+        className="flex min-h-11 items-center gap-1.5 font-semibold underline decoration-1 underline-offset-4 hover:decoration-2"
+      >
+        {t("nav.signIn")}
+        <svg viewBox="0 0 10 6" className={`size-2.5 transition-transform ${open ? "rotate-180" : ""}`} aria-hidden fill="none">
+          <path d="M1 1l4 4 4-4" stroke="currentColor" strokeWidth="1.4" />
+        </svg>
+      </button>
+      <span id={`${id}-hint`} className="sr-only">
+        {t("nav.signInHint")}
+      </span>
+      <div
+        id={`${id}-menu`}
+        hidden={!open}
+        className="absolute right-0 top-full z-40 w-72 max-w-[calc(100vw-2rem)] border border-rule bg-surface text-foreground shadow-[0_12px_32px_-16px_rgb(11_42_91/0.35)]"
+      >
+        <FlagBand thickness={3} />
+        <div className="px-4 pb-2 pt-3">
+          <p className="font-display text-lg italic">{t("nav.chooseRole")}</p>
+          <p className="mt-1 text-xs leading-snug text-muted">{t("nav.signInHint")}</p>
+        </div>
+        <ul className="border-t border-border pb-1">
+          {ROLES.map((r) => (
+            <li key={r}>
+              <button
+                type="button"
+                data-role={r}
+                onClick={async () => {
+                  setOpen(false);
+                  await signInAs(r);
+                }}
+                className="flex min-h-11 w-full items-center justify-between gap-3 px-4 text-left text-[15px] hover:bg-paper focus-visible:bg-paper"
+              >
+                {t(`role.${r}`)}
+              </button>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </div>
   );
 }

@@ -1,31 +1,15 @@
-"use client";
+import { MaterialGlyph } from "@/components/ui/MaterialGlyph";
 
-import { useState } from "react";
-
-/** Material icon from public/materials/<itemKey>.png (Lane E), with a lettered tile fallback. */
+/** Material line drawing in ink on a square paper tile. The name is always printed beside it. */
 export function MaterialIcon({ itemKey, label, size = 40 }: { itemKey: string; label: string; size?: number }) {
-  const [failed, setFailed] = useState(false);
-  if (failed) {
-    return (
-      <span
-        aria-hidden
-        style={{ width: size, height: size }}
-        className="inline-flex shrink-0 items-center justify-center rounded-md bg-clay-soft font-display text-lg font-semibold text-clay"
-      >
-        {label.charAt(0).toUpperCase()}
-      </span>
-    );
-  }
+  void label;
   return (
-    // eslint-disable-next-line @next/next/no-img-element
-    <img
-      src={`/materials/${itemKey}.png`}
-      alt=""
-      width={size}
-      height={size}
-      onError={() => setFailed(true)}
-      className="shrink-0 rounded-md bg-background object-contain"
+    <span
+      aria-hidden
       style={{ width: size, height: size }}
-    />
+      className="inline-grid shrink-0 place-items-center rounded-[2px] border border-border bg-paper text-foreground"
+    >
+      <MaterialGlyph itemKey={itemKey} className="size-[78%]" />
+    </span>
   );
 }

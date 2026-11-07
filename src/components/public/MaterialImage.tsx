@@ -1,33 +1,17 @@
-"use client";
-
-import { useState } from "react";
-
-const EMOJI: Record<string, string> = {
-  bricks: "🧱",
-  cement_bag: "🪨",
-  zinc_sheet: "🏚️",
-  wood_beam: "🪵",
-  nails: "🔩",
-  tarp: "⛺",
-  paint: "🎨",
-  rebar: "🏗️",
-  seeds: "🌱",
-  soil: "🟫",
-  water_tank: "💧",
-  tools: "🛠️",
-  generic: "📦",
-};
+import { MaterialGlyph } from "@/components/ui/MaterialGlyph";
+import { CategoryMark } from "@/components/ui/tricolor";
+import { isCategory } from "./types";
 
 /**
- * Material/brand image with a two-step fallback: given src → generic.png → emoji.
- * Uses a plain <img> because these are small static assets that may not exist yet.
+ * Material / program imagery. Tricolor has no raster assets: materials are drawn as fine line
+ * glyphs (MaterialGlyph) and `/brand/<category>.png` paths become a line-drawn program emblem on
+ * paper. Props are unchanged from the original image component (`emoji` is accepted and ignored).
  */
 export function MaterialImage({
   itemKey,
   src,
   alt,
   className = "",
-  emoji,
 }: {
   itemKey?: string;
   src?: string;
@@ -35,37 +19,46 @@ export function MaterialImage({
   className?: string;
   emoji?: string;
 }) {
-  const primary = src ?? (itemKey ? `/materials/${itemKey}.png` : "/materials/generic.png");
-  const [stage, setStage] = useState<0 | 1 | 2>(0);
-  const [prevPrimary, setPrevPrimary] = useState(primary);
-  if (prevPrimary !== primary) {
-    setPrevPrimary(primary);
-    setStage(0);
-  }
+  const brand = src?.match(/^\/brand\/([a-z_]+)\.png$/)?.[1];
+  const a11y = alt ? { role: "img" as const, "aria-label": alt } : { "aria-hidden": true as const };
+  const cls = className.replace(/\bobject-\S+/g, "");
 
-  if (stage === 2) {
+  if (src && brand !== undefined) {
     return (
-      <span role="img" aria-label={alt} className={`grid place-items-center select-none [container-type:size] ${className}`}>
-        <span className="text-[clamp(1.75rem,40cqmin,5rem)] leading-none" aria-hidden>
-          {emoji ?? EMOJI[itemKey ?? "generic"] ?? EMOJI.generic}
-        </span>
+      <span {...a11y} className={`grid place-items-center bg-paper text-foreground select-none [container-type:size] ${cls}`}>
+        <Emblem category={isCategory(brand) ? brand : undefined} />
       </span>
     );
   }
-  const current = stage === 0 ? primary : "/materials/generic.png";
-  const fail = () => setStage(stage === 0 && primary !== "/materials/generic.png" ? 1 : 2);
+
   return (
-    // eslint-disable-next-line @next/next/no-img-element
-    <img
-      src={current}
-      alt={alt}
-      draggable={false}
-      className={`${className.includes("object-") ? "" : "object-contain"} select-none ${className}`}
-      onError={fail}
-      // SSR'd images can 404 before hydration, so onError never fires: catch that on attach.
-      ref={(el) => {
-        if (el && el.complete && el.naturalWidth === 0) queueMicrotask(fail);
-      }}
-    />
+    <span {...a11y} className={`inline-grid place-items-center text-foreground select-none ${cls}`}>
+      <MaterialGlyph itemKey={itemKey ?? materialFromSrc(src)} className="size-full max-h-full max-w-full" />
+    </span>
+  );
+}
+
+function materialFromSrc(src?: string) {
+  return src?.match(/^\/materials\/([a-z_]+)\.png$/)?.[1];
+}
+
+/** A hairline double ring with the program's shape at its centre — or all three for the hero. */
+function Emblem({ category }: { category?: Parameters<typeof CategoryMark>[0]["category"] }) {
+  return (
+    <span
+      aria-hidden
+      className="relative grid aspect-square w-[clamp(1.5rem,52cqmin,9rem)] place-items-center rounded-full border border-rule"
+      style={{ boxShadow: "inset 0 0 0 4px var(--paper), inset 0 0 0 5px var(--gold)" }}
+    >
+      {category ? (
+        <CategoryMark category={category} size={48} className="h-[34%] w-[34%]" />
+      ) : (
+        <span className="flex items-end gap-[8%] w-[56%] justify-center">
+          <CategoryMark category="roof_shelter" size={24} className="h-auto w-[28%]" />
+          <CategoryMark category="reconstruction" size={24} className="h-auto w-[28%]" />
+          <CategoryMark category="heal_sow" size={24} className="h-auto w-[28%]" />
+        </span>
+      )}
+    </span>
   );
 }

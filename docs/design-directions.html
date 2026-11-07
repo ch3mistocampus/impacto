@@ -1,0 +1,810 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Impacto Design Directions</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=Barlow+Condensed:wght@600;800&family=Barlow:wght@400;600&family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,700;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&family=Courier+Prime:wght@400;700&family=Familjen+Grotesk:wght@500;700&family=Schibsted+Grotesk:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --f-bg:#f5f6f7; --f-ink:#1d2329; --f-muted:#5a6570; --f-line:#d9dde1; --f-card:#ffffff;
+  --sev-h:#b42318; --sev-m:#b54708; --sev-l:#475467;
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{transition:none!important;animation:none!important}}
+body{margin:0;background:var(--f-bg);color:var(--f-ink);font:16px/1.55 "IBM Plex Sans",system-ui,sans-serif}
+a{color:inherit}
+:focus-visible{outline:3px solid #0b5fff;outline-offset:2px}
+.wrap{max-width:1180px;margin:0 auto;padding:0 16px}
+code{font-size:.86em;background:#eceef0;padding:.1em .35em;border-radius:4px}
+
+/* frame */
+.top{background:var(--f-ink);color:#fff;padding:56px 0 40px}
+.top h1{font-size:clamp(2rem,5vw,3.4rem);line-height:1.05;margin:0;font-weight:700;letter-spacing:-.02em;max-width:18ch}
+.top p{color:#c4cbd2;max-width:62ch;margin:16px 0 0}
+.jump{position:sticky;top:0;z-index:20;background:#fff;border-bottom:1px solid var(--f-line)}
+.jump .wrap{display:flex;gap:4px;overflow-x:auto;padding-top:8px;padding-bottom:8px}
+.jump a{flex:none;text-decoration:none;font-size:14px;font-weight:500;padding:6px 12px;border-radius:999px;color:var(--f-muted)}
+.jump a:hover{background:#eceef0;color:var(--f-ink)}
+.jump .sw{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:6px;vertical-align:0}
+section.part{padding:56px 0}
+h2.ph{font-size:clamp(1.6rem,3vw,2.2rem);margin:0 0 8px;letter-spacing:-.01em}
+.lead{color:var(--f-muted);max-width:66ch;margin:0}
+
+/* review */
+.verdict{margin-top:28px;background:var(--f-card);border:1px solid var(--f-line);border-left:6px solid var(--f-ink);border-radius:8px;padding:20px 24px;max-width:860px}
+.verdict p{margin:0}
+.grid2{display:grid;gap:24px;grid-template-columns:1fr;margin-top:32px}
+@media(min-width:900px){.grid2{grid-template-columns:1fr 1.6fr}}
+.works{background:var(--f-card);border:1px solid var(--f-line);border-radius:8px;padding:20px 24px}
+.works h3,.issues h3{margin:0 0 12px;font-size:1.1rem}
+.works ul{margin:0;padding-left:1.1em}
+.works li{margin-bottom:10px}
+.issue{background:var(--f-card);border:1px solid var(--f-line);border-radius:8px;padding:16px 20px;margin-bottom:12px;display:grid;grid-template-columns:auto 1fr;gap:4px 14px}
+.sev{grid-row:span 3;font-size:12px;font-weight:700;padding:3px 8px;border-radius:4px;color:#fff;height:fit-content;margin-top:2px}
+.sev.h{background:var(--sev-h)}.sev.m{background:var(--sev-m)}.sev.l{background:var(--sev-l)}
+.issue h4{margin:0;font-size:1rem}
+.issue p{margin:0;color:#38424c;font-size:15px}
+.issue .where{font-size:13px;color:var(--f-muted)}
+table.ct{border-collapse:collapse;width:100%;font-size:14px;margin-top:8px;background:#fff}
+table.ct th,table.ct td{border-bottom:1px solid var(--f-line);padding:8px 10px;text-align:left}
+table.ct td.fail{color:var(--sev-h);font-weight:700}
+table.ct td.ok{color:#1a7f37;font-weight:700}
+.chipdemo{display:inline-block;padding:2px 8px;border-radius:99px;font-size:12px;font-weight:600}
+.cross{margin-top:28px;background:#fff;border:1px solid var(--f-line);border-radius:8px;padding:20px 24px}
+.cross ol{margin:8px 0 0;padding-left:1.3em}
+.cross li{margin-bottom:8px}
+
+/* direction scaffolding */
+.dir{padding:64px 0;border-top:1px solid var(--f-line)}
+.dir-head{display:grid;gap:12px 40px;grid-template-columns:1fr}
+@media(min-width:900px){.dir-head{grid-template-columns:1.1fr 1fr}}
+.dir-name{margin:0;line-height:1}
+.thesis{margin:0;max-width:56ch}
+.meta{display:grid;gap:16px;grid-template-columns:1fr;margin-top:28px}
+@media(min-width:760px){.meta{grid-template-columns:1.2fr 1fr 1fr}}
+.swatches{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:8px}
+.swatch{border-radius:6px;overflow:hidden;font-size:12px;line-height:1.3;background:rgba(255,255,255,.7);color:#1d2329}
+.swatch i{display:block;height:44px;box-shadow:inset 0 0 0 1px rgba(0,0,0,.12)}
+.swatch span{display:block;padding:6px 8px}
+.swatch b{display:block;font-weight:600}
+.notes h4{margin:0 0 6px;font-size:14px}
+.notes ul{margin:0 0 12px;padding-left:1.1em;font-size:14px}
+.stage{display:grid;gap:24px;margin-top:32px;grid-template-columns:1fr}
+@media(min-width:980px){.stage{grid-template-columns:minmax(0,1.35fr) minmax(0,1fr)}}
+.phone{width:100%;max-width:360px;margin:0 auto;border-radius:34px;padding:10px;background:#1d2329}
+.screen{border-radius:26px;overflow:hidden;min-height:640px;display:flex;flex-direction:column}
+
+/* ================= OBRA ================= */
+.ob{background:#d6d3cc;color:#262522;font-family:Barlow,sans-serif}
+.ob .dir-name{font:800 clamp(3.4rem,9vw,6.5rem)/.85 "Barlow Condensed",sans-serif;text-transform:uppercase;letter-spacing:-.01em}
+.ob .thesis{font-size:18px}
+.ob-hero{background:#262522;color:#f2f0ea;padding:28px;border-radius:2px;position:relative;overflow:hidden}
+.ob-hero::after{content:"";position:absolute;left:0;right:0;bottom:0;height:14px;background:repeating-linear-gradient(-45deg,#f5c400 0 14px,#262522 14px 28px)}
+.ob-hero h3{font:800 clamp(2.4rem,5vw,4.2rem)/.9 "Barlow Condensed";text-transform:uppercase;margin:0;max-width:12ch}
+.ob-hero p{color:#bdb9b0;max-width:44ch;margin:14px 0 22px}
+.ob-btn{display:inline-block;font:800 20px/1 "Barlow Condensed";text-transform:uppercase;padding:14px 20px;border:none;cursor:pointer}
+.ob-btn.y{background:#f5c400;color:#262522}
+.ob-btn.o{background:transparent;color:#f2f0ea;box-shadow:inset 0 0 0 3px #f2f0ea}
+.ob-buckets{display:grid;grid-template-columns:repeat(3,1fr);gap:3px;margin-top:3px}
+.ob-buckets div{background:#f2f0ea;padding:14px 12px 16px}
+.ob-buckets svg{display:block;margin-bottom:8px}
+.ob-buckets b{font:800 30px/1 "Barlow Condensed";display:block}
+.ob-buckets span{font-size:13px;line-height:1.25;display:block}
+.ob .screen{background:#f2f0ea}
+.ob-sign{background:#f5c400;padding:16px 18px;display:flex;justify-content:space-between;align-items:flex-start}
+.ob-sign small{font:600 13px Barlow;display:block}
+.ob-sign h4{font:800 44px/.9 "Barlow Condensed";text-transform:uppercase;margin:4px 0 0}
+.ob-qty{font:800 64px/.8 "Barlow Condensed";text-align:right}
+.ob-qty small{font:600 13px Barlow;display:block;text-align:right}
+.ob-body{padding:16px 18px;flex:1;display:flex;flex-direction:column;gap:10px}
+.ob-row{display:grid;grid-template-columns:86px 1fr 40px;align-items:center;gap:8px;font-size:14px}
+.ob-row b{font:800 22px/1 "Barlow Condensed";text-align:right}
+.ob-bar{height:16px;background:#dcd8cf;position:relative}
+.ob-bar i{position:absolute;inset:0 auto 0 0;background:var(--c);background-image:repeating-linear-gradient(90deg,transparent 0 12px,#f2f0ea 12px 14px)}
+.ob-bar i.haz{background:repeating-linear-gradient(-45deg,#f5c400 0 5px,#262522 5px 10px)}
+.ob-row.v{color:#1f6b3a;font-weight:600}
+.ob-note{font:600 13px Barlow;border-left:4px solid #262522;padding-left:8px;margin-top:auto}
+.ob-actions{display:grid;grid-template-columns:1fr 1.4fr;gap:3px;padding:3px;background:#262522}
+.ob-actions .ob-btn{padding:20px 0;text-align:center}
+.ob-actions .ob-btn.o{box-shadow:none;background:#3a3934}
+
+/* ================= TIERRA VIVA ================= */
+.tv{background:#fffefa;color:#2a1f3d;font-family:"Bricolage Grotesque",sans-serif}
+.tv .dir-name{font:800 clamp(3.2rem,8.5vw,6rem)/.9 "Bricolage Grotesque";letter-spacing:-.04em;color:#0d6e6e}
+.tv .thesis{font-size:18px}
+.tv-hero{position:relative;border-radius:28px;padding:30px;background:#0d6e6e;color:#fff;overflow:hidden;min-height:330px}
+.tv-hero h3{font:800 clamp(2.2rem,4.6vw,3.6rem)/.95 "Bricolage Grotesque";letter-spacing:-.03em;margin:0;max-width:11ch;position:relative;z-index:1}
+.tv-hero p{max-width:30ch;position:relative;z-index:1;color:#d5f0ec}
+.tv-shapes{position:absolute;right:-20px;bottom:-20px;width:58%;max-width:340px}
+.tv-btn{display:inline-block;border:none;border-radius:999px;padding:14px 22px;font:700 17px "Bricolage Grotesque";cursor:pointer;position:relative;z-index:1}
+.tv-btn.p{background:#ffb627;color:#2a1f3d}
+.tv-btn.g{background:#fff;color:#2a1f3d}
+.tv-legend{display:flex;gap:18px;flex-wrap:wrap;margin-top:16px;font-size:15px;font-weight:700}
+.tv-legend span{display:flex;align-items:center;gap:8px}
+.tv .screen{background:#fffefa}
+.tv-top{background:#ffd9e4;padding:20px 20px 64px;border-radius:0 0 50% 50%/0 0 34px 34px;position:relative}
+.tv-pill{display:inline-flex;align-items:center;gap:6px;background:#fff;border-radius:99px;padding:5px 12px;font-size:13px;font-weight:700}
+.tv-mat{position:absolute;left:50%;bottom:-46px;transform:translateX(-50%);width:104px;height:104px;border-radius:50%;background:#fff;display:grid;place-items:center;box-shadow:0 0 0 6px #fffefa}
+.tv-b{padding:56px 20px 18px;text-align:center;flex:1;display:flex;flex-direction:column}
+.tv-b h4{font:800 36px/1 "Bricolage Grotesque";margin:0;letter-spacing:-.02em}
+.tv-b .sub{color:#6d6280;font-size:14px;margin:6px 0 16px}
+.tv-grow{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;text-align:center;font-size:12px;font-weight:700;line-height:1.2}
+.tv-grow b{display:block;font-size:22px;margin-top:2px}
+.tv-grow .off{opacity:.38}
+.tv-grow .v b{color:#1d7a3e}
+.tv-say{margin:16px 0 0;font-size:15px;background:#fff4dc;border-radius:16px;padding:10px 14px;text-align:left}
+.tv-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:0 20px 20px}
+.tv-actions button{border:none;border-radius:999px;height:60px;font:700 18px "Bricolage Grotesque";cursor:pointer}
+.tv-actions .pass{background:#efe9f6;color:#2a1f3d}
+.tv-actions .give{background:#2a1f3d;color:#fff}
+
+/* ================= SEÑAL CLARA ================= */
+.sc{background:#fff;color:#0f2537;font-family:"Atkinson Hyperlegible",sans-serif}
+.sc .dir-name{font:700 clamp(3rem,8vw,5.6rem)/.95 "Atkinson Hyperlegible";letter-spacing:-.03em}
+.sc .thesis{font-size:19px}
+.sc-hdr{border:2px solid #0f2537;border-radius:12px;overflow:hidden}
+.sc-bar{display:flex;align-items:center;gap:16px;padding:12px 16px;background:#fff;flex-wrap:wrap}
+.sc-bar strong{font-size:22px}
+.sc-bar nav{display:flex;gap:4px}
+.sc-bar nav a{text-decoration:none;padding:8px 12px;border-radius:8px;font-weight:700;font-size:15px}
+.sc-bar nav a[aria-current]{background:#e6eefc;color:#0a4fd6;box-shadow:inset 0 -3px 0 #0a4fd6}
+.sc-seg{margin-left:auto;display:inline-flex;border:2px solid #0f2537;border-radius:8px;overflow:hidden;font-weight:700}
+.sc-seg span{padding:6px 12px}
+.sc-seg span.on{background:#0f2537;color:#fff}
+.sc-demo{background:#0f2537;color:#fff;font-size:14px;padding:8px 16px;display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.sc-demo u{text-underline-offset:3px}
+.sc-hero{padding:24px 16px;display:grid;gap:20px}
+@media(min-width:700px){.sc-hero{grid-template-columns:1.2fr 1fr;align-items:center}}
+.sc-hero h3{font:700 clamp(2rem,4vw,2.9rem)/1.05 "Atkinson Hyperlegible";margin:0}
+.sc-hero p{font-size:18px;margin:12px 0 18px;color:#2f4558}
+.sc-btn{display:inline-flex;align-items:center;justify-content:center;min-height:56px;padding:0 22px;border-radius:10px;font:700 18px "Atkinson Hyperlegible";border:2px solid #0a4fd6;cursor:pointer}
+.sc-btn.p{background:#0a4fd6;color:#fff}
+.sc-btn.s{background:#fff;color:#0a4fd6}
+.sc-big{border:2px solid #d6dde4;border-radius:12px;padding:18px}
+.sc-big .n{font-size:56px;font-weight:700;line-height:1;color:#11713a}
+.sc-big .l{font-size:16px;margin-top:4px}
+.sc-big .s{font-size:14px;color:#3d5366;margin-top:10px;border-top:1px solid #d6dde4;padding-top:10px}
+.sc .screen{background:#fff}
+.sc-card{padding:18px;flex:1;display:flex;flex-direction:column}
+.sc-tags{display:flex;gap:6px;flex-wrap:wrap}
+.sc-tag{display:inline-flex;align-items:center;gap:6px;border:2px solid currentColor;border-radius:6px;padding:2px 8px;font-size:13px;font-weight:700}
+.sc-card h4{font-size:30px;margin:12px 0 2px;line-height:1.1}
+.sc-sent{font-size:19px;line-height:1.35;margin:8px 0 14px}
+.sc-sent b{font-size:26px}
+.sc-steps{list-style:none;margin:0;padding:0}
+.sc-steps li{display:grid;grid-template-columns:32px 1fr auto;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid #e3e8ed;font-size:16px}
+.sc-steps .dot{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;font-size:14px;font-weight:700}
+.sc-steps .num{font-weight:700;font-size:18px}
+.sc-actions{display:grid;grid-template-columns:1fr 1.4fr;gap:10px;padding:14px 18px 18px;border-top:2px solid #0f2537}
+.sc .screen.sc-dark{background:#0d1b26;color:#eef3f7}
+.sc-dark .sc-steps li{border-color:#25394a}
+.sc-dark .sc-btn.s{background:transparent;color:#8db4ff;border-color:#8db4ff}
+.sc-dark .sc-btn.p{background:#8db4ff;color:#0d1b26;border-color:#8db4ff}
+.sc-dark .sc-actions{border-color:#8db4ff}
+.sc-pair{display:grid;gap:16px;grid-template-columns:1fr}
+@media(min-width:640px){.sc-pair{grid-template-columns:1fr 1fr}}
+.sc-pair .phone{max-width:330px}
+.sc-pair .screen{min-height:600px}
+
+/* ================= RECIBO ================= */
+.rc{background:#cfd3d6;color:#232629;font-family:"Familjen Grotesk",sans-serif}
+.rc .dir-name{font:700 clamp(3.2rem,9vw,6.4rem)/.9 "Courier Prime",monospace;letter-spacing:-.04em}
+.rc .thesis{font-size:18px}
+.rc-hero{background:#232629;color:#f4f4f1;border-radius:6px;padding:28px;display:grid;gap:24px}
+@media(min-width:700px){.rc-hero{grid-template-columns:1fr 250px;align-items:center}}
+.rc-hero h3{font:700 clamp(2.2rem,4.5vw,3.4rem)/1 "Familjen Grotesk";margin:0;letter-spacing:-.02em}
+.rc-hero p{color:#b9bec2;margin:12px 0 18px;max-width:40ch}
+.rc-btn{display:inline-block;border:none;border-radius:4px;padding:14px 20px;font:700 17px "Familjen Grotesk";cursor:pointer}
+.rc-btn.p{background:#5b3fd1;color:#fff}
+.rc-btn.s{background:#f4f4f1;color:#232629}
+.ticket{background:#fbfbf8;color:#232629;font:400 14px/1.5 "Courier Prime",monospace;padding:20px 18px;position:relative;
+  -webkit-mask:radial-gradient(circle 6px at 50% 0,#0000 98%,#000) top/14px 51% repeat-x,radial-gradient(circle 6px at 50% 100%,#0000 98%,#000) bottom/14px 51% repeat-x;
+          mask:radial-gradient(circle 6px at 50% 0,#0000 98%,#000) top/14px 51% repeat-x,radial-gradient(circle 6px at 50% 100%,#0000 98%,#000) bottom/14px 51% repeat-x}
+.ticket .c{text-align:center}
+.ticket hr{border:none;border-top:2px dashed #9aa0a5;margin:10px 0}
+.lead-row{display:flex;gap:6px}
+.lead-row span:nth-child(2){flex:1;border-bottom:2px dotted #9aa0a5;transform:translateY(-5px)}
+.stamp{display:inline-block;font:700 15px/1 "Familjen Grotesk";padding:6px 10px;border:3px solid currentColor;border-radius:6px;transform:rotate(-7deg);opacity:.92}
+.stamp.v{color:#5b3fd1}.stamp.b{color:#1d5fa8}.stamp.g{color:#1d7a3e;border-radius:50%;padding:14px 8px;transform:rotate(9deg);font-size:13px;text-align:center}
+.rc .screen{background:#cfd3d6;padding:16px;gap:12px}
+.rc-stub-h{display:flex;justify-content:space-between;align-items:center}
+.rc-big{font:700 54px/1 "Courier Prime";margin:6px 0 0}
+.rc-stamps{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:10px;min-height:66px}
+.rc-ghost{display:inline-block;font:700 13px/1 "Familjen Grotesk";padding:6px 10px;border:2px dashed #b3b8bc;color:#8b9196;border-radius:6px}
+.rc-actions{display:grid;grid-template-columns:1fr 1.4fr;gap:8px;margin-top:auto}
+.rc-actions button{height:58px;border-radius:4px;border:none;font:700 17px "Familjen Grotesk";cursor:pointer}
+.rc-actions .pass{background:#f4f4f1;color:#232629}
+.rc-actions .give{background:#5b3fd1;color:#fff}
+
+/* ================= MOSAICO ================= */
+.mo{background:#eceef4;color:#1f1c4d;font-family:"Schibsted Grotesk",sans-serif}
+.mo .dir-name{font:800 clamp(3.2rem,9vw,6.4rem)/.9 "Schibsted Grotesk";letter-spacing:-.045em}
+.mo .thesis{font-size:18px}
+.mo-hero{background:#fff;border-radius:4px;padding:28px;display:grid;gap:28px}
+@media(min-width:760px){.mo-hero{grid-template-columns:1fr 1.15fr;align-items:center}}
+.mo-hero h3{font:800 clamp(2.2rem,4.4vw,3.5rem)/.98 "Schibsted Grotesk";letter-spacing:-.035em;margin:0}
+.mo-hero p{color:#4b4878;max-width:38ch;margin:14px 0 20px}
+.mo-btn{display:inline-block;border:none;border-radius:3px;padding:14px 20px;font:600 17px "Schibsted Grotesk";cursor:pointer}
+.mo-btn.p{background:#1f1c4d;color:#fff}
+.mo-btn.s{background:#e3e2f3;color:#1f1c4d}
+.wall{display:grid;grid-template-columns:repeat(20,1fr);gap:3px}
+.wall i{aspect-ratio:2/1;border-radius:1px;background:transparent;box-shadow:inset 0 0 0 1px #c7c5dd}
+.wall i.ver{background:#1f8a4c;box-shadow:none}
+.wall i.use{background:#2b6cb0;box-shadow:none}
+.wall i.del{background:#7aa7d6;box-shadow:none}
+.wall i.rec{background:#bcd3ea;box-shadow:none}
+.wall i.pl{background:repeating-linear-gradient(-45deg,#e0a21b 0 2px,#fbf0d4 2px 5px);box-shadow:none}
+.mo-key{display:flex;flex-wrap:wrap;gap:6px 16px;margin-top:12px;font-size:14px}
+.mo-key span{display:inline-flex;align-items:center;gap:6px}
+.mo-key i{width:18px;height:9px;display:inline-block;border-radius:1px}
+.mo-cap{margin-top:10px;font-size:14px;color:#4b4878}
+.mo .screen{background:#fff}
+.mo-card{padding:18px;flex:1;display:flex;flex-direction:column}
+.mo-cat{display:inline-flex;align-items:center;gap:8px;font-weight:600;font-size:14px}
+.mo-card h4{font:800 38px/1 "Schibsted Grotesk";letter-spacing:-.03em;margin:12px 0 4px}
+.mo-card .sub{color:#4b4878;font-size:14px;margin:0 0 14px}
+.mo-card .wall{gap:2px}
+.mo-stat{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:14px}
+.mo-stat div{border-top:3px solid var(--c);padding-top:6px;font-size:13px;line-height:1.2}
+.mo-stat b{display:block;font-size:24px}
+.mo-actions{display:grid;grid-template-columns:1fr 1.4fr;gap:8px;padding:0 18px 18px}
+.mo-actions button{height:58px;border:none;border-radius:3px;font:600 17px "Schibsted Grotesk";cursor:pointer}
+.mo-actions .pass{background:#eceef4;color:#1f1c4d}
+.mo-actions .give{background:#1f1c4d;color:#fff}
+
+/* compare */
+.cmp{overflow-x:auto;margin-top:24px}
+.cmp table{border-collapse:collapse;min-width:760px;width:100%;background:#fff;font-size:15px}
+.cmp th,.cmp td{padding:12px;border-bottom:1px solid var(--f-line);text-align:left;vertical-align:top}
+.cmp thead th{background:#eceef0}
+.dots{letter-spacing:2px;color:var(--f-ink)}
+.rec{margin-top:28px;background:var(--f-ink);color:#fff;border-radius:8px;padding:24px 28px}
+.rec h3{margin:0 0 8px;font-size:1.4rem}
+.rec p{margin:0 0 10px;color:#d5dbe0;max-width:72ch}
+footer{padding:32px 0 56px;color:var(--f-muted);font-size:14px}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <h1>Impacto: UI review and five design directions</h1>
+    <p>A review of the current Next.js UI (public site, donor deck, field intake, coordinator desk), followed by five distinct visual directions. Every mock uses the same content so you can compare them directly: one need for 200 bricks with 80 pledged, 50 received and delivered, 40 used and 30 verified.</p>
+  </div>
+</header>
+
+<nav class="jump" aria-label="Sections">
+  <div class="wrap">
+    <a href="#review">Review</a>
+    <a href="#obra"><span class="sw" style="background:#f5c400"></span>Obra</a>
+    <a href="#tierra"><span class="sw" style="background:#0d6e6e"></span>Tierra Viva</a>
+    <a href="#senal"><span class="sw" style="background:#0a4fd6"></span>Señal Clara</a>
+    <a href="#recibo"><span class="sw" style="background:#5b3fd1"></span>Recibo</a>
+    <a href="#mosaico"><span class="sw" style="background:#1f8a4c"></span>Mosaico</a>
+    <a href="#compare">Compare</a>
+  </div>
+</nav>
+
+<!-- ================= REVIEW ================= -->
+<section class="part" id="review">
+  <div class="wrap">
+    <h2 class="ph">Review of the current UI</h2>
+    <p class="lead">Based on the source in <code>src/app</code>, <code>src/components/*</code> and <code>globals.css</code>. I didn't capture runtime screenshots because the app needs a live Convex deployment.</p>
+
+    <div class="verdict">
+      <p><strong>Verdict:</strong> The product thinking is strong. Keeping the six ledger stages honest, building in privacy and giving every swipe a button alternative are better than most hackathon UIs. Four things weaken the visual layer: missing image assets mean emoji stand in for imagery, each color carries two or three meanings, three different component styles are in use, and warnings repeat until people stop reading them. Some status chips and the dark mode also fail contrast checks.</p>
+    </div>
+
+    <div class="grid2">
+      <div class="works">
+        <h3>What's working</h3>
+        <ul>
+          <li><strong>The ledger never stacks.</strong> <code>LedgerBar</code> draws each of the six stages as its own course, pledges are hatched and only verified items are green. This is the best idea in the codebase. Every direction below keeps it.</li>
+          <li><strong>Accessibility is built in.</strong> Swipes have large-button equivalents with <code>aria-keyshortcuts</code>. The UI also handles reduced motion, uses <code>:focus-visible</code>, announces ledger updates with <code>aria-live</code> and has proper tab roles on the coordinator desk.</li>
+          <li><strong>The copy has a voice.</strong> “Cada ladrillo, contado desde la necesidad hasta el techo terminado” and “Sin pines en el mapa. Sin nombres.” are good lines.</li>
+          <li><strong>Field intake is resilient.</strong> It offers a language choice, a voice/text switch with automatic fallback when the mic is denied, a demo transcript and a sticky Analyze button.</li>
+        </ul>
+      </div>
+
+      <div class="issues">
+        <h3>Issues, ranked</h3>
+
+        <div class="issue"><span class="sev h">High</span><h4>Image assets don't exist, so emoji are the imagery</h4>
+          <p><code>public/materials/</code> and <code>public/brand/</code> are both missing. The landing hero is a 🏡 in a clay square. Zinc sheets render as 🏚️ (a derelict house), cement as 🪨 (a rock), and each OS draws these emoji differently.</p>
+          <p class="where">MaterialImage.tsx · Landing.tsx:52 · types.ts CATEGORY_STYLE.image</p></div>
+
+        <div class="issue"><span class="sev h">High</span><h4>Dark mode breaks every accent color</h4>
+          <p>The dark theme redefines the <em>soft</em> tints but leaves <code>--clay --brick --leaf --sky --amber</code> unchanged. On the dark surface, brick text drops to about 2.0:1 contrast, sky to about 2.8:1 and clay to about 3.4:1. <code>themeColor</code> is also hard-coded to clay.</p>
+          <p class="where">globals.css:22–33 · layout.tsx:18</p></div>
+
+        <div class="issue"><span class="sev h">High</span><h4>The most important warnings fail contrast in light mode</h4>
+          <p>Amber on amber-soft measures about 3.1:1. That pairing carries “Comprometer no es entregar”, the demo banner (at 12px) and “needs confirmation”. Leaf on leaf-soft measures about 4.1:1. Both fail WCAG AA for small text (see the table below).</p>
+          <p class="where">LedgerBar.tsx PledgeIsNotNote · AppHeader.tsx:14 · field/ui.tsx ConfirmChip</p></div>
+
+        <div class="issue"><span class="sev h">High</span><h4>Each color has two or three meanings</h4>
+          <p><strong>Leaf</strong> is both the Heal &amp; Sow category and “verified impact”, so a Heal &amp; Sow card looks verified. <strong>Brick</strong> is both Reconstruction and errors or rejection. <strong>Clay</strong> is both the main button color and Roof &amp; Shelter. <strong>Sky</strong> covers verified, in review, paused, received, delivered and used. <strong>Amber</strong> covers pledged, draft, demo and needs confirmation.</p>
+          <p class="where">public/types.ts · ledgerStyles.ts · coordinator/ui.tsx statusTone</p></div>
+
+        <div class="issue"><span class="sev m">Med</span><h4>Three component styles that contradict each other</h4>
+          <p>The public pages use pill buttons, 2px borders and <code>rounded-3xl</code>. The field screens use <code>rounded-xl</code> and string constants for buttons. The coordinator uses <code>rounded-md</code>, <code>ring-1</code> and a <code>Button</code> component. There are two <code>CATEGORY_STYLE</code> maps and three status-chip systems, and they disagree: <em>paused</em> is clay in the field screens but sky on the coordinator desk.</p>
+          <p class="where">public/PublicMeta · field/ui.tsx StatusChip · coordinator/ui.tsx Chip</p></div>
+
+        <div class="issue"><span class="sev m">Med</span><h4>Repeated warnings get ignored</h4>
+          <p>On /donate, “pledge ≠ delivery” appears four times: at the top, under the card, in the sheet and on the success screen. “Demo” shows up in five components (header banner, landing notice, DemoStamp, DemoTag on every card, DemoLabel). When amber is everywhere, people learn to skip it.</p>
+          <p class="where">DonateDeck.tsx:155 · SwipeCard.tsx:122 · ContributionSheet.tsx:173</p></div>
+
+        <div class="issue"><span class="sev m">Med</span><h4>The landing page shows 21 numbers before any project</h4>
+          <p>Each of the three bucket cards shows six StatTiles plus a callout. Verified impact, the number that matters most, comes seventh.</p>
+          <p class="where">Landing.tsx:74–110</p></div>
+
+        <div class="issue"><span class="sev m">Med</span><h4>On desktop, the donor card is the narrowest element</h4>
+          <p>The deck sits in a 24rem side column while the title and filters get the wide column. Four buttons (Pass, Pledge, I have, I'll buy) all open the same sheet, which then asks the same question again. The drag stamp is sky blue, but pledges are amber everywhere else.</p>
+          <p class="where">DonateDeck.tsx:136, 228–262 · SwipeCard.tsx:83</p></div>
+
+        <div class="issue"><span class="sev m">Med</span><h4>The header mixes demo controls into the product chrome</h4>
+          <p>Role switching is a <code>&lt;select&gt;</code> in the global header. The language toggle is a solid clay pill, the loudest element there and louder than Donate. Nav links have no active state. On mobile, the banner, header bar and scrolling nav take up about 120px of sticky space.</p>
+          <p class="where">AppHeader.tsx</p></div>
+
+        <div class="issue"><span class="sev l">Low</span><h4>The palette and type look generic</h4>
+          <p>Cream <code>#fbf7f1</code> with a Fraunces serif and a clay accent is one of the most common “generated” looks right now. It doesn't say anything specific about rebuilding or materials. There's also a lot of 11–12px muted text.</p>
+          <p class="where">layout.tsx · globals.css</p></div>
+
+        <div class="issue"><span class="sev l">Low</span><h4>Every route uses the same width</h4>
+          <p>All routes use <code>max-w-5xl</code>. Coordinator ledgers and finance tables are cramped, while field forms would work better narrower.</p>
+          <p class="where">layout.tsx:28</p></div>
+      </div>
+    </div>
+
+    <h3 style="margin:36px 0 0">Contrast check (light mode)</h3>
+    <div style="overflow-x:auto"><table class="ct">
+      <thead><tr><th>Pair</th><th>Sample</th><th>Used for</th><th>Ratio</th><th>AA small text</th></tr></thead>
+      <tbody>
+        <tr><td>amber #b7791f on amber-soft #f7ead3</td><td><span class="chipdemo" style="background:#f7ead3;color:#b7791f">Comprometido</span></td><td>pledge warnings, demo banner</td><td>≈3.1:1</td><td class="fail">Fail</td></tr>
+        <tr><td>leaf #3f7a4a on leaf-soft #dcebdc</td><td><span class="chipdemo" style="background:#dcebdc;color:#3f7a4a">Activo</span></td><td>verified callout, status</td><td>≈4.1:1</td><td class="fail">Fail</td></tr>
+        <tr><td>sky #2f6690 on sky-soft #dce8f1</td><td><span class="chipdemo" style="background:#dce8f1;color:#2f6690">Verificado</span></td><td>verified badge</td><td>≈4.9:1</td><td class="ok">Pass</td></tr>
+        <tr><td>white on clay #b4532a</td><td><span class="chipdemo" style="background:#b4532a;color:#fff">Donar</span></td><td>primary buttons</td><td>≈5.0:1</td><td class="ok">Pass</td></tr>
+        <tr><td>brick #8a3b2a on dark surface #211b17</td><td><span class="chipdemo" style="background:#211b17;color:#8a3b2a">Reconstrucción</span></td><td>category text, dark mode</td><td>≈2.0:1</td><td class="fail">Fail</td></tr>
+      </tbody>
+    </table></div>
+
+    <div class="cross">
+      <h3 style="margin:0">Fixes that apply whichever direction you pick</h3>
+      <ol>
+        <li><strong>Separate category from status.</strong> Give each program a shape and icon (Roof = triangle, Reconstruction = square, Heal &amp; Sow = circle) and keep color for ledger stages only. Then green can mean “verified” and nothing else.</li>
+        <li><strong>Use one component kit</strong> with one Button, one Chip and one status map across the public, field and coordinator screens.</li>
+        <li><strong>State “pledge ≠ delivery” once per screen</strong>, where the decision is made (the quantity sheet), and let the ledger visual carry the message everywhere else.</li>
+        <li><strong>Move demo controls into a single “Modo demo” drawer.</strong> Make the language toggle a quiet ES | EN segmented control and add active states to the nav.</li>
+        <li><strong>Commission 12 material illustrations</strong> in one consistent style, plus three program images. This is the biggest perceived-quality gain for the effort.</li>
+      </ol>
+    </div>
+  </div>
+</section>
+
+<!-- ================= OBRA ================= -->
+<section class="dir ob" id="obra" aria-labelledby="obra-t">
+  <div class="wrap">
+    <div class="dir-head">
+      <h2 class="dir-name" id="obra-t">Obra</h2>
+      <div>
+        <p class="thesis"><strong>The construction site as the interface.</strong> Site-sign yellow, concrete and rebar black, with condensed stencil type. Pledges appear as hazard tape, meaning not yet safe to count. The materials are the heroes, and every number reads at the scale of a site sign.</p>
+      </div>
+    </div>
+
+    <div class="meta">
+      <div class="swatches">
+        <div class="swatch"><i style="background:#f5c400"></i><span><b>Señal</b>#F5C400 action</span></div>
+        <div class="swatch"><i style="background:#262522"></i><span><b>Varilla</b>#262522 ink</span></div>
+        <div class="swatch"><i style="background:#d6d3cc"></i><span><b>Concreto</b>#D6D3CC ground</span></div>
+        <div class="swatch"><i style="background:#f2f0ea"></i><span><b>Yeso</b>#F2F0EA surface</span></div>
+        <div class="swatch"><i style="background:#2f6fa8"></i><span><b>Custodia</b>#2F6FA8 received→used</span></div>
+        <div class="swatch"><i style="background:#1f6b3a"></i><span><b>Verificado</b>#1F6B3A impact</span></div>
+      </div>
+      <div class="notes">
+        <h4>Type</h4>
+        <ul><li>Barlow Condensed 800 for headlines and numbers, in uppercase like site signage</li><li>Barlow 400/600 for body text</li></ul>
+        <h4>Best for</h4>
+        <ul><li>Donors, and a three-minute pitch on a projector</li></ul>
+      </div>
+      <div class="notes">
+        <h4>Solves</h4>
+        <ul><li>Leaves cream and serif behind completely</li><li>Hazard tape makes “pledged” look provisional without extra warning text</li></ul>
+        <h4>Risk</h4>
+        <ul><li>Could feel macho or cold for Heal &amp; Sow. Uppercase is harder to read at length, so limit it to headlines</li></ul>
+      </div>
+    </div>
+
+    <div class="stage">
+      <div>
+        <div class="ob-hero">
+          <h3>Cada ladrillo, contado.</h3>
+          <p>De la necesidad reportada en campo al techo terminado. Tú eliges el material; la organización verifica que llegó y se usó.</p>
+          <button class="ob-btn y">Donar materiales</button> <button class="ob-btn o">Ver transparencia</button>
+          <div style="height:14px"></div>
+        </div>
+        <div class="ob-buckets">
+          <div><svg width="34" height="26" viewBox="0 0 34 26"><path d="M2 24L17 3l15 21z" fill="#262522"/></svg><b>12</b><span>Techo y abrigo<br>techos verificados</span></div>
+          <div><svg width="26" height="26" viewBox="0 0 26 26"><rect x="1" y="1" width="24" height="24" fill="#262522"/></svg><b>340</b><span>Reconstrucción<br>bloques verificados</span></div>
+          <div><svg width="26" height="26" viewBox="0 0 26 26"><circle cx="13" cy="13" r="12" fill="#262522"/></svg><b>6</b><span>Sanar y sembrar<br>huertos verificados</span></div>
+        </div>
+      </div>
+
+      <div class="phone"><div class="screen">
+        <div class="ob-sign">
+          <div><small>▲ Reconstrucción · Proyecto 014</small><h4>Ladrillos</h4></div>
+          <div class="ob-qty">120<small>faltan de 200</small></div>
+        </div>
+        <div class="ob-body">
+          <div class="ob-row"><span>Solicitado</span><div class="ob-bar"><i style="width:100%;--c:#bdb8ad"></i></div><b>200</b></div>
+          <div class="ob-row"><span>Comprometido</span><div class="ob-bar"><i class="haz" style="width:40%"></i></div><b>80</b></div>
+          <div class="ob-row"><span>Recibido</span><div class="ob-bar"><i style="width:25%;--c:#8fb3d6"></i></div><b>50</b></div>
+          <div class="ob-row"><span>Entregado</span><div class="ob-bar"><i style="width:25%;--c:#5b8fc2"></i></div><b>50</b></div>
+          <div class="ob-row"><span>Usado</span><div class="ob-bar"><i style="width:20%;--c:#2f6fa8"></i></div><b>40</b></div>
+          <div class="ob-row v"><span>Verificado</span><div class="ob-bar"><i style="width:15%;--c:#1f6b3a"></i></div><b>30</b></div>
+          <p style="font-size:14px;margin:6px 0 0">Familia de cinco, pared norte colapsada. Se reconstruye con mano de obra local.</p>
+          <p class="ob-note">La cinta amarilla es una promesa: aún no ha llegado.</p>
+        </div>
+        <div class="ob-actions"><button class="ob-btn o">Pasar</button><button class="ob-btn y">Aportar</button></div>
+      </div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= TIERRA VIVA ================= -->
+<section class="dir tv" id="tierra" aria-labelledby="tv-t">
+  <div class="wrap">
+    <div class="dir-head">
+      <h2 class="dir-name" id="tv-t">Tierra Viva</h2>
+      <div>
+        <p class="thesis"><strong>Recovery as something that grows.</strong> Flat Caribbean color blocks (sea teal, mango, hibiscus) on bright paper, with soft geometry and a plant-growth metaphor for the ledger: a pledge is a seed and verified impact is a flower. Warm and communal, and plays to Heal &amp; Sow without leaving out the other two programs.</p>
+      </div>
+    </div>
+
+    <div class="meta">
+      <div class="swatches">
+        <div class="swatch"><i style="background:#0d6e6e"></i><span><b>Mar</b>#0D6E6E brand</span></div>
+        <div class="swatch"><i style="background:#ffb627"></i><span><b>Mango</b>#FFB627 action</span></div>
+        <div class="swatch"><i style="background:#ffd9e4"></i><span><b>Amapola</b>#FFD9E4 cards</span></div>
+        <div class="swatch"><i style="background:#2a1f3d"></i><span><b>Noche</b>#2A1F3D ink</span></div>
+        <div class="swatch"><i style="background:#1d7a3e"></i><span><b>Brote</b>#1D7A3E verified</span></div>
+        <div class="swatch"><i style="background:#fffefa;box-shadow:inset 0 0 0 1px #ddd"></i><span><b>Papel</b>#FFFEFA ground</span></div>
+      </div>
+      <div class="notes">
+        <h4>Type</h4>
+        <ul><li>Bricolage Grotesque 800 with tight tracking for headlines</li><li>The same family at 400 for body text, so there's one voice throughout</li></ul>
+        <h4>Best for</h4>
+        <ul><li>The community and local partners, and social sharing</li></ul>
+      </div>
+      <div class="notes">
+        <h4>Solves</h4>
+        <ul><li>Programs are identified by shape (roof triangle, brick square, seed circle), never by color</li><li>Feels hopeful rather than like a disaster site</li></ul>
+        <h4>Risk</h4>
+        <ul><li>A metaphor can blur exact meaning, so each glyph always needs a word next to it. The illustrations take more work to make</li></ul>
+      </div>
+    </div>
+
+    <div class="stage">
+      <div>
+        <div class="tv-hero">
+          <h3>Lo que se pide, lo que llega, lo que crece.</h3>
+          <p>Cada material que aportas se sigue hasta que la organización confirma que se usó.</p>
+          <button class="tv-btn p">Donar materiales</button> <button class="tv-btn g">Ver el avance</button>
+          <svg class="tv-shapes" viewBox="0 0 300 260" aria-hidden="true">
+            <path d="M20 250L120 70l100 180z" fill="#ffb627"/>
+            <rect x="150" y="110" width="140" height="140" rx="18" fill="#ffd9e4"/>
+            <circle cx="210" cy="70" r="58" fill="#7fd1ae"/>
+          </svg>
+        </div>
+        <div class="tv-legend">
+          <span><svg width="22" height="20"><path d="M1 19L11 1l10 18z" fill="#ffb627"/></svg>Techo y abrigo</span>
+          <span><svg width="20" height="20"><rect width="20" height="20" rx="4" fill="#f59ab3"/></svg>Reconstrucción</span>
+          <span><svg width="20" height="20"><circle cx="10" cy="10" r="10" fill="#7fd1ae"/></svg>Sanar y sembrar</span>
+        </div>
+      </div>
+
+      <div class="phone"><div class="screen">
+        <div class="tv-top">
+          <span class="tv-pill"><svg width="12" height="12"><rect width="12" height="12" rx="2" fill="#f59ab3"/></svg>Reconstrucción</span>
+          <span class="tv-pill" style="float:right">✓ Organización verificada</span>
+          <div class="tv-mat"><svg width="64" height="44" viewBox="0 0 64 44"><g fill="#c8553d"><rect x="0" y="0" width="30" height="13" rx="2"/><rect x="34" y="0" width="30" height="13" rx="2"/><rect x="16" y="16" width="30" height="13" rx="2"/><rect x="0" y="31" width="30" height="13" rx="2"/><rect x="34" y="31" width="30" height="13" rx="2"/></g></svg></div>
+        </div>
+        <div class="tv-b">
+          <h4>Ladrillos</h4>
+          <p class="sub">Proyecto 014 · faltan 120 de 200</p>
+          <div class="tv-grow">
+            <div><svg width="34" height="34" viewBox="0 0 34 34"><ellipse cx="17" cy="24" rx="7" ry="5" fill="none" stroke="#e0a21b" stroke-width="2.5" stroke-dasharray="3 3"/></svg>Prometido<b>80</b></div>
+            <div><svg width="34" height="34" viewBox="0 0 34 34"><ellipse cx="17" cy="24" rx="7" ry="5" fill="#8b5e34"/></svg>Recibido<b>50</b></div>
+            <div><svg width="34" height="34" viewBox="0 0 34 34"><ellipse cx="17" cy="27" rx="7" ry="4" fill="#8b5e34"/><path d="M17 26V14" stroke="#3a9d5d" stroke-width="2.5"/><path d="M17 16c-5 0-7-4-7-6 4 0 7 2 7 6z" fill="#3a9d5d"/></svg>Entregado<b>50</b></div>
+            <div><svg width="34" height="34" viewBox="0 0 34 34"><ellipse cx="17" cy="29" rx="7" ry="3" fill="#8b5e34"/><path d="M17 28V8" stroke="#3a9d5d" stroke-width="2.5"/><path d="M17 16c-6 0-9-5-9-8 5 0 9 3 9 8zM17 12c6 0 9-5 9-8-5 0-9 3-9 8z" fill="#3a9d5d"/></svg>Usado<b>40</b></div>
+            <div class="v"><svg width="34" height="34" viewBox="0 0 34 34"><path d="M17 32V14" stroke="#1d7a3e" stroke-width="2.5"/><g fill="#ff6b8b"><circle cx="17" cy="6" r="4"/><circle cx="12" cy="10" r="4"/><circle cx="22" cy="10" r="4"/><circle cx="14" cy="15" r="4"/><circle cx="20" cy="15" r="4"/></g><circle cx="17" cy="11" r="3" fill="#ffb627"/></svg>Verificado<b>30</b></div>
+          </div>
+          <p class="tv-say">Una semilla es una promesa. Solo la flor, verificada por la organización, cuenta como impacto.</p>
+        </div>
+        <div class="tv-actions"><button class="pass">Pasar</button><button class="give">Aportar</button></div>
+      </div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= SEÑAL CLARA ================= -->
+<section class="dir sc" id="senal" aria-labelledby="sc-t">
+  <div class="wrap">
+    <div class="dir-head">
+      <h2 class="dir-name" id="sc-t">Señal Clara</h2>
+      <div>
+        <p class="thesis"><strong>A public utility you can read in direct sun.</strong> Navy, white and one signal blue, set in Atkinson Hyperlegible, a typeface built for low vision. Stages read like package tracking, written as full sentences. Dark mode is a designed theme in its own right, not an afterthought. This is the most accessible and least decorative direction.</p>
+      </div>
+    </div>
+
+    <div class="meta">
+      <div class="swatches">
+        <div class="swatch"><i style="background:#0f2537"></i><span><b>Marino</b>#0F2537 ink</span></div>
+        <div class="swatch"><i style="background:#0a4fd6"></i><span><b>Señal</b>#0A4FD6 action</span></div>
+        <div class="swatch"><i style="background:#9a5b00"></i><span><b>Promesa</b>#9A5B00 pledged</span></div>
+        <div class="swatch"><i style="background:#2c5f8a"></i><span><b>Custodia</b>#2C5F8A received→used</span></div>
+        <div class="swatch"><i style="background:#11713a"></i><span><b>Verificado</b>#11713A impact</span></div>
+        <div class="swatch"><i style="background:#0d1b26"></i><span><b>Noche</b>#0D1B26 dark ground</span></div>
+      </div>
+      <div class="notes">
+        <h4>Type</h4>
+        <ul><li>Atkinson Hyperlegible 700/400 throughout, 18px body, never below 14px</li></ul>
+        <h4>Best for</h4>
+        <ul><li>Field workers outdoors on cheap phones, and the coordinator desk</li></ul>
+      </div>
+      <div class="notes">
+        <h4>Solves</h4>
+        <ul><li>Every color pair passes AA, including dark mode</li><li>The redesigned header: ES | EN segmented control, active nav, one-line demo bar</li><li>Sentences replace six-bar charts</li></ul>
+        <h4>Risk</h4>
+        <ul><li>Can look like a government form, so it needs good imagery to feel warm. Least memorable for donors</li></ul>
+      </div>
+    </div>
+
+    <div class="sc-hdr" style="margin-top:32px">
+      <div class="sc-demo"><span>Modo demo · datos ficticios</span><u>Cambiar rol: Donante ▾</u></div>
+      <div class="sc-bar">
+        <strong>Impacto</strong>
+        <nav><a href="#senal" aria-current="page">Donar</a><a href="#senal">Transparencia</a><a href="#senal">Mis aportes</a></nav>
+        <span class="sc-seg" role="group" aria-label="Idioma"><span class="on">ES</span><span>EN</span></span>
+      </div>
+      <div class="sc-hero">
+        <div>
+          <h3>Ve exactamente qué llegó y qué se usó.</h3>
+          <p>Cada material se cuenta en seis pasos separados. Solo lo verificado por la organización cuenta como impacto.</p>
+          <button class="sc-btn p">Donar materiales</button> <button class="sc-btn s">Ver transparencia</button>
+        </div>
+        <div class="sc-big"><div class="n">376</div><div class="l">materiales verificados como usados</div><div class="s">Al 7 nov 2026 · también hay 940 comprometidos que aún no han llegado</div></div>
+      </div>
+    </div>
+
+    <div class="stage" style="grid-template-columns:1fr">
+      <div class="sc-pair">
+        <div class="phone"><div class="screen"><div class="sc-card">
+          <div class="sc-tags"><span class="sc-tag" style="color:#0f2537">■ Reconstrucción</span><span class="sc-tag" style="color:#11713a">✓ Verificada</span></div>
+          <h4>Ladrillos</h4>
+          <p class="sc-sent">Se necesitan <b>200</b>. Faltan <b>120</b> por comprometer.</p>
+          <ol class="sc-steps">
+            <li><span class="dot" style="border:2px dashed #9a5b00;color:#9a5b00">1</span><span>Comprometido por donantes</span><span class="num" style="color:#9a5b00">80</span></li>
+            <li><span class="dot" style="background:#2c5f8a;color:#fff">✓</span><span>Recibido por la organización</span><span class="num">50</span></li>
+            <li><span class="dot" style="background:#2c5f8a;color:#fff">✓</span><span>Entregado al proyecto</span><span class="num">50</span></li>
+            <li><span class="dot" style="background:#2c5f8a;color:#fff">✓</span><span>Usado en la obra</span><span class="num">40</span></li>
+            <li><span class="dot" style="background:#11713a;color:#fff">★</span><span><strong>Verificado: impacto</strong></span><span class="num" style="color:#11713a">30</span></li>
+          </ol>
+        </div><div class="sc-actions"><button class="sc-btn s">Pasar</button><button class="sc-btn p">Aportar</button></div></div></div>
+
+        <div class="phone"><div class="screen sc-dark"><div class="sc-card">
+          <div class="sc-tags"><span class="sc-tag" style="color:#eef3f7">■ Reconstrucción</span><span class="sc-tag" style="color:#6fd49a">✓ Verificada</span></div>
+          <h4>Ladrillos</h4>
+          <p class="sc-sent">Se necesitan <b>200</b>. Faltan <b>120</b> por comprometer.</p>
+          <ol class="sc-steps">
+            <li><span class="dot" style="border:2px dashed #f2b552;color:#f2b552">1</span><span>Comprometido por donantes</span><span class="num" style="color:#f2b552">80</span></li>
+            <li><span class="dot" style="background:#8db4ff;color:#0d1b26">✓</span><span>Recibido por la organización</span><span class="num">50</span></li>
+            <li><span class="dot" style="background:#8db4ff;color:#0d1b26">✓</span><span>Entregado al proyecto</span><span class="num">50</span></li>
+            <li><span class="dot" style="background:#8db4ff;color:#0d1b26">✓</span><span>Usado en la obra</span><span class="num">40</span></li>
+            <li><span class="dot" style="background:#6fd49a;color:#0d1b26">★</span><span><strong>Verificado: impacto</strong></span><span class="num" style="color:#6fd49a">30</span></li>
+          </ol>
+        </div><div class="sc-actions"><button class="sc-btn s">Pasar</button><button class="sc-btn p">Aportar</button></div></div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= RECIBO ================= -->
+<section class="dir rc" id="recibo" aria-labelledby="rc-t">
+  <div class="wrap">
+    <div class="dir-head">
+      <h2 class="dir-name" id="rc-t">Recibo</h2>
+      <div>
+        <p class="thesis"><strong>Every pledge gets a receipt.</strong> A pledge prints a ticket stub, and the nonprofit stamps it at each stage: carbon violet for the promise, blue for custody and a round green seal for verified. The follow-your-pledge page (<code>/follow/[token]</code>) becomes the hero of the brand. The monospace type comes from the thermal-receipt subject itself.</p>
+      </div>
+    </div>
+
+    <div class="meta">
+      <div class="swatches">
+        <div class="swatch"><i style="background:#5b3fd1"></i><span><b>Carbón</b>#5B3FD1 promise / action</span></div>
+        <div class="swatch"><i style="background:#1d5fa8"></i><span><b>Sello</b>#1D5FA8 custody</span></div>
+        <div class="swatch"><i style="background:#1d7a3e"></i><span><b>Lacre</b>#1D7A3E verified</span></div>
+        <div class="swatch"><i style="background:#fbfbf8;box-shadow:inset 0 0 0 1px #ccc"></i><span><b>Térmico</b>#FBFBF8 paper</span></div>
+        <div class="swatch"><i style="background:#cfd3d6"></i><span><b>Mesa</b>#CFD3D6 ground</span></div>
+        <div class="swatch"><i style="background:#232629"></i><span><b>Tinta</b>#232629 ink</span></div>
+      </div>
+      <div class="notes">
+        <h4>Type</h4>
+        <ul><li>Courier Prime for anything printed on a receipt</li><li>Familjen Grotesk for UI and stamps</li></ul>
+        <h4>Best for</h4>
+        <ul><li>Donor follow-up and weekly reports, where institutional donors want an audit trail</li></ul>
+      </div>
+      <div class="notes">
+        <h4>Solves</h4>
+        <ul><li>Shows pledge ≠ delivery without a warning: the stamp slots are visibly empty</li><li>A natural home for evidence: each stamp links to its receipt or photo</li></ul>
+        <h4>Risk</h4>
+        <ul><li>Feels transactional, closer to logistics than to people. Mono text in long passages is hard to read, so keep it on the tickets</li></ul>
+      </div>
+    </div>
+
+    <div class="stage">
+      <div class="rc-hero">
+        <div>
+          <h3>Tu promesa tiene recibo.</h3>
+          <p>Cuando la organización recibe, entrega y verifica tus materiales, tu recibo se sella. Sin sello, no cuenta como impacto.</p>
+          <button class="rc-btn p">Donar materiales</button> <button class="rc-btn s">Seguir mi aporte</button>
+        </div>
+        <div class="ticket">
+          <div class="c"><strong>IMPACTO · ESPEJO DE AGUA</strong><br>Recibo de compromiso #A7-0412</div>
+          <hr>
+          <div class="lead-row"><span>LADRILLOS</span><span></span><span>50 u</span></div>
+          <div class="lead-row"><span>Proyecto</span><span></span><span>014</span></div>
+          <div class="lead-row"><span>Modo</span><span></span><span>Tengo materiales</span></div>
+          <hr>
+          <div class="c" style="padding:6px 0"><span class="stamp v">COMPROMETIDO</span></div>
+        </div>
+      </div>
+
+      <div class="phone"><div class="screen">
+        <div class="ticket" style="padding:22px 18px 24px">
+          <div class="rc-stub-h"><strong>Ladrillos · Proyecto 014</strong><span>■</span></div>
+          <p class="rc-big">120<span style="font-size:18px"> / 200 faltan</span></p>
+          <hr>
+          <div class="lead-row"><span>Comprometido</span><span></span><span>80</span></div>
+          <div class="lead-row"><span>Recibido</span><span></span><span>50</span></div>
+          <div class="lead-row"><span>Entregado</span><span></span><span>50</span></div>
+          <div class="lead-row"><span>Usado</span><span></span><span>40</span></div>
+          <div class="lead-row"><strong>Verificado</strong><span></span><strong>30</strong></div>
+          <hr>
+          <div class="rc-stamps">
+            <span class="stamp v">COMPROMETIDO</span>
+            <span class="stamp b">RECIBIDO</span>
+            <span class="stamp g">VERIFI-<br>CADO<br>30</span>
+          </div>
+          <p style="margin:10px 0 0;font-size:13px">Familia de cinco. Pared norte colapsada.</p>
+        </div>
+        <div class="ticket" style="padding:14px 18px">
+          <strong>Tu aporte de 50</strong>
+          <div class="rc-stamps" style="min-height:0;margin-top:8px">
+            <span class="stamp v" style="font-size:12px">COMPROMETIDO</span>
+            <span class="rc-ghost">Recibido</span><span class="rc-ghost">Verificado</span>
+          </div>
+        </div>
+        <div class="rc-actions"><button class="pass">Pasar</button><button class="give">Aportar</button></div>
+      </div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= MOSAICO ================= -->
+<section class="dir mo" id="mosaico" aria-labelledby="mo-t">
+  <div class="wrap">
+    <div class="dir-head">
+      <h2 class="dir-name" id="mo-t">Mosaico</h2>
+      <div>
+        <p class="thesis"><strong>“Cada ladrillo, contado,” taken literally.</strong> Every unit of material is one tile. A need for 200 bricks is a wall of 200 tiles, each colored by the furthest stage it has verifiably reached. You can't overstate impact when the empty tiles are right there. Restrained indigo type lets the wall carry the page.</p>
+      </div>
+    </div>
+
+    <div class="meta">
+      <div class="swatches">
+        <div class="swatch"><i style="background:#1f1c4d"></i><span><b>Índigo</b>#1F1C4D ink / action</span></div>
+        <div class="swatch"><i style="background:repeating-linear-gradient(-45deg,#e0a21b 0 3px,#fbf0d4 3px 7px)"></i><span><b>Promesa</b>#E0A21B pledged</span></div>
+        <div class="swatch"><i style="background:#7aa7d6"></i><span><b>Custodia</b>#2B6CB0 + tints</span></div>
+        <div class="swatch"><i style="background:#1f8a4c"></i><span><b>Verificado</b>#1F8A4C impact</span></div>
+        <div class="swatch"><i style="background:#eceef4"></i><span><b>Neblina</b>#ECEEF4 ground</span></div>
+        <div class="swatch"><i style="background:#fff;box-shadow:inset 0 0 0 1px #c7c5dd"></i><span><b>Pendiente</b>outline = still needed</span></div>
+      </div>
+      <div class="notes">
+        <h4>Type</h4>
+        <ul><li>Schibsted Grotesk 800 with tight tracking for headlines</li><li>Schibsted 400/600 for body and figures</li></ul>
+        <h4>Best for</h4>
+        <ul><li>The public dashboard, donors and the judging demo: the live wall filling in is the “aha”</li></ul>
+      </div>
+      <div class="notes">
+        <h4>Solves</h4>
+        <ul><li>Replaces six bars with one honest picture, without stacking the stages</li><li>Works with no photos at all, which suits the missing assets</li><li>Turns the brand line into the visual system</li></ul>
+        <h4>Risk</h4>
+        <ul><li>Large quantities (1,000+) need bundling, e.g. one tile = 10 units. The wall needs a table alternative for screen readers</li></ul>
+      </div>
+    </div>
+
+    <div class="stage">
+      <div class="mo-hero">
+        <div>
+          <h3>Cada ladrillo, contado.</h3>
+          <p>Esta pared es una necesidad real de 200 ladrillos. Cada pieza se pinta solo cuando la organización confirma en qué etapa está.</p>
+          <button class="mo-btn p">Donar materiales</button> <button class="mo-btn s">Ver transparencia</button>
+        </div>
+        <div>
+          <div class="wall" id="wall-hero" role="img" aria-label="200 ladrillos: 30 verificados, 10 usados, 10 entregados, 30 comprometidos, 120 aún necesarios"></div>
+          <div class="mo-key">
+            <span><i style="background:#1f8a4c"></i>Verificado 30</span>
+            <span><i style="background:#2b6cb0"></i>Usado 40</span>
+            <span><i style="background:#7aa7d6"></i>Entregado 50</span>
+            <span><i style="background:repeating-linear-gradient(-45deg,#e0a21b 0 2px,#fbf0d4 2px 5px)"></i>Comprometido 80</span>
+            <span><i style="box-shadow:inset 0 0 0 1px #c7c5dd"></i>Falta</span>
+          </div>
+          <p class="mo-cap">Each tile shows its furthest stage. Pledged tiles are hatched because they are a promise, not material.</p>
+        </div>
+      </div>
+
+      <div class="phone"><div class="screen">
+        <div class="mo-card">
+          <span class="mo-cat"><svg width="14" height="14"><rect width="14" height="14" fill="#1f1c4d"/></svg>Reconstrucción · Proyecto 014</span>
+          <h4>Ladrillos</h4>
+          <p class="sub">Faltan 120 de 200 · organización verificada</p>
+          <div class="wall" id="wall-card" aria-hidden="true"></div>
+          <div class="mo-stat">
+            <div style="--c:repeating-linear-gradient(-45deg,#e0a21b 0 2px,#fbf0d4 2px 5px);border-image:repeating-linear-gradient(-45deg,#e0a21b 0 2px,#fbf0d4 2px 5px) 1"><b>80</b>comprometidos</div>
+            <div style="--c:#2b6cb0"><b>40</b>usados</div>
+            <div style="--c:#1f8a4c"><b style="color:#1f8a4c">30</b>verificados</div>
+          </div>
+          <p style="font-size:14px;margin:14px 0 0;color:#4b4878">Familia de cinco, pared norte colapsada. Mano de obra local.</p>
+        </div>
+        <div class="mo-actions"><button class="pass">Pasar</button><button class="give">Aportar</button></div>
+      </div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= COMPARE ================= -->
+<section class="part" id="compare" style="border-top:1px solid var(--f-line)">
+  <div class="wrap">
+    <h2 class="ph">Side by side</h2>
+    <p class="lead">Ratings are relative to each other (●●● = strongest of the five).</p>
+    <div class="cmp">
+      <table>
+        <thead><tr><th>Direction</th><th>Donor appeal</th><th>Field and coordinator use</th><th>Accessibility</th><th>Shows ledger honesty</th><th>Build effort</th><th>Main risk</th></tr></thead>
+        <tbody>
+          <tr><th>Obra</th><td class="dots">●●●</td><td class="dots">●○○</td><td class="dots">●●○</td><td class="dots">●●○</td><td>Low</td><td>Cold or macho for Heal &amp; Sow</td></tr>
+          <tr><th>Tierra Viva</th><td class="dots">●●●</td><td class="dots">●○○</td><td class="dots">●●○</td><td class="dots">●○○</td><td>High (illustration)</td><td>Metaphor blurs meaning</td></tr>
+          <tr><th>Señal Clara</th><td class="dots">●○○</td><td class="dots">●●●</td><td class="dots">●●●</td><td class="dots">●●○</td><td>Low</td><td>Forgettable</td></tr>
+          <tr><th>Recibo</th><td class="dots">●●○</td><td class="dots">●●○</td><td class="dots">●●○</td><td class="dots">●●●</td><td>Medium</td><td>Transactional tone</td></tr>
+          <tr><th>Mosaico</th><td class="dots">●●●</td><td class="dots">●●○</td><td class="dots">●●○</td><td class="dots">●●●</td><td>Medium</td><td>Scale bundling, screen-reader table</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="rec">
+      <h3>Recommendation: Mosaico for public and donor screens, Señal Clara for working screens</h3>
+      <p>Mosaico turns the headline you already have into the visual system, works without photography and makes the demo moment visible: 50 tiles go from hatched to blue to green live as the coordinator records receipt.</p>
+      <p>Mosaico's component rules (big targets, one status map, sentence-style stages, real dark mode) come from Señal Clara, which also styles the field and coordinator screens. Both use the same indigo, hatched amber and verified green, so the product still reads as one system.</p>
+      <p>Recibo's stamped stub is worth adopting just for <code>/follow/[token]</code> if you have time.</p>
+    </div>
+  </div>
+</section>
+
+<footer><div class="wrap">Impacto · Hack for Humanity · design review, Nov 7, 2026. All data in mocks is fictional.</div></footer>
+
+<script>
+// Fill each wall: 200 units, one tile per brick, colored by furthest verified stage.
+function fill(id){
+  const el=document.getElementById(id); if(!el) return;
+  const seq=[['ver',30],['use',10],['del',10],['pl',30],['',120]];
+  let html='';
+  for(const [c,n] of seq) for(let i=0;i<n;i++) html+= c?`<i class="${c}"></i>`:'<i></i>';
+  el.innerHTML=html;
+}
+fill('wall-hero'); fill('wall-card');
+</script>
+</body>
+</html>

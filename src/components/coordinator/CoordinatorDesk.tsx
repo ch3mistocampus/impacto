@@ -1,13 +1,28 @@
 "use client";
 
 import Link from "next/link";
-import { useState, type KeyboardEvent } from "react";
+import { useState } from "react";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import { useI18n } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
 import type { DictKey } from "@/lib/dict";
-import { AiNever, Button, Chip, DemoLabel, Skeleton, categoryTone, formatDate, statusTone, useAction } from "./ui";
+import { DoubleRule, FlagBand, Kicker } from "@/components/ui/tricolor";
+import {
+  AiNever,
+  Button,
+  CategoryTag,
+  Chip,
+  CountBadge,
+  DemoLabel,
+  Skeleton,
+  TabRow,
+  deskBtn,
+  formatDate,
+  statusTone,
+  useAction,
+} from "./ui";
+import { LockGlyph } from "./CoordinatorGate";
 import { ConfirmDialog } from "../ConfirmDialog";
 import { FinancialsPanel } from "./Financials";
 import { WeeklyReportsPanel } from "./WeeklyReports";
@@ -31,62 +46,46 @@ export function CoordinatorDesk() {
     reports: undefined,
   };
 
-  const onKey = (e: KeyboardEvent<HTMLButtonElement>) => {
-    const i = TABS.indexOf(tab);
-    if (e.key === "ArrowRight" || e.key === "ArrowLeft") {
-      e.preventDefault();
-      const next = TABS[(i + (e.key === "ArrowRight" ? 1 : TABS.length - 1)) % TABS.length];
-      setTab(next);
-      document.getElementById(`coord-tab-${next}`)?.focus();
-    }
-  };
-
   return (
     <div className="pt-6 sm:pt-10">
-      <div className="flex flex-wrap items-end gap-x-6 gap-y-2">
-        <h1 className="font-display text-3xl font-semibold leading-none sm:text-4xl">{t("coord.gate.title")}</h1>
-        {user && (
-          <p className="text-sm text-muted">
-            {t("coord.signedInAs")} <strong className="text-foreground">{user.name}</strong>
-          </p>
-        )}
-        <DemoLabel className="sm:ml-auto" />
-      </div>
-      <AiNever className="mt-4 max-w-3xl" />
+      <header>
+        <FlagBand />
+        <div className="flex flex-wrap items-end gap-x-8 gap-y-3 pt-6">
+          <div className="min-w-0 flex-1">
+            <Kicker>{t("coord.desk.kicker")}</Kicker>
+            <h1 className="mt-1 font-display text-4xl font-normal leading-[1.05] sm:text-5xl">{t("coord.gate.title")}</h1>
+          </div>
+          <div className="flex flex-col items-start gap-1 sm:items-end">
+            {user && (
+              <p className="text-[15px] text-muted">
+                {t("coord.signedInAs")} <strong className="font-semibold text-foreground">{user.name}</strong>
+              </p>
+            )}
+            <DemoLabel />
+          </div>
+        </div>
+        <DoubleRule className="mt-5" />
+        <AiNever className="mt-4 max-w-3xl" />
+      </header>
 
-      <div role="tablist" aria-label={t("coord.gate.title")} className="-mx-1 mt-6 flex gap-1 overflow-x-auto border-b border-border px-1">
-        {TABS.map((k) => {
-          const active = tab === k;
-          return (
-            <button
-              key={k}
-              id={`coord-tab-${k}`}
-              role="tab"
-              aria-selected={active}
-              aria-controls={`coord-panel-${k}`}
-              tabIndex={active ? 0 : -1}
-              onKeyDown={onKey}
-              onClick={() => setTab(k)}
-              className={`-mb-px flex shrink-0 items-center gap-2 whitespace-nowrap border-b-2 px-3 py-2.5 text-sm font-medium transition sm:px-4 ${
-                active ? "border-clay text-foreground" : "border-transparent text-muted hover:text-foreground"
-              }`}
-            >
+      <div className="mt-8">
+        <TabRow
+          tabs={TABS}
+          active={tab}
+          onChange={setTab}
+          label={t("coord.gate.title")}
+          idPrefix="coord-tab-"
+          panelPrefix="coord-panel-"
+          render={(k, on) => (
+            <>
               {t(`coord.tab.${k}` as DictKey)}
-              {counts[k] !== undefined && (
-                <span
-                  className={`min-w-5 rounded-full px-1.5 text-center text-xs tabular-nums ${
-                    active ? "bg-clay text-white" : "bg-border/70 text-muted"
-                  }`}
-                >
-                  {counts[k]}
-                </span>
-              )}
-            </button>
-          );
-        })}
+              {counts[k] !== undefined && <CountBadge n={counts[k]} active={on} />}
+            </>
+          )}
+        />
       </div>
 
-      <div id={`coord-panel-${tab}`} role="tabpanel" aria-labelledby={`coord-tab-${tab}`} className="pt-5">
+      <div id={`coord-panel-${tab}`} role="tabpanel" aria-labelledby={`coord-tab-${tab}`} className="pt-6">
         {inbox === undefined ? (
           <Skeleton rows={3} />
         ) : tab === "inbox" ? (
@@ -119,11 +118,11 @@ function DemoControls() {
   return (
     <section
       aria-labelledby="coord-demo-title"
-      className="mt-16 rounded-lg border border-dashed border-amber/60 bg-amber-soft/40 px-4 py-4 sm:px-5"
+      className="mt-16 border-t border-border pt-5"
     >
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
         <div className="min-w-0 flex-1">
-          <h2 id="coord-demo-title" className="text-sm font-semibold uppercase tracking-wide text-amber">
+          <h2 id="coord-demo-title" className="font-display text-lg font-normal italic text-muted">
             {t("coord.demo.title")}
           </h2>
           <p className="mt-1 max-w-2xl text-sm text-muted">
@@ -163,30 +162,36 @@ function ProjectList({ items, empty, mode }: { items: InboxItem[]; empty: string
   const { t, tn, pick, locale } = useI18n();
   if (items.length === 0) return <Empty text={empty} />;
   return (
-    <ul className="divide-y divide-border overflow-hidden rounded-lg border border-border bg-surface">
-      {items.map((p) => (
-        <li key={p.projectId}>
+    <ol className="border-y border-rule">
+      {items.map((p, i) => (
+        <li key={p.projectId} className="border-b border-border last:border-b-0">
           <Link
             href={`/coordinator/${p.projectId}`}
-            className="group flex flex-col gap-2 px-4 py-4 transition hover:bg-background sm:flex-row sm:items-center sm:gap-4"
+            className="group grid grid-cols-[2rem_minmax(0,1fr)] gap-x-3 gap-y-3 px-1 py-4 transition-colors hover:bg-paper sm:grid-cols-[2.5rem_minmax(0,1fr)_auto] sm:items-center sm:px-2"
           >
-            <div className="min-w-0 flex-1">
-              <div className="flex flex-wrap items-center gap-2">
-                <Chip tone={categoryTone(p.category)}>{t(`category.${p.category}` as DictKey)}</Chip>
+            <span aria-hidden className="self-start pt-0.5 font-display text-lg tabular-nums text-muted">
+              {String(i + 1).padStart(2, "0")}
+            </span>
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
+                <CategoryTag category={p.category} />
                 {p.status !== "in_review" && (
                   <Chip tone={statusTone(p.status)}>{t(`coord.status.${p.status}` as DictKey)}</Chip>
                 )}
-                {p.urgency === "high" && <Chip tone="brick">{t("coord.urgency.high")}</Chip>}
+                {p.urgency === "high" && <Chip tone="navy">{t("coord.urgency.high")}</Chip>}
                 {p.needsConfirmationCount > 0 && (
-                  <Chip tone="amber">
-                    {p.needsConfirmationCount} · {t("ledger.needsConfirmation")}
+                  <Chip tone="gold">
+                    <span className="tabular-nums">{p.needsConfirmationCount}</span> · {t("ledger.needsConfirmation")}
                   </Chip>
                 )}
               </div>
-              <p className="mt-1.5 truncate font-display text-lg font-semibold">{pick(p.titleEs, p.titleEn)}</p>
-              <p className="text-sm text-muted">
+              <p className="mt-1.5 truncate font-display text-[22px] leading-snug group-hover:underline group-hover:decoration-1 group-hover:underline-offset-4">
+                {pick(p.titleEs, p.titleEn)}
+              </p>
+              <p className="mt-0.5 text-sm text-muted">
                 {p.publicAlias}
-                {p.region ? ` · ${p.region}` : ""} · {p.needsCount} {tn("coord.needsCount", p.needsCount)} ·{" "}
+                {p.region ? ` · ${p.region}` : ""} · <span className="tabular-nums">{p.needsCount}</span>{" "}
+                {tn("coord.needsCount", p.needsCount)} ·{" "}
                 {mode === "review"
                   ? `${t("coord.submittedAgo")} ${formatDate(p.createdAt, locale)}`
                   : p.publishedAt
@@ -194,24 +199,24 @@ function ProjectList({ items, empty, mode }: { items: InboxItem[]; empty: string
                     : ""}
               </p>
               {p.status === "paused" && p.safetyPauseReasonPublic && (
-                <p className="mt-1 text-sm text-sky">{p.safetyPauseReasonPublic}</p>
+                <p className="mt-1 border-l border-rule pl-2 text-sm text-foreground">{p.safetyPauseReasonPublic}</p>
               )}
             </div>
-            <div className="flex items-center gap-3">
+            <div className="col-start-2 flex items-center gap-4 sm:col-start-3 sm:justify-end">
               {mode === "manage" && p.activePledgesCount > 0 && (
-                <span className="text-sm text-muted">
-                  <strong className="tabular-nums text-foreground">{p.activePledgesCount}</strong>{" "}
+                <span className="text-sm text-gold-ink">
+                  <span className="font-display text-lg tabular-nums">{p.activePledgesCount}</span>{" "}
                   {tn("coord.pledgesCount", p.activePledgesCount)}
                 </span>
               )}
-              <span className="rounded-md bg-clay px-3 py-1.5 text-sm font-medium text-white group-hover:brightness-110">
+              <span className={deskBtn(mode === "review" ? "primary" : "secondary", "sm")}>
                 {mode === "review" ? t("coord.review") : t("coord.manage")}
               </span>
             </div>
           </Link>
         </li>
       ))}
-    </ul>
+    </ol>
   );
 }
 
@@ -223,23 +228,26 @@ function PledgeList() {
   if (pledges.length === 0) return <Empty text={t("coord.pledges.empty")} />;
   return (
     <>
-      <p className="mb-3 text-sm text-muted">
-        {t("coord.contact")}: {t("coord.contactPrivate")}
+      <p className="mb-3 flex items-center gap-2 text-sm text-muted">
+        <LockGlyph className="size-4" />
+        <span>
+          {t("coord.contact")}: {t("coord.contactPrivate")}
+        </span>
       </p>
-      <ul className="divide-y divide-border overflow-hidden rounded-lg border border-border bg-surface">
+      <ul className="border-y border-rule">
         {pledges.map((pl) => {
           const name = pick(pl.needNameEs, pl.needNameEn);
           return (
-            <li key={pl.pledgeId}>
+            <li key={pl.pledgeId} className="border-b border-border last:border-b-0">
               <Link
                 href={`/coordinator/${pl.projectId}#need-${pl.needId}`}
-                className="flex flex-col gap-3 px-4 py-3 transition hover:bg-background sm:flex-row sm:items-center"
+                className="flex flex-col gap-3 px-1 py-3.5 transition-colors hover:bg-paper sm:flex-row sm:items-center sm:px-2"
               >
                 <div className="flex min-w-0 flex-1 items-center gap-3">
-                  <MaterialIcon itemKey={pl.itemKey} label={name} size={36} />
+                  <MaterialIcon itemKey={pl.itemKey} label={name} size={40} />
                   <div className="min-w-0">
-                    <p className="font-medium">
-                      <span className="tabular-nums">{pl.qty}</span> {name}
+                    <p className="text-[15px]">
+                      <span className="font-display text-xl tabular-nums">{pl.qty}</span> <span className="font-semibold">{name}</span>
                       <span className="text-muted"> · {pl.publicAlias}</span>
                     </p>
                     <p className="truncate text-sm text-muted">
@@ -247,12 +255,12 @@ function PledgeList() {
                     </p>
                   </div>
                 </div>
-                <div className="flex flex-wrap items-center gap-2 text-xs">
-                  <Chip tone="sky">{t(`coord.mode.${pl.mode}` as DictKey)}</Chip>
-                  <Chip tone="amber">
-                    {t("ledger.received")} {pl.receivedQty}/{pl.qty}
+                <div className="flex flex-wrap items-center gap-2 pl-[52px] text-xs sm:pl-0">
+                  <Chip tone="navy">{t(`coord.mode.${pl.mode}` as DictKey)}</Chip>
+                  <Chip tone="gold">
+                    {t("ledger.received")} <span className="tabular-nums">{pl.receivedQty}/{pl.qty}</span>
                   </Chip>
-                  <span className="text-muted">
+                  <span className="text-[13px] text-muted">
                     {t("coord.expires")} {formatDate(pl.expiresAt, locale)}
                   </span>
                 </div>
@@ -266,5 +274,7 @@ function PledgeList() {
 }
 
 function Empty({ text }: { text: string }) {
-  return <p className="rounded-lg border border-dashed border-border px-4 py-10 text-center text-sm text-muted">{text}</p>;
+  return (
+    <p className="border-y border-border px-4 py-12 text-center font-display text-lg italic text-muted">{text}</p>
+  );
 }

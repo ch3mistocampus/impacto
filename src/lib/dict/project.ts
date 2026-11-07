@@ -183,4 +183,18 @@ export const project = {
   "project.follow.expires": { es: "Vence", en: "Expires" },
   "project.follow.qtyOf": { es: "de", en: "of" },
   "project.follow.mode": { es: "Modo", en: "Mode" },
+  // --- Tricolor public report (lane 2) ---
+  "report.kicker": { es: "Informe público de recuperación", en: "Public recovery report" },
+  "report.issuedBy": {
+    es: "Publicado por Espejo de Agua · Pijao, Quindío, Colombia",
+    en: "Published by Espejo de Agua · Pijao, Quindío, Colombia",
+  },
+  "report.programs": { es: "Programas", en: "Programs" },
+  "report.weekly": { es: "Informe semanal", en: "Weekly report" },
+  "report.sealVerified": { es: "Verificado por Espejo de Agua", en: "Verified by Espejo de Agua" },
+  "report.projectKicker": { es: "Ficha pública del proyecto", en: "Public project record" },
+  "report.status": { es: "Estado", en: "Status" },
+  "report.program": { es: "Programa", en: "Program" },
+  "report.approved": { es: "Aprobado por la organización", en: "Approved by the nonprofit" },
+  "report.unit": { es: "Unidad", en: "Unit" },
 } satisfies Record<string, { es: string; en: string }>;

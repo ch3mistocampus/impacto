@@ -2,6 +2,7 @@
 
 import { useI18n } from "@/lib/i18n";
 import type { DictKey } from "@/lib/dict";
+import { PLEDGED_HATCH, intlLocale } from "@/components/ui/tricolor";
 import { CheckIcon, PendingBadge, VerifiedBadge } from "./VerifiedBadge";
 
 export type MilestoneType =
@@ -42,19 +43,37 @@ const KNOWN = new Set<string>([
   "paused",
 ]);
 
-/** Node colour per step: amber for promises, sky for custody, leaf for verified impact. Paused is calm sky. */
-function nodeClass(type: string, verified: boolean) {
-  if (type === "paused") return "bg-sky-soft text-sky border-2 border-sky";
-  if (type === "pledge") return "bg-amber-soft text-amber border-2 border-amber";
-  if ((type === "outcome" || type === "verified") && verified) return "bg-leaf text-white";
-  if (verified) return "bg-sky text-white";
-  return "bg-surface text-muted border-2 border-border";
+/**
+ * Node per step: hatched gold outline for promises, navy for custody, esmeralda for verified
+ * impact. Paused is a calm navy outline (never red). Unverified = hollow hairline.
+ */
+function Node({ type, verified }: { type: string; verified: boolean }) {
+  const base = "relative z-10 mt-1 grid place-items-center";
+  if (type === "paused")
+    return (
+      <span className={`${base} size-4 bg-surface text-foreground shadow-[inset_0_0_0_1px_var(--rule)]`} aria-hidden>
+        <svg viewBox="0 0 12 12" className="size-2.5">
+          <rect x="3" y="2.5" width="2" height="7" fill="currentColor" />
+          <rect x="7" y="2.5" width="2" height="7" fill="currentColor" />
+        </svg>
+      </span>
+    );
+  if (type === "pledge")
+    return <span className={`${base} size-4`} style={{ background: PLEDGED_HATCH, boxShadow: "inset 0 0 0 1px var(--gold)" }} aria-hidden />;
+  if ((type === "outcome" || type === "verified") && verified)
+    return (
+      <span className={`${base} size-4 rounded-full bg-emerald text-on-navy`} aria-hidden>
+        <CheckIcon className="size-3" />
+      </span>
+    );
+  if (!verified) return <span className={`${base} size-4 bg-surface shadow-[inset_0_0_0_1px_var(--muted)]`} aria-hidden />;
+  return <span className={`${base} size-4 bg-stage-used`} aria-hidden />;
 }
 
-/** Vertical need → impact timeline. Oldest first, so it reads as a story. */
+/** Vertical need → impact timeline on a hairline. Oldest first, so it reads as a story. */
 export function Timeline({ items, emptyLabel }: { items: TimelineItem[]; emptyLabel?: string }) {
   const { t, pick, locale } = useI18n();
-  const fmt = new Intl.DateTimeFormat(locale === "es" ? "es-PR" : "en-US", {
+  const fmt = new Intl.DateTimeFormat(intlLocale(locale), {
     day: "numeric",
     month: "short",
     year: "numeric",
@@ -62,7 +81,7 @@ export function Timeline({ items, emptyLabel }: { items: TimelineItem[]; emptyLa
   const sorted = [...items].sort((a, b) => a.occurredAt - b.occurredAt);
 
   if (sorted.length === 0) {
-    return <p className="text-sm text-muted">{emptyLabel ?? t("project.timelineEmpty")}</p>;
+    return <p className="text-[15px] text-muted">{emptyLabel ?? t("project.timelineEmpty")}</p>;
   }
 
   return (
@@ -74,37 +93,37 @@ export function Timeline({ items, emptyLabel }: { items: TimelineItem[]; emptyLa
         const title = KNOWN.has(m.type) ? t(`project.milestone.${m.type}` as DictKey) : m.type;
         const desc = pick(m.descriptionEs, m.descriptionEn);
         return (
-          <li key={m.id} className="relative grid grid-cols-[2rem_1fr] gap-x-3 pb-6 last:pb-0">
-            {!last && <span className="absolute left-[15px] top-8 bottom-0 w-0.5 bg-border" aria-hidden />}
-            <span
-              className={`relative z-10 grid place-items-center size-8 rounded-full ${nodeClass(m.type, verified)}`}
-              aria-hidden
-            >
-              {verified && !isPledge && m.type !== "paused" ? <CheckIcon className="size-4" /> : <span className="size-2 rounded-full bg-current" />}
-            </span>
-            <div className="pt-0.5 min-w-0">
-              <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                <h3 className="font-semibold">{title}</h3>
+          <li key={m.id} className="relative grid grid-cols-[1rem_1fr] gap-x-4 pb-7 last:pb-0">
+            {!last && <span className="absolute left-[7.5px] top-2 bottom-0 w-px bg-rule/30" aria-hidden />}
+            <Node type={m.type} verified={verified} />
+            <div className="min-w-0">
+              <time
+                className="block text-[13px] text-muted tabular-nums"
+                dateTime={new Date(m.occurredAt).toISOString()}
+              >
+                {fmt.format(m.occurredAt)}
+              </time>
+              <div className="mt-0.5 flex flex-wrap items-center gap-x-2.5 gap-y-1">
+                <h3 className={`font-display text-lg font-normal leading-snug ${isPledge ? "text-gold-ink" : ""}`}>
+                  {title}
+                </h3>
                 {/* Pledge milestones (incl. canceled/expired) are promises: no verified badge; the text says which. */}
                 {isPledge || m.type === "paused" ? null : m.type === "used" ? (
                   // Use is recorded by staff but is not impact until a separate "verified" event.
-                  <PendingBadge label={t("project.usedAwaiting")} className="!py-0.5 !text-[11px]" />
+                  <PendingBadge label={t("project.usedAwaiting")} />
                 ) : verified ? (
                   <VerifiedBadge
                     compact={!["delivered", "verified", "outcome", "received"].includes(m.type)}
                     label={t("project.verifiedByOrg")}
                   />
                 ) : (
-                  <PendingBadge label={t("project.pending")} className="!py-0.5 !text-[11px]" />
+                  <PendingBadge label={t("project.pending")} />
                 )}
               </div>
-              <time className="block text-xs text-muted mt-0.5" dateTime={new Date(m.occurredAt).toISOString()}>
-                {fmt.format(m.occurredAt)}
-              </time>
-              {desc && <p className="mt-1.5 text-sm leading-relaxed max-w-prose">{desc}</p>}
+              {desc && <p className="mt-1.5 text-[15px] leading-relaxed max-w-prose">{desc}</p>}
               {m.photoUrl && (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={m.photoUrl} alt={desc || title} className="mt-2 w-full max-w-sm rounded-lg border border-border" />
+                <img src={m.photoUrl} alt={desc || title} className="mt-3 w-full max-w-sm border border-border" />
               )}
             </div>
           </li>

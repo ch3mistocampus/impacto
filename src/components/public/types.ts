@@ -20,35 +20,28 @@ export type StageTotals = Record<Stage, number>;
 /** Public project statuses (DB values) — labels are mapped in the UI only. */
 export type PublicStatus = "published" | "paused" | "completed";
 
-/** Category → token classes. Kept as literal strings so Tailwind picks them up. */
+/**
+ * Category → token classes. Tricolor: programs are told apart by SHAPE, never colour, so every
+ * category maps to the same neutral ink/paper classes. Render `<CategoryMark category=… />`
+ * (src/components/ui/tricolor.tsx) next to the label to distinguish programs. `emoji` is kept
+ * for API compatibility and is always empty (never render emoji). `image` paths have no assets;
+ * `MaterialImage` draws an emblem for them instead.
+ */
+const NEUTRAL = {
+  text: "text-foreground",
+  bg: "bg-foreground",
+  soft: "bg-paper",
+  border: "border-rule",
+  emoji: "",
+} as const;
+
 export const CATEGORY_STYLE: Record<
   Category,
   { text: string; bg: string; soft: string; border: string; image: string; emoji: string }
 > = {
-  roof_shelter: {
-    text: "text-clay",
-    bg: "bg-clay",
-    soft: "bg-clay-soft",
-    border: "border-clay",
-    image: "/brand/roof_shelter.png",
-    emoji: "🏠",
-  },
-  reconstruction: {
-    text: "text-brick",
-    bg: "bg-brick",
-    soft: "bg-brick-soft",
-    border: "border-brick",
-    image: "/brand/reconstruction.png",
-    emoji: "🧱",
-  },
-  heal_sow: {
-    text: "text-leaf",
-    bg: "bg-leaf",
-    soft: "bg-leaf-soft",
-    border: "border-leaf",
-    image: "/brand/heal_sow.png",
-    emoji: "🌱",
-  },
+  roof_shelter: { ...NEUTRAL, image: "/brand/roof_shelter.png" },
+  reconstruction: { ...NEUTRAL, image: "/brand/reconstruction.png" },
+  heal_sow: { ...NEUTRAL, image: "/brand/heal_sow.png" },
 };
 
 export function isCategory(x: unknown): x is Category {

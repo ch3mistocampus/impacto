@@ -1,16 +1,17 @@
 "use client";
 
 import { useI18n } from "@/lib/i18n";
-import { CATEGORY_STYLE, type Category } from "./types";
+import { CategoryMark } from "@/components/ui/tricolor";
+import type { Category } from "./types";
 
+/** Program label: shape mark + name in ink, square hairline chip. Programs never carry colour. */
 export function CategoryBadge({ category, className = "" }: { category: Category; className?: string }) {
   const { t } = useI18n();
-  const s = CATEGORY_STYLE[category];
   return (
     <span
-      className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ${s.soft} ${s.text} ${className}`}
+      className={`inline-flex items-center gap-1.5 rounded-[2px] px-2 py-0.5 text-xs font-semibold text-foreground shadow-[inset_0_0_0_1px_var(--rule)] ${className}`}
     >
-      <span className={`size-2 rounded-[2px] ${s.bg}`} aria-hidden />
+      <CategoryMark category={category} size={9} />
       {t(`category.${category}`)}
     </span>
   );

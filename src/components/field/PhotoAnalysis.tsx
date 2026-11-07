@@ -8,7 +8,8 @@ import type { PhotoSuggestion } from "../../../convex/field";
 import { useI18n } from "@/lib/i18n";
 import type { DictKey } from "@/lib/dict";
 import { useSession } from "@/lib/session";
-import { AiBadge, Spinner, btnSecondary } from "./ui";
+import { Chip, btn } from "@/components/ui/tricolor";
+import { AiBadge, Spinner, btnSecondary, noticeCls } from "./ui";
 
 type Photo = { _id: Id<"photos">; url: string | null };
 export type SuggestedMaterial = PhotoSuggestion["materials"][number];
@@ -35,9 +36,9 @@ export function PhotoAnalysis({
   if (photos.length === 0) return null;
   return (
     <div className="mt-5 border-t border-border pt-4">
-      <h3 className="font-display text-base font-semibold">{t("field.photoAi.title")}</h3>
-      <p role="note" className="mt-1 rounded-xl bg-amber-soft px-3 py-2 text-sm font-medium text-amber">
-        ⚠ {t("field.photoAi.warning")}
+      <h3 className="font-display text-lg font-normal">{t("field.photoAi.title")}</h3>
+      <p role="note" className={`mt-2 ${noticeCls}`}>
+        {t("field.photoAi.warning")}
       </p>
       <ul className="mt-3 space-y-3">
         {photos.map((p) => (
@@ -120,22 +121,22 @@ function PhotoRow({
     : null;
 
   return (
-    <li className="rounded-2xl border border-border bg-background p-3">
+    <li className="border border-border bg-surface p-3">
       <div className="flex items-start gap-3">
         {photo.url ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={photo.url} alt="" className="h-20 w-20 shrink-0 rounded-xl object-cover" />
+          <img src={photo.url} alt="" className="h-20 w-20 shrink-0 object-cover" />
         ) : (
-          <div className="h-20 w-20 shrink-0 rounded-xl bg-surface" aria-hidden />
+          <div className="h-20 w-20 shrink-0 bg-paper" aria-hidden />
         )}
         <div className="min-w-0 flex-1 space-y-2">
-          <label className="flex cursor-pointer items-start gap-2 text-sm">
+          <label className="flex min-h-11 cursor-pointer items-start gap-2 text-[15px]">
             <input
               type="checkbox"
               checked={confirmed}
               disabled={busy || disabled}
               onChange={(e) => setConfirmed(e.target.checked)}
-              className="mt-0.5 h-5 w-5 shrink-0 accent-clay"
+              className="mt-0.5 h-5 w-5 shrink-0 accent-navy"
             />
             <span>{t("field.photoAi.confirm")}</span>
           </label>
@@ -143,13 +144,13 @@ function PhotoRow({
             type="button"
             disabled={!confirmed || busy || disabled || !sessionToken}
             onClick={() => void run()}
-            className={`${btnSecondary} w-full text-sm sm:w-auto`}
+            className={`${btnSecondary} w-full sm:w-auto`}
           >
             {busy ? <Spinner className="h-4 w-4" /> : null}
             {t(busy ? "field.photoAi.analyzing" : suggestion ? "field.photoAi.again" : "field.photoAi.button")}
           </button>
           {errKey && (
-            <p role="alert" className="rounded-xl bg-brick-soft px-3 py-2 text-xs font-medium text-brick">
+            <p role="alert" className="border-l-2 border-red bg-red-soft px-3 py-2 text-sm font-medium text-red">
               {t(errKey)}
             </p>
           )}
@@ -158,19 +159,19 @@ function PhotoRow({
 
       {suggestion && (
         <div className="mt-3 space-y-2" aria-live="polite">
-          <p className="flex flex-wrap items-center gap-1.5 text-xs font-semibold text-sky">
+          <p className="flex flex-wrap items-center gap-1.5 text-sm font-semibold text-foreground">
             <AiBadge /> {t("field.photoAi.suggested")} <span className="font-normal text-muted">· {suggestion.model}</span>
           </p>
           {suggestion.privacyConcern && (
-            <p role="alert" className="rounded-xl bg-brick-soft px-3 py-2 text-xs font-medium text-brick">
+            <p role="alert" className="border-l-2 border-red bg-red-soft px-3 py-2 text-sm font-medium text-red">
               {t("field.photoAi.privacyConcern")}
             </p>
           )}
 
           {suggestion.observationsEs.length + suggestion.observationsEn.length > 0 && (
-            <div className="rounded-xl border border-dashed border-sky/60 p-2">
-              <p className="text-xs font-semibold text-muted">{t("field.photoAi.observations")}</p>
-              <ul className="mt-1 list-disc pl-5 text-sm">
+            <div className="border-l-2 border-rule bg-paper px-3 py-2">
+              <p className="text-sm font-semibold text-muted">{t("field.photoAi.observations")}</p>
+              <ul className="mt-1 list-disc pl-5 text-[15px]">
                 {(pick(suggestion.observationsEs.join("\n"), suggestion.observationsEn.join("\n")) || "")
                   .split("\n")
                   .filter(Boolean)
@@ -188,20 +189,18 @@ function PhotoRow({
           )}
 
           {suggestion.materials.length === 0 ? (
-            <p className="text-xs text-muted">{t("field.photoAi.none")}</p>
+            <p className="text-sm text-muted">{t("field.photoAi.none")}</p>
           ) : (
             suggestion.materials.map((m, i) => (
-              <div key={i} className="rounded-xl border border-dashed border-sky/60 p-2">
+              <div key={i} className="border-l-2 border-rule bg-paper px-3 py-2">
                 <div className="flex flex-wrap items-center gap-1.5">
                   <span className="font-semibold">{pick(m.nameEs, m.nameEn)}</span>
                   <span className="text-sm text-muted">
                     · {m.quantity !== null ? `${m.quantity} ${m.unit}` : t("ledger.needsConfirmation")}
                   </span>
-                  <span className="rounded-full bg-sky-soft px-2 py-0.5 text-[11px] font-semibold text-sky">
-                    {t(`field.photoAi.confidence.${m.confidence}` as DictKey)}
-                  </span>
+                  <Chip tone="neutral">{t(`field.photoAi.confidence.${m.confidence}` as DictKey)}</Chip>
                 </div>
-                {pick(m.reasonEs, m.reasonEn) && <p className="mt-0.5 text-xs italic text-muted">{pick(m.reasonEs, m.reasonEn)}</p>}
+                {pick(m.reasonEs, m.reasonEn) && <p className="mt-0.5 text-sm italic text-muted">{pick(m.reasonEs, m.reasonEn)}</p>}
                 <Decision
                   status={m.status}
                   busy={rowBusy === i}
@@ -231,7 +230,7 @@ function Decision({
   const { t } = useI18n();
   if (status !== "pending")
     return (
-      <p className={`mt-1 text-xs font-semibold ${status === "accepted" ? "text-leaf" : "text-muted line-through"}`}>
+      <p className={`mt-1 text-sm font-semibold ${status === "accepted" ? "text-foreground" : "text-muted line-through"}`}>
         {t(status === "accepted" ? "field.photoAi.accepted" : "field.photoAi.discarded")}
       </p>
     );
@@ -241,7 +240,7 @@ function Decision({
         type="button"
         disabled={busy}
         onClick={() => onDecide("accepted")}
-        className="min-h-11 flex-1 rounded-lg bg-leaf-soft px-3 text-sm font-semibold text-leaf disabled:opacity-50"
+        className={btn("primary", "md", "min-h-12 flex-1")}
       >
         {busy ? <Spinner className="mx-auto h-4 w-4" /> : `✓ ${acceptLabel}`}
       </button>
@@ -249,7 +248,7 @@ function Decision({
         type="button"
         disabled={busy}
         onClick={() => onDecide("discarded")}
-        className="min-h-11 flex-1 rounded-lg border border-border px-3 text-sm font-medium text-muted disabled:opacity-50"
+        className={btn("secondary", "md", "min-h-12 flex-1")}
       >
         ✕ {t("field.photoAi.discard")}
       </button>

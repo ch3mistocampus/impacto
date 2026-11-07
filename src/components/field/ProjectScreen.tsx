@@ -15,17 +15,23 @@ import { MaterialsEditor, type NeedRow } from "./MaterialsEditor";
 import { PhotoPicker } from "./PhotoPicker";
 import { PhotoAnalysis, type SuggestedMaterial } from "./PhotoAnalysis";
 import { PrivateDetails, type PrivateState } from "./PrivateDetails";
+import { CategoryMark, Chip, DoubleRule, FlagBand, btn } from "@/components/ui/tricolor";
 import {
   AiBadge,
-  CATEGORY_STYLE,
   Card,
+  CategoryLabel,
   DEMO_TRANSCRIPT,
   LockIcon,
+  Sparkle,
   Spinner,
   StatusChip,
   btnPrimary,
   btnSecondary,
+  fieldLabel,
   inputCls,
+  noticeCls,
+  sectionTitle,
+  segCls,
   uploadFile,
   type Category,
 } from "./ui";
@@ -72,7 +78,7 @@ export function ProjectScreen({ projectId }: { projectId: string }) {
   if (data === null || !data.report)
     return (
       <Card className="mx-auto mt-10 max-w-md text-center">
-        <p>{t("field.notFound")}</p>
+        <p className="font-display text-xl">{t("field.notFound")}</p>
         <Link href="/field" className={`${btnSecondary} mt-4`}>
           {t("field.success.back")}
         </Link>
@@ -98,21 +104,19 @@ function TextFallback({ data, onAnalyze }: { data: Draft; onAnalyze: (text: stri
     : null;
   return (
     <div className="mx-auto max-w-xl space-y-4 pt-6">
-      <Link href="/field" className="text-sm text-muted">
-        ← {t("common.back")}
-      </Link>
+      <BackLink />
       <Card>
-        <h1 className="font-display text-2xl font-semibold">{t("field.needsText.title")}</h1>
-        {reason && <p className="mt-2 rounded-xl bg-amber-soft px-3 py-2 text-sm text-amber">{t(reason)}</p>}
-        {report.hasAudio && <p className="mt-2 text-xs text-muted">{t("field.hasAudio")}</p>}
-        <div className="mt-4 grid grid-cols-2 gap-2">
+        <h1 className="font-display text-[28px] font-normal leading-tight">{t("field.needsText.title")}</h1>
+        {reason && <p className={`mt-3 ${noticeCls}`}>{t(reason)}</p>}
+        {report.hasAudio && <p className="mt-2 text-sm text-muted">{t("field.hasAudio")}</p>}
+        <div className="mt-5 grid grid-cols-2 border border-rule [&>*+*]:border-l [&>*+*]:border-rule">
           {(["es", "en"] as const).map((l) => (
             <button
               key={l}
               type="button"
               aria-pressed={lang === l}
               onClick={() => setLang(l)}
-              className={`min-h-11 rounded-xl border font-semibold ${lang === l ? "border-clay bg-clay-soft text-clay" : "border-border"}`}
+              className={segCls(lang === l)}
             >
               {l === "es" ? "Español" : "English"}
             </button>
@@ -126,16 +130,18 @@ function TextFallback({ data, onAnalyze }: { data: Draft; onAnalyze: (text: stri
           placeholder={t("field.text.placeholder")}
           className={`${inputCls} mt-3`}
         />
-        <button
-          type="button"
-          className={`${btnSecondary} mt-3 w-full border-dashed text-sm`}
-          onClick={() => {
-            setLang("es");
-            setText(DEMO_TRANSCRIPT.es);
-          }}
-        >
-          {t("field.demoTranscript")}
-        </button>
+        <div className="mt-2 text-center">
+          <button
+            type="button"
+            className={btn("quiet", "md", "min-h-11 text-[15px] text-muted")}
+            onClick={() => {
+              setLang("es");
+              setText(DEMO_TRANSCRIPT.es);
+            }}
+          >
+            {t("field.demoTranscript")}
+          </button>
+        </div>
         <button
           type="button"
           disabled={!text.trim()}
@@ -155,37 +161,54 @@ function SubmittedView({ data }: { data: Draft }) {
   const { t, pick } = useI18n();
   const submitted = data.project.status === "in_review";
   return (
-    <Card className="mx-auto mt-10 max-w-md text-center">
-      {submitted ? (
-        <>
-          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-leaf-soft text-leaf">
-            <svg aria-hidden viewBox="0 0 24 24" className="h-9 w-9" fill="none" stroke="currentColor" strokeWidth={3}>
-              <path d="M5 12l5 5L19 7" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
+    <section className="mx-auto mt-10 max-w-md border border-border bg-surface text-center">
+      <FlagBand />
+      <div className="px-6 pb-8 pt-8">
+        {submitted ? (
+          <>
+            <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full border border-emerald text-emerald">
+              <svg aria-hidden viewBox="0 0 24 24" className="h-7 w-7" fill="none" stroke="currentColor" strokeWidth={1.75}>
+                <path d="M5 12.5l4.5 4.5L19 7.5" strokeLinecap="square" />
+              </svg>
+            </span>
+            <h1 className="mt-5 font-display text-[30px] font-normal leading-tight">{t("field.success.title")}</h1>
+            <p className="mt-3 text-[15px] leading-relaxed text-muted">{t("field.success.body")}</p>
+          </>
+        ) : (
+          <p className="font-display text-xl italic text-muted">{t("field.readonly")}</p>
+        )}
+        <DoubleRule className="mt-6" />
+        <div className="flex flex-col items-center gap-2 py-5">
+          <p className="font-display text-xl leading-snug">{pick(data.project.titleEs, data.project.titleEn) || t("field.untitled")}</p>
+          <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-sm text-muted">
+            <CategoryLabel category={data.project.category} />
+            <span className="tabular-nums">
+              {data.needs.length} {t("field.needsCount")}
+            </span>
+            <StatusChip status={data.project.status} />
           </div>
-          <h1 className="mt-4 font-display text-2xl font-semibold">{t("field.success.title")}</h1>
-          <p className="mt-2 text-muted">{t("field.success.body")}</p>
-        </>
-      ) : (
-        <p className="text-muted">{t("field.readonly")}</p>
-      )}
-      <div className="mt-4 flex flex-col items-center gap-2 rounded-xl bg-background p-3">
-        <StatusChip status={data.project.status} />
-        <p className="font-semibold">{pick(data.project.titleEs, data.project.titleEn) || t("field.untitled")}</p>
-        <p className="text-sm text-muted">
-          {data.needs.length} {t("field.needsCount")}
-        </p>
+        </div>
+        <DoubleRule />
+        <Link href="/field" className={`${btnPrimary} mt-6 w-full`}>
+          {t("field.success.back")}
+        </Link>
       </div>
-      <Link href="/field" className={`${btnPrimary} mt-5 w-full`}>
-        {t("field.success.back")}
-      </Link>
-    </Card>
+    </section>
+  );
+}
+
+function BackLink() {
+  const { t } = useI18n();
+  return (
+    <Link href="/field" className="inline-flex min-h-11 items-center gap-1.5 text-[15px] text-muted underline-offset-4 hover:text-foreground hover:underline">
+      <span aria-hidden>‹</span> {t("common.back")}
+    </Link>
   );
 }
 
 // ---------------------------------------------------------------------------
 
-function Editor({ data, onReanalyze }: { data: Draft; onReanalyze: (transcript?: string) => void }) {
+export function Editor({ data, onReanalyze }: { data: Draft; onReanalyze: (transcript?: string) => void }) {
   const { t, pick } = useI18n();
   const { sessionToken } = useSession();
   const report = data.report!;
@@ -347,35 +370,33 @@ function Editor({ data, onReanalyze }: { data: Draft; onReanalyze: (transcript?:
   return (
     <div className="mx-auto max-w-2xl space-y-4 pt-6 lg:max-w-6xl" onChangeCapture={markDirty}>
       <div className="flex items-center justify-between gap-3">
-        <Link href="/field" className="text-sm text-muted">
-          ← {t("common.back")}
-        </Link>
+        <BackLink />
         <StatusChip status={data.project.status} />
       </div>
       <div>
-        <h1 className="font-display text-3xl font-semibold">{t("field.step3")}</h1>
-        <p className="mt-1 text-muted">{t("field.review.intro")}</p>
+        <h1 className="font-display text-[34px] font-normal leading-tight">{t("field.step3")}</h1>
+        <p className="mt-2 max-w-prose text-base leading-relaxed text-muted">{t("field.review.intro")}</p>
       </div>
 
       {/* Source / provenance */}
       {ex && (
         <div
-          className={`flex flex-wrap items-center gap-2 rounded-xl px-3 py-2 text-sm ${
-            ex.source === "fallback" ? "bg-amber-soft text-amber" : "bg-sky-soft text-sky"
+          className={`flex flex-wrap items-center gap-x-3 gap-y-1.5 border-l-2 px-4 py-3 text-sm ${
+            ex.source === "fallback" ? "border-gold bg-gold-soft text-gold-ink" : "border-rule bg-paper text-foreground"
           }`}
         >
           {ex.source === "fallback" ? (
-            <span className="inline-flex items-center rounded-full border border-current px-2.5 py-0.5 text-xs font-bold">
-              {t("field.source.fallback")}
-            </span>
+            <Chip tone="gold">{t("field.source.fallback")}</Chip>
           ) : (
-            <span className="font-semibold">{t("field.source.ai")}</span>
+            <span className="inline-flex items-center gap-1.5 font-semibold">
+              <Sparkle /> {t("field.source.ai")}
+            </span>
           )}
           {ex.source === "fallback" &&
             ["ai_error", "ai_timeout", "openai_error", "no_api_key"].includes(ex.notice ?? "") && (
             <span>{t(`field.source.fallback.${ex.notice}` as DictKey)}</span>
           )}
-          {ex.model && <span className="opacity-75">· {ex.model}</span>}
+          {ex.model && <span className="text-muted">· {ex.model}</span>}
           {ex.redactions > 0 && (
             <span className="flex items-center gap-1">
               <LockIcon className="h-3.5 w-3.5" /> {ex.redactions} {t("field.redacted")}
@@ -387,12 +408,12 @@ function Editor({ data, onReanalyze }: { data: Draft; onReanalyze: (transcript?:
       {/* Transcript (left, sticky on wide screens) | extracted fields (right). Stacked on mobile. */}
       <div className="space-y-4 lg:grid lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:items-start lg:gap-6 lg:space-y-0">
       <div className="lg:sticky lg:top-20 lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto">
-      <Card>
+      <section className="rounded-[2px] border border-border bg-paper p-4 sm:p-6">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <h2 className="font-display text-lg font-semibold">
-            {t("field.transcript")} <span className="text-sm font-normal uppercase text-muted">({report.language})</span>
+          <h2 className={sectionTitle}>
+            {t("field.transcript")} <span className="font-sans text-sm text-muted">({report.language === "es" ? "Español" : "English"})</span>
           </h2>
-          <button type="button" className="min-h-11 text-sm text-sky underline-offset-4 hover:underline" onClick={() => setEditTranscript((v) => !v)}>
+          <button type="button" aria-pressed={editTranscript} className={btn("quiet", "md", "min-h-11 text-[15px]")} onClick={() => setEditTranscript((v) => !v)}>
             {t("field.editTranscript")}
           </button>
         </div>
@@ -402,39 +423,39 @@ function Editor({ data, onReanalyze }: { data: Draft; onReanalyze: (transcript?:
             value={transcript}
             lang={report.language}
             onChange={(e) => setTranscript(e.target.value)}
-            className={`${inputCls} mt-2`}
+            className={`${inputCls} mt-3 leading-relaxed`}
           />
         ) : (
-          <blockquote lang={report.language} className="mt-2 whitespace-pre-wrap border-l-4 border-clay pl-3 text-lg leading-relaxed">
+          <blockquote lang={report.language} className="mt-4 whitespace-pre-wrap border-l-2 border-rule pl-4 font-display text-[19px] italic leading-relaxed text-foreground">
             <HighlightedText text={report.transcriptOriginal} quotes={quotes} />
           </blockquote>
         )}
         <button
           type="button"
           aria-expanded={showTranslation}
-          className="mt-3 min-h-11 text-sm font-medium text-sky"
+          className={btn("quiet", "md", "mt-3 min-h-11 text-[15px]")}
           onClick={() => setShowTranslation((v) => !v)}
         >
           {t(showTranslation ? "field.hideTranslation" : "field.showTranslation")} ({otherLang})
         </button>
         {showTranslation && (
-          <p lang={otherLang} className="mt-1 rounded-xl bg-background px-3 py-2 text-muted">
+          <p lang={otherLang} className="mt-2 border-l border-border pl-4 text-[15px] leading-relaxed text-muted">
             {report.transcriptTranslated || t("field.noTranslation")}
           </p>
         )}
-        <div className="mt-3 border-t border-border pt-3">
+        <div className="mt-4 border-t border-border pt-4">
           <button
             type="button"
-            className={`${btnSecondary} text-sm`}
+            className={btn("secondary", "md", "min-h-12")}
             onClick={() => {
               if (!window.confirm(t("field.reanalyze.confirm"))) return;
               onReanalyze(transcript !== report.transcriptOriginal ? transcript : undefined);
             }}
           >
-            ↻ {t("field.reanalyze")}
+            <span aria-hidden>↻</span> {t("field.reanalyze")}
           </button>
         </div>
-      </Card>
+      </section>
       </div>
 
       <div className="space-y-4">
@@ -443,10 +464,10 @@ function Editor({ data, onReanalyze }: { data: Draft; onReanalyze: (transcript?:
       <Card className="space-y-4">
         <div>
           <div className="mb-2 flex items-center justify-between gap-2">
-            <span className="text-sm font-medium text-muted">{t("field.category")}</span>
+            <span className={fieldLabel}>{t("field.category")}</span>
             <AiBadge />
           </div>
-          <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+          <div className="grid grid-cols-1 border border-rule sm:grid-cols-3 [&>*+*]:border-t [&>*+*]:border-rule sm:[&>*+*]:border-l sm:[&>*+*]:border-t-0">
             {CATEGORIES.map((c) => (
               <button
                 key={c}
@@ -456,10 +477,9 @@ function Editor({ data, onReanalyze }: { data: Draft; onReanalyze: (transcript?:
                   setCategory(c);
                   markDirty();
                 }}
-                className={`min-h-12 rounded-xl border-2 px-3 text-left font-semibold ${
-                  category === c ? `${CATEGORY_STYLE[c].soft} ${CATEGORY_STYLE[c].text} border-current` : "border-border"
-                }`}
+                className={`flex items-center gap-2 text-left ${segCls(category === c)}`}
               >
+                <CategoryMark category={c} size={11} />
                 {t(`category.${c}` as DictKey)}
               </button>
             ))}
@@ -468,12 +488,12 @@ function Editor({ data, onReanalyze }: { data: Draft; onReanalyze: (transcript?:
 
         <div>
           <div className="mb-2 flex items-center justify-between gap-2">
-            <span className="text-sm font-medium text-muted">
-              {t("field.urgency")} · <span className="italic">{t("field.urgency.suggested")}</span>
+            <span className={fieldLabel}>
+              {t("field.urgency")} <span className="font-normal text-muted">· <span className="italic">{t("field.urgency.suggested")}</span></span>
             </span>
             <AiBadge />
           </div>
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-3 border border-rule [&>*+*]:border-l [&>*+*]:border-rule">
             {URGENCIES.map((u) => (
               <button
                 key={u}
@@ -483,15 +503,7 @@ function Editor({ data, onReanalyze }: { data: Draft; onReanalyze: (transcript?:
                   setUrgency(u);
                   markDirty();
                 }}
-                className={`min-h-12 rounded-xl border-2 font-semibold ${
-                  urgency === u
-                    ? u === "high"
-                      ? "border-brick bg-brick-soft text-brick"
-                      : u === "medium"
-                        ? "border-amber bg-amber-soft text-amber"
-                        : "border-leaf bg-leaf-soft text-leaf"
-                    : "border-border"
-                }`}
+                className={segCls(urgency === u)}
               >
                 {t(`field.urgency.${u}` as DictKey)}
               </button>
@@ -508,11 +520,11 @@ function Editor({ data, onReanalyze }: { data: Draft; onReanalyze: (transcript?:
           ] as const
         ).map(([label, value, set, lang, multi]) => (
           <label key={label} className="block">
-            <span className="mb-1 flex items-center justify-between gap-2 text-sm font-medium text-muted">
+            <span className={`mb-1.5 flex items-center justify-between gap-2 ${fieldLabel}`}>
               {t(label)} <AiBadge />
             </span>
             {multi ? (
-              <textarea rows={3} lang={lang} value={value} onChange={(e) => set(e.target.value)} className={inputCls} />
+              <textarea rows={3} lang={lang} value={value} onChange={(e) => set(e.target.value)} className={`${inputCls} leading-relaxed`} />
             ) : (
               <input lang={lang} value={value} onChange={(e) => set(e.target.value)} className={inputCls} />
             )}
@@ -523,7 +535,7 @@ function Editor({ data, onReanalyze }: { data: Draft; onReanalyze: (transcript?:
       {ex && (
         <Card className="space-y-3">
           <div className="flex items-center justify-between gap-2">
-            <h2 className="font-display text-lg font-semibold">{t("field.damage")}</h2>
+            <h2 className={sectionTitle}>{t("field.damage")}</h2>
             <AiBadge />
           </div>
           {(
@@ -533,7 +545,7 @@ function Editor({ data, onReanalyze }: { data: Draft; onReanalyze: (transcript?:
             ] as const
           ).map(([label, value, set, lang]) => (
             <label key={label} className="block">
-              <span className="mb-1 block text-sm font-medium text-muted">{t(label)}</span>
+              <span className={`mb-1.5 block ${fieldLabel}`}>{t(label)}</span>
               <textarea rows={2} lang={lang} value={value} onChange={(e) => set(e.target.value)} className={inputCls} />
             </label>
           ))}
@@ -541,7 +553,7 @@ function Editor({ data, onReanalyze }: { data: Draft; onReanalyze: (transcript?:
       )}
 
       <Card>
-        <h2 className="mb-3 font-display text-lg font-semibold">{t("field.materials")}</h2>
+        <h2 className={`mb-4 ${sectionTitle}`}>{t("field.materials")}</h2>
         <MaterialsEditor
           rows={rows}
           onChange={(r) => {
@@ -554,14 +566,14 @@ function Editor({ data, onReanalyze }: { data: Draft; onReanalyze: (transcript?:
       {ex && (
         <Card>
           <div className="flex items-center justify-between gap-2">
-            <h2 className="font-display text-lg font-semibold">{t("field.milestones")}</h2>
+            <h2 className={sectionTitle}>{t("field.milestones")}</h2>
             <AiBadge />
           </div>
-          <p className="text-sm text-muted">{t("field.milestones.hint")}</p>
-          <ol className="mt-3 space-y-2">
+          <p className="mt-1 text-[15px] text-muted">{t("field.milestones.hint")}</p>
+          <ol className="mt-4 divide-y divide-border border-y border-border">
             {milestones.map((m, i) => (
-              <li key={m.key} className="flex items-start gap-2 rounded-xl border border-border bg-background p-2">
-                <span className="mt-3 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-clay-soft text-sm font-bold text-clay">
+              <li key={m.key} className="flex items-start gap-2 py-3">
+                <span className="mt-2.5 w-7 shrink-0 text-center font-display text-2xl leading-none text-foreground tabular-nums">
                   {i + 1}
                 </span>
                 <div className="grid min-w-0 flex-1 grid-cols-1 gap-2 sm:grid-cols-2">
@@ -586,7 +598,7 @@ function Editor({ data, onReanalyze }: { data: Draft; onReanalyze: (transcript?:
                     setMilestones((ms) => ms.filter((x) => x.key !== m.key));
                     markDirty();
                   }}
-                  className="mt-1 flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-xl text-brick"
+                  className="flex h-12 w-11 shrink-0 items-center justify-center text-2xl leading-none text-muted hover:text-red"
                 >
                   ×
                 </button>
@@ -595,7 +607,7 @@ function Editor({ data, onReanalyze }: { data: Draft; onReanalyze: (transcript?:
           </ol>
           <button
             type="button"
-            className={`${btnSecondary} mt-3 w-full border-dashed`}
+            className={`${btnSecondary} mt-4 w-full`}
             onClick={() => {
               setMilestones((ms) => [...ms, { key: `new-${Date.now()}`, es: "", en: "" }]);
               markDirty();
@@ -607,10 +619,10 @@ function Editor({ data, onReanalyze }: { data: Draft; onReanalyze: (transcript?:
       )}
 
       {ex && ex.missingQuestions.length > 0 && (
-        <Card className="border-amber bg-amber-soft/40">
-          <h2 className="font-display text-lg font-semibold">{t("field.missing")}</h2>
-          <p className="text-sm text-muted">{t("field.missing.hint")}</p>
-          <ul className="mt-2 list-disc space-y-1 pl-5">
+        <Card className="border-l-2 border-l-gold">
+          <h2 className={sectionTitle}>{t("field.missing")}</h2>
+          <p className="mt-1 text-[15px] text-muted">{t("field.missing.hint")}</p>
+          <ul className="mt-3 list-disc space-y-1.5 pl-5 text-[15px] marker:text-gold-ink">
             {ex.missingQuestions.map((q, i) => (
               <li key={i}>{pick(q.es, q.en)}</li>
             ))}
@@ -619,7 +631,7 @@ function Editor({ data, onReanalyze }: { data: Draft; onReanalyze: (transcript?:
       )}
 
       <Card>
-        <h2 className="mb-3 font-display text-lg font-semibold">{t("field.photos")}</h2>
+        <h2 className={`mb-4 ${sectionTitle}`}>{t("field.photos")}</h2>
         <PhotoPicker
           disabled={photoBusy}
           items={data.photos.map((p) => ({
@@ -654,12 +666,12 @@ function Editor({ data, onReanalyze }: { data: Draft; onReanalyze: (transcript?:
       />
 
       {error && (
-        <p role="alert" className="rounded-xl bg-brick-soft px-3 py-2 text-sm font-medium text-brick">
+        <p role="alert" className="border-l-2 border-red bg-red-soft px-4 py-3 text-[15px] font-medium text-red">
           {error}
         </p>
       )}
 
-      <div className="sticky bottom-0 -mx-4 grid grid-cols-2 gap-2 border-t border-border bg-background/95 px-4 py-3 backdrop-blur">
+      <div className="sticky bottom-0 -mx-4 grid grid-cols-2 gap-2 border-t border-rule bg-background/95 px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 backdrop-blur lg:mx-0 lg:px-0">
         <button type="button" disabled={busy} onClick={() => void onSave()} className={btnSecondary}>
           {status === "saving" ? <Spinner /> : null}
           {status === "saved" ? `✓ ${t("field.saved")}` : t("field.saveDraft")}
@@ -692,7 +704,7 @@ function HighlightedText({ text, quotes }: { text: string; quotes: string[] }) {
     if (a < pos) continue; // overlapping — skip
     if (a > pos) parts.push(<Fragment key={`t${pos}`}>{text.slice(pos, a)}</Fragment>);
     parts.push(
-      <mark key={`m${a}`} className="rounded bg-amber-soft px-0.5 text-inherit">
+      <mark key={`m${a}`} className="bg-gold-soft px-0.5 not-italic text-inherit underline decoration-gold decoration-2 underline-offset-4">
         {text.slice(a, b)}
       </mark>,
     );

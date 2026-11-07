@@ -256,6 +256,7 @@ export const field = {
     es: "Opcional. Solo la ven tú y la coordinación de la organización. Nunca se publica y nunca se envía a la IA.",
     en: "Optional. Only you and the nonprofit's coordinators can see it. Never published and never sent to AI.",
   },
+  "field.private.badge": { es: "Privado", en: "Private" },
   "field.private.name": { es: "Nombre de la persona beneficiaria", en: "Beneficiary name" },
   "field.private.contact": { es: "Contacto (teléfono / correo)", en: "Contact (phone / email)" },
   "field.private.address": { es: "Ubicación precisa", en: "Precise location" },

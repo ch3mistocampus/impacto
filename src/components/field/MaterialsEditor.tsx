@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
 import { useI18n } from "@/lib/i18n";
 import type { DictKey } from "@/lib/dict";
+import { Chip } from "@/components/ui/tricolor";
+import { MaterialGlyph } from "@/components/ui/MaterialGlyph";
 import { AiBadge, ConfirmChip, ITEM_KEYS, btnSecondary, inputCls } from "./ui";
 
 export type NeedRow = {
@@ -19,21 +20,10 @@ export type NeedRow = {
 };
 
 function MaterialIcon({ itemKey }: { itemKey: string }) {
-  const [broken, setBroken] = useState(false);
-  if (broken || itemKey === "other")
-    return (
-      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-clay-soft text-xs font-bold uppercase text-clay" aria-hidden>
-        {itemKey.slice(0, 2)}
-      </div>
-    );
   return (
-    // eslint-disable-next-line @next/next/no-img-element
-    <img
-      src={`/materials/${itemKey}.png`}
-      alt=""
-      onError={() => setBroken(true)}
-      className="h-12 w-12 shrink-0 rounded-xl bg-background object-contain"
-    />
+    <span aria-hidden className="flex h-14 w-14 shrink-0 items-center justify-center border border-border bg-paper text-foreground">
+      <MaterialGlyph itemKey={itemKey} className="h-11 w-11" />
+    </span>
   );
 }
 
@@ -43,45 +33,44 @@ export function MaterialsEditor({ rows, onChange }: { rows: NeedRow[]; onChange:
     onChange(rows.map((r) => (r.rowKey === key ? { ...r, ...patch } : r)));
 
   return (
-    <div className="space-y-3">
+    <div>
+      <div className="divide-y divide-border border-y border-border">
       {rows.map((r, i) => {
         const unknown = r.qty.trim() === "";
         return (
           <div
             key={r.rowKey}
-            className={`rounded-2xl border p-3 ${unknown ? "border-amber bg-amber-soft/40" : "border-border bg-background"}`}
+            className={`py-4 ${unknown ? "-mx-3 border-l-2 border-l-gold bg-gold-soft/40 px-3" : ""}`}
           >
             <div className="flex items-start gap-3">
               <MaterialIcon itemKey={r.itemKey} />
               <div className="min-w-0 flex-1 space-y-1">
                 <div className="flex flex-wrap items-center gap-1.5">
-                  <span className="font-semibold">{r.nameEs || r.nameEn || `#${i + 1}`}</span>
+                  <span className="text-[17px] font-semibold">{r.nameEs || r.nameEn || `#${i + 1}`}</span>
                   {r.aiSuggested && <AiBadge />}
                   {unknown && <ConfirmChip />}
                   {!unknown && r.approximate && (
-                    <span className="inline-flex items-center rounded-full bg-amber-soft px-2 py-0.5 text-[11px] font-semibold text-amber">
-                      ≈ {t("field.mat.approx")}
-                    </span>
+                    <Chip tone="gold">≈ {t("field.mat.approx")}</Chip>
                   )}
                 </div>
                 {r.quote && (
-                  <p className="text-xs text-muted">
+                  <p className="text-sm text-muted">
                     {t("field.mat.quote")}:{" "}
-                    <q className="rounded bg-amber-soft/60 px-1 italic text-foreground">{r.quote}</q>
+                    <q className="font-display italic text-foreground underline decoration-gold decoration-2 underline-offset-4">{r.quote}</q>
                   </p>
                 )}
               </div>
               <button
                 type="button"
                 onClick={() => onChange(rows.filter((x) => x.rowKey !== r.rowKey))}
-                className="min-h-11 rounded-lg px-2 text-sm text-brick underline-offset-4 hover:underline"
+                className="min-h-11 shrink-0 px-1 text-sm font-semibold text-muted underline decoration-1 underline-offset-4 hover:text-red"
               >
                 {t("field.mat.remove")}
               </button>
             </div>
 
-            <div className="mt-3 grid grid-cols-2 gap-2">
-              <label className="col-span-1 text-xs font-medium text-muted">
+            <div className="mt-3 grid grid-cols-2 gap-x-3 gap-y-2.5">
+              <label className="col-span-1 text-sm font-semibold text-foreground">
                 {t("field.mat.qty")}
                 <input
                   inputMode="decimal"
@@ -91,25 +80,25 @@ export function MaterialsEditor({ rows, onChange }: { rows: NeedRow[]; onChange:
                   placeholder="?"
                   aria-describedby={`${r.rowKey}-qtyhint`}
                   onChange={(e) => update(r.rowKey, { qty: e.target.value, approximate: false })}
-                  className={`${inputCls} mt-1 text-lg font-semibold ${unknown ? "border-amber" : ""}`}
+                  className={`${inputCls} mt-1 font-display text-xl tabular-nums ${unknown ? "border-gold" : ""}`}
                 />
               </label>
-              <label className="col-span-1 text-xs font-medium text-muted">
+              <label className="col-span-1 text-sm font-semibold text-foreground">
                 {t("field.mat.unit")}
                 <input value={r.unit} onChange={(e) => update(r.rowKey, { unit: e.target.value })} className={`${inputCls} mt-1`} />
               </label>
-              <span id={`${r.rowKey}-qtyhint`} className="col-span-2 -mt-1 text-[11px] text-muted">
+              <span id={`${r.rowKey}-qtyhint`} className="col-span-2 -mt-1 text-xs text-muted">
                 {t("field.mat.qtyBlank")}
               </span>
-              <label className="col-span-2 text-xs font-medium text-muted sm:col-span-1">
+              <label className="col-span-2 text-sm font-semibold text-foreground sm:col-span-1">
                 {t("field.mat.nameEs")}
                 <input lang="es" value={r.nameEs} onChange={(e) => update(r.rowKey, { nameEs: e.target.value })} className={`${inputCls} mt-1`} />
               </label>
-              <label className="col-span-2 text-xs font-medium text-muted sm:col-span-1">
+              <label className="col-span-2 text-sm font-semibold text-foreground sm:col-span-1">
                 {t("field.mat.nameEn")}
                 <input lang="en" value={r.nameEn} onChange={(e) => update(r.rowKey, { nameEn: e.target.value })} className={`${inputCls} mt-1`} />
               </label>
-              <label className="col-span-2 text-xs font-medium text-muted">
+              <label className="col-span-2 text-sm font-semibold text-foreground">
                 {t("field.mat.type")}
                 <select value={r.itemKey} onChange={(e) => update(r.rowKey, { itemKey: e.target.value })} className={`${inputCls} mt-1`}>
                   {ITEM_KEYS.map((k) => (
@@ -124,9 +113,10 @@ export function MaterialsEditor({ rows, onChange }: { rows: NeedRow[]; onChange:
           </div>
         );
       })}
+      </div>
       <button
         type="button"
-        className={`${btnSecondary} w-full border-dashed`}
+        className={`${btnSecondary} mt-4 w-full`}
         onClick={() =>
           onChange([
             ...rows,

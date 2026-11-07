@@ -5,12 +5,13 @@ import { useParams } from "next/navigation";
 import { useQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import { useI18n } from "@/lib/i18n";
-import { CategoryBadge } from "./CategoryBadge";
+import { CategoryMark, FlagBand, Kicker, btn } from "@/components/ui/tricolor";
 import { EvidenceList } from "./EvidenceList";
 import { FinancialsTable } from "./Financials";
 import { LedgerBar, StageLegend } from "./LedgerBar";
 import { MaterialImage } from "./MaterialImage";
-import { DemoStamp, PausedNotice, StatusBadge, useDateFmt } from "./PublicMeta";
+import { DemoStamp, PausedNotice } from "./PublicMeta";
+import { ProjectStatusChip, ReportHeading, useReportFmt } from "./reportKit";
 import { StageStrip } from "./ProjectCard";
 import { Timeline, toTimelineItems } from "./Timeline";
 import { VerifiedBadge } from "./VerifiedBadge";
@@ -20,15 +21,15 @@ export function ProjectDetail({ backHref = "/#proyectos" }: { backHref?: string 
   const params = useParams<{ projectId?: string; id?: string }>();
   const projectId = params.projectId ?? params.id ?? "";
   const { t, pick } = useI18n();
-  const fmt = useDateFmt();
+  const fmt = useReportFmt();
   const data = useQuery(api.public.getProject, { projectId });
 
   if (data === undefined) return <p className="py-16 text-muted">{t("common.loading")}</p>;
   if (data === null) {
     return (
       <div className="py-16">
-        <p className="font-display text-2xl font-semibold">{t("project.notFound")}</p>
-        <Link href="/" className="mt-4 inline-block font-semibold underline underline-offset-4">
+        <p className="font-display text-3xl font-normal">{t("project.notFound")}</p>
+        <Link href="/" className={btn("quiet", "md", "mt-4")}>
           {t("project.backHome")}
         </Link>
       </div>
@@ -45,44 +46,55 @@ export function ProjectDetail({ backHref = "/#proyectos" }: { backHref?: string 
 
   return (
     <div className="pt-6 sm:pt-10">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <Link href={backHref} className="text-sm text-muted underline underline-offset-4">
-          {t("common.back")}
-        </Link>
-        <DemoStamp asOf={asOf} />
-      </div>
+      <Link href={backHref} className={btn("quiet", "md", "text-sm text-muted min-h-11")}>
+        {t("common.back")}
+      </Link>
 
-      <header className="mt-4 grid gap-6 md:grid-cols-[1fr_18rem] md:items-end">
-        <div>
-          <div className="flex flex-wrap items-center gap-2">
-            <CategoryBadge category={p.category} />
-            <StatusBadge status={p.status} />
+      {/* Report masthead */}
+      <header className="mt-3 border border-border bg-surface">
+        <FlagBand thickness={6} />
+        <div className="grid gap-8 px-5 pt-8 pb-7 sm:px-10 sm:pt-10 md:grid-cols-[1fr_11rem] md:items-start">
+          <div className="min-w-0">
+            <Kicker className="flex items-center gap-2">
+              <CategoryMark category={p.category} size={12} className="not-italic text-foreground" />
+              {t(`category.${p.category}`)}
+            </Kicker>
+            <h1 className="mt-2 font-display text-[2.6rem] font-normal leading-[1.02] sm:text-6xl">{p.publicAlias}</h1>
+            <p className="mt-3 font-display text-xl italic leading-snug text-muted sm:text-2xl">
+              {pick(p.titleEs, p.titleEn)}
+            </p>
           </div>
-          <h1 className={`mt-3 font-display text-4xl sm:text-5xl font-semibold leading-[1.05] ${s.text}`}>
-            {p.publicAlias}
-          </h1>
-          <p className="mt-2 font-display text-xl sm:text-2xl">{pick(p.titleEs, p.titleEn)}</p>
-          <div className="mt-2 flex flex-wrap gap-x-5 gap-y-1 text-sm text-muted">
-            {p.region && (
-              <p>
-                {t("project.region")}: <span className="text-foreground font-semibold">{p.region}</span>
-              </p>
-            )}
-            {approvedAt && (
-              <p>
-                {t("project.approvedOn")}{" "}
-                <span className="text-foreground font-semibold">{fmt.date(approvedAt)}</span>
-              </p>
-            )}
+          <div className="hidden md:block aspect-square border border-border bg-surface text-foreground">
+            <MaterialImage
+              src={p.coverPhotoUrl ?? s.image}
+              alt=""
+              emoji={s.emoji}
+              className={`size-full ${p.coverPhotoUrl ? "object-cover" : "p-5"}`}
+            />
           </div>
         </div>
-        <div className={`hidden md:block aspect-square rounded-3xl overflow-hidden ${s.soft}`}>
-          <MaterialImage
-            src={p.coverPhotoUrl ?? s.image}
-            alt=""
-            emoji={s.emoji}
-            className={`size-full ${p.coverPhotoUrl ? "object-cover" : ""}`}
-          />
+        <dl className="grid border-t border-border text-sm sm:grid-cols-3">
+          <div className="flex items-center justify-between gap-3 px-5 py-3 sm:block sm:px-10 sm:py-4">
+            <dt className="text-[13px] text-muted">{t("report.status")}</dt>
+            <dd className="sm:mt-1.5">
+              <ProjectStatusChip status={p.status} />
+            </dd>
+          </div>
+          {p.region && (
+            <div className="flex items-baseline justify-between gap-3 border-t border-border px-5 py-3 sm:block sm:border-t-0 sm:border-l sm:px-6 sm:py-4">
+              <dt className="text-[13px] text-muted">{t("project.region")}</dt>
+              <dd className="font-display text-lg sm:mt-1">{p.region}</dd>
+            </div>
+          )}
+          {approvedAt && (
+            <div className="flex items-baseline justify-between gap-3 border-t border-border px-5 py-3 sm:block sm:border-t-0 sm:border-l sm:px-6 sm:py-4">
+              <dt className="text-[13px] text-muted">{t("report.approved")}</dt>
+              <dd className="font-display text-lg sm:mt-1 text-right sm:text-left">{fmt.date(approvedAt)}</dd>
+            </div>
+          )}
+        </dl>
+        <div className="border-t border-border px-5 py-3 sm:px-10">
+          <DemoStamp asOf={asOf} />
         </div>
       </header>
 
@@ -92,43 +104,48 @@ export function ProjectDetail({ backHref = "/#proyectos" }: { backHref?: string 
         </div>
       )}
 
-      <p className="mt-6 text-lg leading-relaxed max-w-[38rem]">{pick(p.summaryEs, p.summaryEn)}</p>
-      <p className="mt-3 text-sm text-muted max-w-[38rem]">{t("project.privacyNote")}</p>
-
-      {canPledge && (
-        <Link
-          href={`/donate?category=${p.category}`}
-          className="mt-6 inline-flex rounded-full bg-clay text-white px-6 py-3.5 font-semibold shadow-[0_2px_0_var(--brick)]"
-        >
-          {t("project.pledgeCta")}
-        </Link>
-      )}
+      <div className="mt-8 max-w-[40rem]">
+        <p className="text-lg leading-relaxed">{pick(p.summaryEs, p.summaryEn)}</p>
+        <p className="mt-3 text-[15px] text-muted">{t("project.privacyNote")}</p>
+        {canPledge && (
+          <Link href={`/donate?category=${p.category}`} className={btn("primary", "lg", "mt-6")}>
+            {t("project.pledgeCta")}
+          </Link>
+        )}
+      </div>
 
       {/* How things changed — verified outcome milestones only */}
-      <section className="mt-12 rounded-3xl bg-leaf-soft/60 border border-leaf/25 p-5 sm:p-7" aria-labelledby="changed-title">
-        <h2 id="changed-title" className="font-display text-2xl sm:text-3xl font-semibold text-leaf">
-          {t("project.howChanged")}
-        </h2>
-        <p className="mt-1 text-sm text-muted">{t("project.howChangedLead")}</p>
-        {outcomes.length === 0 ? (
-          <p className="mt-4 text-sm">{t("project.howChangedEmpty")}</p>
-        ) : (
-          <ul className="mt-4 space-y-3">
-            {outcomes.map((m) => (
-              <li key={m.milestoneId} className="grid grid-cols-[auto_1fr] gap-3 items-start">
-                <VerifiedBadge compact label={t("project.verifiedByOrg")} className="mt-0.5" />
-                <div>
-                  <p className="leading-relaxed">{pick(m.descriptionEs, m.descriptionEn)}</p>
-                  <p className="text-xs text-muted">{fmt.date(m.occurredAt)}</p>
-                </div>
-              </li>
-            ))}
-          </ul>
-        )}
+      <section className="mt-14 border border-border bg-surface" aria-labelledby="changed-title">
+        <div className="grid gap-6 px-5 py-7 sm:grid-cols-[1fr_auto] sm:px-10 sm:py-9">
+          <div className="min-w-0">
+            <h2 id="changed-title" className="font-display text-[1.75rem] font-normal leading-tight text-emerald sm:text-[2.1rem]">
+              {t("project.howChanged")}
+            </h2>
+            <p className="mt-1.5 text-[15px] text-muted">{t("project.howChangedLead")}</p>
+            {outcomes.length === 0 ? (
+              <p className="mt-5 text-[15px]">{t("project.howChangedEmpty")}</p>
+            ) : (
+              <ul className="mt-5 divide-y divide-border border-y border-border">
+                {outcomes.map((m) => (
+                  <li key={m.milestoneId} className="grid grid-cols-[auto_1fr] items-start gap-3 py-3.5">
+                    <VerifiedBadge compact label={t("project.verifiedByOrg")} className="mt-0.5" />
+                    <div>
+                      <p className="text-[15px] leading-relaxed sm:text-base">{pick(m.descriptionEs, m.descriptionEn)}</p>
+                      <p className="mt-0.5 text-[13px] text-muted">{fmt.date(m.occurredAt)}</p>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+          {outcomes.length > 0 && (
+            <VerifiedBadge variant="seal" label={t("report.sealVerified")} className="hidden sm:inline-grid" />
+          )}
+        </div>
         {(before.length > 0 || after.length > 0) && (
-          <div className="mt-6">
-            <h3 className="font-semibold">{t("project.beforeAfter")}</h3>
-            <div className="mt-3 grid grid-cols-2 gap-3">
+          <div className="border-t border-border px-5 py-7 sm:px-10">
+            <h3 className="font-display text-xl font-normal">{t("project.beforeAfter")}</h3>
+            <div className="mt-4 grid grid-cols-2 gap-4">
               {[
                 { label: t("evidence.before_photo"), list: before },
                 { label: t("evidence.after_photo"), list: after },
@@ -139,12 +156,12 @@ export function ProjectDetail({ backHref = "/#proyectos" }: { backHref?: string 
                     <img
                       src={col.list[0].url}
                       alt={`${col.label}: ${p.publicAlias}`}
-                      className="aspect-[4/3] w-full rounded-xl object-cover border border-border"
+                      className="aspect-[4/3] w-full border border-border object-cover"
                     />
                   ) : (
-                    <div className="aspect-[4/3] w-full rounded-xl border-2 border-dashed border-border" />
+                    <div className="aspect-[4/3] w-full border border-dashed border-border" />
                   )}
-                  <figcaption className="mt-1 text-xs font-semibold">{col.label}</figcaption>
+                  <figcaption className="mt-1.5 font-display text-[15px] italic">{col.label}</figcaption>
                 </figure>
               ))}
             </div>
@@ -152,23 +169,24 @@ export function ProjectDetail({ backHref = "/#proyectos" }: { backHref?: string 
         )}
       </section>
 
-      <div className="mt-12 grid gap-12 lg:grid-cols-[1.15fr_1fr]">
-        <section aria-labelledby="materials-title">
-          <h2 id="materials-title" className="font-display text-2xl sm:text-3xl font-semibold">
-            {t("project.materials")}
-          </h2>
-          <p className="mt-1 text-sm text-muted">{t("project.materialsLead")}</p>
-          <StageStrip totals={p.totals} className="mt-4 rounded-xl border border-border bg-surface p-3" />
-          <ul className="mt-4 space-y-4">
+      <div className="mt-16 grid gap-x-14 gap-y-16 lg:grid-cols-[1.15fr_1fr]">
+        <section aria-labelledby="materials-title" className="min-w-0">
+          <ReportHeading id="materials-title" title={t("project.materials")} lead={t("project.materialsLead")} />
+          <div className="mt-5 border-y border-rule py-4">
+            <StageStrip totals={p.totals} />
+          </div>
+          <ul className="mt-2">
             {needs.map((n) => (
-              <li key={n.needId} className="rounded-2xl border border-border bg-surface p-4 sm:p-5">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className={`size-14 shrink-0 rounded-xl ${s.soft} grid place-items-center`}>
-                    <MaterialImage itemKey={n.itemKey} alt="" className="size-12" />
+              <li key={n.needId} className="border-b border-border py-6">
+                <div className="mb-4 flex items-center gap-4">
+                  <div className="grid size-14 shrink-0 place-items-center border border-border bg-surface text-foreground">
+                    <MaterialImage itemKey={n.itemKey} alt="" className="size-11" />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <h3 className="font-display text-xl font-semibold leading-tight">{pick(n.nameEs, n.nameEn)}</h3>
-                    <p className="text-xs text-muted">{n.unit}</p>
+                    <h3 className="font-display text-[1.4rem] font-normal leading-tight">{pick(n.nameEs, n.nameEn)}</h3>
+                    <p className="mt-0.5 text-[13px] text-muted">
+                      {t("report.unit")}: {n.unit}
+                    </p>
                   </div>
                   {n.verified && <VerifiedBadge compact />}
                 </div>
@@ -177,51 +195,41 @@ export function ProjectDetail({ backHref = "/#proyectos" }: { backHref?: string 
             ))}
           </ul>
           <details className="mt-4 text-sm">
-            <summary className="cursor-pointer font-semibold underline underline-offset-4 decoration-dotted">
+            <summary className="flex min-h-11 cursor-pointer items-center font-semibold underline decoration-dotted decoration-1 underline-offset-[5px]">
               {t("stage.legendTitle")}
             </summary>
-            <StageLegend className="mt-3" />
+            <StageLegend className="mt-2" />
           </details>
         </section>
 
-        <section aria-labelledby="timeline-title">
-          <h2 id="timeline-title" className="font-display text-2xl sm:text-3xl font-semibold">
-            {t("project.timeline")}
-          </h2>
-          <div className="mt-5">
+        <section aria-labelledby="timeline-title" className="min-w-0">
+          <ReportHeading id="timeline-title" title={t("project.timeline")} />
+          <div className="mt-6">
             <Timeline items={toTimelineItems(timeline)} />
           </div>
         </section>
       </div>
 
       {financials.length > 0 && (
-        <section className="mt-12" aria-labelledby="fin-title">
-          <h2 id="fin-title" className="font-display text-2xl sm:text-3xl font-semibold">
-            {t("project.financials")}
-          </h2>
-          <p className="mt-1 text-sm text-muted">{t("project.financialsLead")}</p>
-          <FinancialsTable rows={financials} className="mt-4 max-w-xl" />
+        <section className="mt-16" aria-labelledby="fin-title">
+          <ReportHeading id="fin-title" title={t("project.financials")} lead={t("project.financialsLead")} />
+          <FinancialsTable rows={financials} className="mt-5 max-w-2xl" />
         </section>
       )}
 
-      <section className="mt-12" aria-labelledby="evidence-title">
-        <h2 id="evidence-title" className="font-display text-2xl sm:text-3xl font-semibold">
-          {t("project.evidence")}
-        </h2>
-        <p className="mt-1 text-sm text-muted">{t("project.evidenceLead")}</p>
-        <div className="mt-4">
+      <section className="mt-16" aria-labelledby="evidence-title">
+        <ReportHeading id="evidence-title" title={t("project.evidence")} lead={t("project.evidenceLead")} />
+        <div className="mt-5">
           <EvidenceList items={otherEvidence} />
         </div>
       </section>
 
-      <section className="mt-12" aria-labelledby="photos-title">
-        <h2 id="photos-title" className="font-display text-2xl sm:text-3xl font-semibold">
-          {t("project.photos")}
-        </h2>
+      <section className="mt-16" aria-labelledby="photos-title">
+        <ReportHeading id="photos-title" title={t("project.photos")} />
         {photos.length === 0 ? (
-          <p className="mt-2 text-sm text-muted">{t("project.noPhotos")}</p>
+          <p className="mt-4 text-[15px] text-muted">{t("project.noPhotos")}</p>
         ) : (
-          <ul className="mt-4 grid grid-cols-2 sm:grid-cols-3 gap-3">
+          <ul className="mt-5 grid grid-cols-2 gap-4 sm:grid-cols-3">
             {photos.map((ph) => {
               const cap = pick(ph.captionEs ?? undefined, ph.captionEn ?? undefined);
               return (
@@ -231,9 +239,9 @@ export function ProjectDetail({ backHref = "/#proyectos" }: { backHref?: string 
                     <img
                       src={ph.url}
                       alt={cap || p.publicAlias}
-                      className="aspect-[4/3] w-full rounded-xl object-cover border border-border"
+                      className="aspect-[4/3] w-full border border-border object-cover"
                     />
-                    {cap && <figcaption className="mt-1 text-xs text-muted">{cap}</figcaption>}
+                    {cap && <figcaption className="mt-1.5 text-[13px] text-muted">{cap}</figcaption>}
                   </figure>
                 </li>
               );
@@ -242,8 +250,8 @@ export function ProjectDetail({ backHref = "/#proyectos" }: { backHref?: string 
         )}
       </section>
 
-      <p className="mt-12">
-        <Link href="/transparency" className="font-semibold underline underline-offset-4 decoration-2">
+      <p className="mt-14 border-t border-border pt-6">
+        <Link href="/transparency" className={btn("secondary", "md")}>
           {t("project.transparencyLink")}
         </Link>
       </p>

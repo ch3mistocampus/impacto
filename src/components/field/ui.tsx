@@ -4,6 +4,17 @@ import type { ReactNode } from "react";
 import { useI18n } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
 import type { DictKey } from "@/lib/dict";
+import {
+  Chip,
+  CategoryMark,
+  DoubleRule,
+  FlagBand,
+  STATUS_TONE,
+  btn,
+  inputCls as kitInputCls,
+  type Category,
+  type ProjectStatus,
+} from "@/components/ui/tricolor";
 
 // Keep in sync with DEMO_TRANSCRIPT_ES/EN in convex/ai.ts
 export const DEMO_TRANSCRIPT = {
@@ -26,82 +37,101 @@ export const ITEM_KEYS = [
   "tools",
 ] as const;
 
-export type ProjectStatus = "draft" | "in_review" | "published" | "paused" | "completed" | "rejected";
-export type Category = "roof_shelter" | "reconstruction" | "heal_sow";
+export type { ProjectStatus, Category } from "@/components/ui/tricolor";
 
-const STATUS_STYLE: Record<ProjectStatus, string> = {
-  draft: "bg-amber-soft text-amber",
-  in_review: "bg-sky-soft text-sky",
-  published: "bg-leaf-soft text-leaf",
-  paused: "bg-clay-soft text-clay",
-  completed: "bg-leaf-soft text-leaf",
-  rejected: "bg-brick-soft text-brick",
-};
-
+/** Programs are told apart by shape (CategoryMark), never colour. Kept for older imports. */
 export const CATEGORY_STYLE: Record<Category, { soft: string; solid: string; text: string }> = {
-  roof_shelter: { soft: "bg-clay-soft", solid: "bg-clay", text: "text-clay" },
-  reconstruction: { soft: "bg-brick-soft", solid: "bg-brick", text: "text-brick" },
-  heal_sow: { soft: "bg-leaf-soft", solid: "bg-leaf", text: "text-leaf" },
+  roof_shelter: { soft: "bg-paper", solid: "bg-foreground", text: "text-foreground" },
+  reconstruction: { soft: "bg-paper", solid: "bg-foreground", text: "text-foreground" },
+  heal_sow: { soft: "bg-paper", solid: "bg-foreground", text: "text-foreground" },
 };
+
+/** Program label with its shape mark, in ink colour. */
+export function CategoryLabel({ category, className = "" }: { category: Category; className?: string }) {
+  const { t } = useI18n();
+  return (
+    <span className={`inline-flex items-center gap-1.5 text-foreground ${className}`}>
+      <CategoryMark category={category} size={11} />
+      {t(`category.${category}` as DictKey)}
+    </span>
+  );
+}
 
 export function StatusChip({ status }: { status: ProjectStatus }) {
   const { t } = useI18n();
+  return <Chip tone={STATUS_TONE[status]} className="shrink-0 whitespace-nowrap">{t(`field.status.${status}` as DictKey)}</Chip>;
+}
+
+export function Sparkle({ className = "h-3 w-3" }: { className?: string }) {
   return (
-    <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ${STATUS_STYLE[status]}`}>
-      {t(`field.status.${status}` as DictKey)}
-    </span>
+    <svg aria-hidden viewBox="0 0 16 16" className={className} fill="currentColor">
+      <path d="M8 0l1.8 4.6L14.4 6.4 9.8 8.2 8 12.8 6.2 8.2 1.6 6.4 6.2 4.6z" />
+    </svg>
   );
 }
 
+/** Outlined navy chip: this value was drafted by AI. */
 export function AiBadge() {
   const { t } = useI18n();
   return (
-    <span className="inline-flex items-center gap-1 rounded-full bg-sky-soft px-2 py-0.5 text-[11px] font-semibold text-sky">
-      <svg aria-hidden viewBox="0 0 16 16" className="h-3 w-3" fill="currentColor">
-        <path d="M8 0l1.8 4.6L14.4 6.4 9.8 8.2 8 12.8 6.2 8.2 1.6 6.4 6.2 4.6z" />
-      </svg>
+    <Chip tone="navy" className="shrink-0 whitespace-nowrap font-semibold">
+      <Sparkle />
       {t("badge.aiDraft")}
-    </span>
+    </Chip>
   );
 }
 
+/** Gold chip: the worker must confirm this value. */
 export function ConfirmChip() {
   const { t } = useI18n();
   return (
-    <span className="inline-flex items-center rounded-full bg-amber-soft px-2 py-0.5 text-[11px] font-semibold text-amber">
+    <Chip tone="gold" className="shrink-0 whitespace-nowrap">
       {t("ledger.needsConfirmation")}
-    </span>
+    </Chip>
   );
 }
 
 export function LockIcon({ className = "h-5 w-5" }: { className?: string }) {
   return (
-    <svg aria-hidden viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth={2}>
-      <rect x="4" y="10" width="16" height="11" rx="2" />
-      <path d="M8 10V7a4 4 0 1 1 8 0v3" strokeLinecap="round" />
+    <svg aria-hidden viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth={1.75}>
+      <rect x="4.5" y="10" width="15" height="11" />
+      <path d="M8 10V7a4 4 0 1 1 8 0v3" strokeLinecap="square" />
     </svg>
   );
 }
 
 export function Spinner({ className = "h-5 w-5" }: { className?: string }) {
   return (
-    <svg aria-hidden viewBox="0 0 24 24" className={`${className} animate-spin`} fill="none">
-      <circle cx="12" cy="12" r="10" stroke="currentColor" strokeOpacity={0.25} strokeWidth={4} />
-      <path d="M22 12a10 10 0 0 0-10-10" stroke="currentColor" strokeWidth={4} strokeLinecap="round" />
+    <svg aria-hidden viewBox="0 0 24 24" className={`${className} animate-spin motion-reduce:animate-none`} fill="none">
+      <circle cx="12" cy="12" r="10" stroke="currentColor" strokeOpacity={0.2} strokeWidth={2.5} />
+      <path d="M22 12a10 10 0 0 0-10-10" stroke="currentColor" strokeWidth={2.5} strokeLinecap="square" />
     </svg>
   );
 }
 
+/** Hairline sheet with square corners. */
 export function Card({ children, className = "" }: { children: ReactNode; className?: string }) {
-  return <section className={`rounded-2xl border border-border bg-surface p-4 sm:p-5 ${className}`}>{children}</section>;
+  return <section className={`rounded-[2px] border border-border bg-surface p-4 sm:p-6 ${className}`}>{children}</section>;
 }
 
-export const inputCls =
-  "w-full rounded-xl border border-border bg-background px-3 py-3 text-base outline-none focus:border-sky";
-export const btnPrimary =
-  "inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-clay px-5 py-3 text-base font-semibold text-white disabled:opacity-50";
-export const btnSecondary =
-  "inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-border bg-surface px-4 py-3 text-base font-medium disabled:opacity-50";
+/** Section heading inside a card: Bodoni, regular weight. */
+export const sectionTitle = "font-display text-xl font-normal leading-tight text-foreground";
+/** Small form label. */
+export const fieldLabel = "text-sm font-semibold text-foreground";
+
+/** Calm gold notice (pending / needs attention). Not an error. */
+export const noticeCls = "border-l-2 border-gold bg-gold-soft px-4 py-3 text-[15px] text-gold-ink";
+
+/** Field inputs: kit input, ≥16px text, ≥48px tall for outdoor use. */
+export const inputCls = `${kitInputCls} min-h-12`;
+export const btnPrimary = btn("primary", "lg", "min-h-12");
+export const btnSecondary = btn("secondary", "lg", "min-h-12");
+/** Square segmented option (aria-pressed). */
+export function segCls(active: boolean) {
+  return `min-h-12 px-3 text-base font-semibold transition-colors ${
+    active ? "bg-navy text-on-navy" : "bg-surface text-foreground hover:bg-paper"
+  }`;
+}
 
 /** Renders children only for a signed-in field worker; otherwise a sign-in prompt. */
 export function FieldGate({ children }: { children: ReactNode }) {
@@ -115,16 +145,18 @@ export function FieldGate({ children }: { children: ReactNode }) {
     );
   if (!user || user.role !== "field_worker")
     return (
-      <Card className="mx-auto mt-10 max-w-md text-center">
-        <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-clay-soft text-clay">
-          <LockIcon />
+      <section className="mx-auto mt-10 max-w-md border border-border bg-surface text-center">
+        <FlagBand />
+        <div className="px-6 pb-8 pt-7">
+          <LockIcon className="mx-auto h-7 w-7 text-foreground" />
+          <h1 className="mt-4 font-display text-[28px] font-normal leading-tight">{t("field.gate.title")}</h1>
+          <DoubleRule className="mx-auto mt-4 w-16" />
+          <p className="mt-4 text-[15px] text-muted">{t("field.gate.body")}</p>
+          <button className={`${btnPrimary} mt-6 w-full`} onClick={() => void signInAs("field_worker")}>
+            {t("field.gate.button")}
+          </button>
         </div>
-        <h1 className="font-display text-2xl font-semibold">{t("field.gate.title")}</h1>
-        <p className="mt-2 text-muted">{t("field.gate.body")}</p>
-        <button className={`${btnPrimary} mt-5 w-full`} onClick={() => void signInAs("field_worker")}>
-          {t("field.gate.button")}
-        </button>
-      </Card>
+      </section>
     );
   return <>{children}</>;
 }
