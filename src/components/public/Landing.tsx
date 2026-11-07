@@ -14,6 +14,9 @@ import { OrganizationPhotos } from "./OrganizationPhotos";
 import { BeforeAfterSection } from "./BeforeAfter";
 import { StageLegend } from "./LedgerBar";
 import { DemoStamp } from "./PublicMeta";
+import { MaterialsMarquee } from "./MaterialsMarquee";
+import { Reveal } from "@/components/motion/Reveal";
+import { CountUp } from "@/components/motion/CountUp";
 import { CATEGORIES, CATEGORY_STYLE, STAGES, type Category } from "./types";
 
 /** Keep the home page short for demos; the full list is one tap away. */
@@ -26,7 +29,6 @@ export function Landing() {
   const [showAll, setShowAll] = useState(false);
   const projects = useQuery(api.public.listPublishedProjects, filter ? { category: filter } : {});
   const nf = new Intl.NumberFormat(intlLocale(locale));
-  const num = (n: number | undefined) => (n === undefined ? "–" : nf.format(n));
 
   const sum = (k: "verified" | "pledged") => dash?.categories.reduce((a, c) => a + c.totals[k], 0);
   const verified = sum("verified");
@@ -37,6 +39,7 @@ export function Landing() {
     <div className="pt-10 sm:pt-16">
       {/* Hero: a centred, certificate-like title page */}
       <section className="mx-auto max-w-3xl text-center" aria-labelledby="hero-title">
+        <div className="hero-drift">
         <Kicker className="motion-rise">{t("landing.kicker")}</Kicker>
         <h1
           id="hero-title"
@@ -48,6 +51,7 @@ export function Landing() {
         <p style={{ animationDelay: "140ms" }} className="motion-rise mx-auto mt-6 max-w-[36rem] text-[17px] leading-relaxed text-muted sm:text-lg">
           {t("landing.mission")}
         </p>
+        </div>
         <div style={{ animationDelay: "220ms" }} className="motion-rise mt-8 flex flex-col justify-center gap-3 sm:flex-row">
           <Link href="/donate" className={btn("primary", "lg")}>
             {t("landing.ctaDonate")}
@@ -63,34 +67,38 @@ export function Landing() {
           style={{ animationDelay: "300ms" }}
           className="motion-rise mt-12 grid grid-cols-3 divide-x divide-border border-y border-border sm:mt-14"
           aria-live="polite"
+          data-tour="impact-figures"
         >
-          <Figure value={num(verified)} label={tn("landing.fig.verified", verified ?? 0)} tone="text-emerald" />
-          <Figure value={num(pledged)} label={tn("landing.fig.pledged", pledged ?? 0)} tone="text-gold-ink" />
-          <Figure value={num(reports)} label={tn("tr.counter.weeklyReportsPublished", reports ?? 0)} />
+          <Figure value={verified} format={nf.format} label={tn("landing.fig.verified", verified ?? 0)} tone="text-emerald" />
+          <Figure value={pledged} format={nf.format} label={tn("landing.fig.pledged", pledged ?? 0)} tone="text-gold-ink" />
+          <Figure value={reports} format={nf.format} label={tn("tr.counter.weeklyReportsPublished", reports ?? 0)} />
         </dl>
         <DemoStamp asOf={dash?.asOf ?? null} className="mt-4 justify-center" />
       </section>
 
-      <OrganizationPhotos />
       <BeforeAfterSection />
+      <MaterialsMarquee />
+      <OrganizationPhotos />
 
       {/* Three programs */}
       <section className="mt-20 sm:mt-28" aria-labelledby="buckets-title">
-        <div className="mx-auto max-w-2xl text-center">
+        <Reveal className="mx-auto max-w-2xl text-center">
           <Kicker>{t("landing.programsKicker")}</Kicker>
           <h2 id="buckets-title" className="mt-2 font-display text-[2rem] font-normal leading-tight sm:text-[2.75rem]">
             {t("landing.bucketsTitle")}
           </h2>
           <p className="mt-3 text-[15px] leading-relaxed text-muted sm:text-base">{t("landing.bucketsLead")}</p>
           <Legend />
-        </div>
+        </Reveal>
 
         <DoubleRule className="mt-10" />
         <div className="grid md:grid-cols-3 md:divide-x md:divide-border">
-          {CATEGORIES.map((c) => {
+          {CATEGORIES.map((c, i) => {
             const row = dash?.categories.find((r) => r.category === c);
             return (
-              <article
+              <Reveal
+                as="article"
+                delay={i * 110}
                 key={c}
                 aria-labelledby={`prog-${c}`}
                 className="flex flex-col border-b border-border py-8 last:border-b-0 md:border-b-0 md:px-8 md:first:pl-0 md:last:pr-0"
@@ -113,9 +121,11 @@ export function Landing() {
                 <p className="mt-1.5 text-[15px] leading-snug text-muted">{t(`landing.desc.${c}` as DictKey)}</p>
 
                 <p className="mt-6 flex items-baseline gap-3">
-                  <span key={num(row?.totals.verified)} className="motion-count font-display text-[3.25rem] font-normal leading-none tabular-nums text-emerald">
-                    {num(row?.totals.verified)}
-                  </span>
+                  <CountUp
+                    value={row?.totals.verified}
+                    format={nf.format}
+                    className="font-display text-[3.25rem] font-normal leading-none tabular-nums text-emerald"
+                  />
                   <span className="text-[15px] font-semibold text-emerald">{t("landing.programVerified")}</span>
                 </p>
 
@@ -138,7 +148,7 @@ export function Landing() {
                     {t("landing.bucketTransparency")}
                   </Link>
                 </div>
-              </article>
+              </Reveal>
             );
           })}
         </div>
@@ -146,11 +156,13 @@ export function Landing() {
       </section>
 
       {/* Privacy */}
-      <section
+      <Reveal
+        as="section"
         className="mx-auto mt-20 grid max-w-4xl gap-6 sm:mt-28 sm:grid-cols-[auto_1fr] sm:items-start sm:gap-10"
         aria-labelledby="privacy-title"
+        data-tour="privacy"
       >
-        <svg viewBox="0 0 48 48" className="size-14 text-foreground sm:mt-2 sm:size-16" aria-hidden fill="none">
+        <svg viewBox="0 0 48 48" className="privacy-seal size-14 text-foreground sm:mt-2 sm:size-16" aria-hidden fill="none">
           <circle cx="24" cy="24" r="22.5" stroke="currentColor" strokeWidth="1" />
           <path
             d="M24 36s-8-8.2-8-14a8 8 0 0 1 16 0c0 5.8-8 14-8 14z"
@@ -168,11 +180,11 @@ export function Landing() {
           </h2>
           <p className="mt-3 max-w-2xl text-[17px] leading-relaxed text-muted">{t("landing.privacyBody")}</p>
         </div>
-      </section>
+      </Reveal>
 
       {/* Projects */}
       <section id="proyectos" className="mt-20 scroll-mt-24 sm:mt-28" aria-labelledby="projects-title">
-        <div className="flex flex-col gap-4 border-b border-rule pb-4 md:flex-row md:items-end md:justify-between">
+        <Reveal className="flex flex-col gap-4 border-b border-rule pb-4 md:flex-row md:items-end md:justify-between">
           <div>
             <Kicker>{t("landing.projectsKicker")}</Kicker>
             <h2 id="projects-title" className="mt-1 font-display text-[2rem] font-normal leading-tight sm:text-[2.75rem]">
@@ -185,7 +197,7 @@ export function Landing() {
             allLabel={t("landing.allCategories")}
             label={t("landing.filterLabel")}
           />
-        </div>
+        </Reveal>
         <div className="mt-1">
           {projects === undefined ? (
             <p className="py-8 text-muted">{t("common.loading")}</p>
@@ -193,8 +205,10 @@ export function Landing() {
             <p className="py-8 text-muted">{t("landing.projectsEmpty")}</p>
           ) : (
             <>
-              {(showAll ? projects : projects.slice(0, HOME_LIMIT)).map((p) => (
-                <ProjectCard key={p.projectId} p={p} />
+              {(showAll ? projects : projects.slice(0, HOME_LIMIT)).map((p, i) => (
+                <Reveal key={p.projectId} delay={Math.min(i, 6) * 70} className="border-b border-border last:border-b-0 [&>a]:border-b-0">
+                  <ProjectCard p={p} />
+                </Reveal>
               ))}
               {!showAll && projects.length > HOME_LIMIT && (
                 <p className="mt-6">
@@ -211,12 +225,22 @@ export function Landing() {
   );
 }
 
-function Figure({ value, label, tone = "text-foreground" }: { value: string; label: string; tone?: string }) {
+function Figure({
+  value,
+  format,
+  label,
+  tone = "text-foreground",
+}: {
+  value: number | undefined;
+  format: (n: number) => string;
+  label: string;
+  tone?: string;
+}) {
   return (
     <div className="flex flex-col-reverse items-center justify-end px-2 py-6 sm:px-6 sm:py-8">
       <dt className="mt-2.5 text-[13px] leading-snug text-muted sm:text-[15px]">{label}</dt>
-      <dd key={value} className={`motion-count font-display text-[2.4rem] font-normal leading-none tabular-nums sm:text-[3.5rem] ${tone}`}>
-        {value}
+      <dd className={`font-display text-[2.4rem] font-normal leading-none tabular-nums sm:text-[3.5rem] ${tone}`}>
+        <CountUp value={value} format={format} />
       </dd>
     </div>
   );

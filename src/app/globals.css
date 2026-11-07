@@ -213,6 +213,103 @@ body {
   animation: count-pop var(--dur-slow) var(--ease-out) both;
 }
 
+/* -- Scroll reveals (components/motion/Reveal.tsx) ------------------ */
+/* Only hide content when JS can reveal it again, and never under reduced motion. */
+@media (scripting: enabled) and (prefers-reduced-motion: no-preference) {
+  [data-reveal] {
+    transition:
+      opacity 700ms var(--ease-out) var(--reveal-delay, 0ms),
+      translate 900ms var(--ease-out) var(--reveal-delay, 0ms),
+      scale 900ms var(--ease-out) var(--reveal-delay, 0ms),
+      clip-path 1100ms var(--ease-in-out) var(--reveal-delay, 0ms);
+  }
+  [data-reveal]:not([data-shown]) {
+    opacity: 0;
+  }
+  [data-reveal="rise"]:not([data-shown]) { translate: 0 28px; }
+  [data-reveal="left"]:not([data-shown]) { translate: -36px 0; }
+  [data-reveal="right"]:not([data-shown]) { translate: 36px 0; }
+  [data-reveal="scale"]:not([data-shown]) { scale: 0.94; }
+  /* Photos: an editorial curtain that lifts from the bottom edge. The clip goes on the children
+     so the observed element itself is never clipped out of the IntersectionObserver's view. */
+  [data-reveal="wipe"]:not([data-shown]) {
+    opacity: 1;
+  }
+  [data-reveal="wipe"] > * {
+    clip-path: inset(0 0 0 0);
+    transition: clip-path 1100ms var(--ease-in-out) var(--reveal-delay, 0ms);
+  }
+  [data-reveal="wipe"]:not([data-shown]) > * {
+    clip-path: inset(100% 0 0 0);
+  }
+}
+
+/* -- Carousel (public/OrganizationPhotos.tsx) ----------------------- */
+.carousel-slide {
+  opacity: 0;
+  transition: opacity 1100ms var(--ease-in-out);
+}
+.carousel-slide[data-active] {
+  opacity: 1;
+  z-index: 1;
+}
+@keyframes ken-burns {
+  from { scale: 1.12; translate: -1.5% -1%; }
+  to { scale: 1; translate: 0 0; }
+}
+.carousel-slide[data-active] .carousel-kenburns {
+  animation: ken-burns 9s var(--ease-out) both;
+}
+@keyframes carousel-progress {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+.carousel-progress {
+  transform: scaleX(1);
+}
+.carousel-progress[data-playing] {
+  animation: carousel-progress linear both;
+}
+
+/* -- Marquee (public/MaterialsMarquee.tsx) -------------------------- */
+.marquee {
+  mask-image: linear-gradient(to right, transparent, #000 6%, #000 94%, transparent);
+}
+@keyframes marquee {
+  to { translate: -100% 0; }
+}
+.marquee-track {
+  animation: marquee 48s linear infinite;
+}
+.marquee:hover .marquee-track,
+.marquee:focus-within .marquee-track,
+.marquee:focus .marquee-track {
+  animation-play-state: paused;
+}
+
+/* -- Scroll-linked flourishes (progressive: browsers without view timelines skip them) -- */
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    @keyframes seal-turn {
+      from { rotate: -40deg; scale: 0.85; }
+      to { rotate: 0deg; scale: 1; }
+    }
+    .privacy-seal {
+      animation: seal-turn linear both;
+      animation-timeline: view();
+      animation-range: entry 0% cover 45%;
+    }
+    @keyframes hero-drift {
+      to { translate: 0 -40px; opacity: 0.35; }
+    }
+    .hero-drift {
+      animation: hero-drift linear both;
+      animation-timeline: scroll(root);
+      animation-range: 0 70vh;
+    }
+  }
+}
+
 /* -- Press feedback on every button-styled control ------------------ */
 .press {
   transition-property: color, background-color, border-color, box-shadow, text-decoration-color, filter, transform;
@@ -310,6 +407,24 @@ details[open] > :not(summary) {
   }
   .press:not(:disabled):active {
     transform: none;
+  }
+  .carousel-kenburns,
+  .carousel-progress {
+    animation: none !important;
+  }
+  .carousel-slide {
+    transition-duration: 0s;
+  }
+  /* The ribbon stops and becomes a swipeable row. */
+  .marquee {
+    overflow-x: auto;
+    mask-image: none;
+  }
+  .marquee-track {
+    animation: none;
+  }
+  .marquee-track[aria-hidden] {
+    display: none;
   }
   dialog.motion-dialog,
   dialog.motion-dialog[open],
