@@ -23,6 +23,8 @@ export function I18nProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
+      // Hydrate from localStorage after mount (avoids SSR mismatch).
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       if (saved === "es" || saved === "en") setLocaleState(saved);
     } catch {}
   }, []);

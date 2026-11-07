@@ -20,6 +20,8 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const [token, setToken] = useState<string | undefined>(undefined);
   useEffect(() => {
     try {
+      // Hydrate from localStorage after mount (avoids SSR mismatch).
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setToken(localStorage.getItem(KEY) ?? undefined);
     } catch {}
   }, []);

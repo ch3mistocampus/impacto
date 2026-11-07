@@ -8,8 +8,16 @@
  * @module
  */
 
+import type * as ai from "../ai.js";
+import type * as coordinator from "../coordinator.js";
+import type * as crons from "../crons.js";
+import type * as field from "../field.js";
 import type * as lib_auth from "../lib/auth.js";
 import type * as lib_ledger from "../lib/ledger.js";
+import type * as pledges from "../pledges.js";
+import type * as projects from "../projects.js";
+import type * as public_ from "../public.js";
+import type * as seed from "../seed.js";
 import type * as sessions from "../sessions.js";
 
 import type {
@@ -19,8 +27,16 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  ai: typeof ai;
+  coordinator: typeof coordinator;
+  crons: typeof crons;
+  field: typeof field;
   "lib/auth": typeof lib_auth;
   "lib/ledger": typeof lib_ledger;
+  pledges: typeof pledges;
+  projects: typeof projects;
+  public: typeof public_;
+  seed: typeof seed;
   sessions: typeof sessions;
 }>;
 

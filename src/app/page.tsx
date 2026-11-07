@@ -1,3 +1,5 @@
+import { Landing } from "@/components/public/Landing";
+
 export default function Home() {
-  return <div className="py-10">Impacto</div>;
+  return <Landing />;
 }
