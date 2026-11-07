@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { Suspense, useEffect, useId, useRef, useState } from "react";
 import { useI18n } from "@/lib/i18n";
 import { useSession, type Role } from "@/lib/session";
@@ -187,12 +187,18 @@ function LangSwitch({
   );
 }
 
-/** Demo sign-in: a disclosure whose options are plain buttons (data-role) — no global <select>. */
+/**
+ * Demo sign-in / role switch: a disclosure whose options are plain buttons (data-role).
+ * Choosing a role always lands on that role's home, and signing out returns to "/", so each
+ * persona starts in its own space instead of inheriting the previous role's page.
+ */
 function DemoRoleSwitcher() {
   const { t } = useI18n();
   const { user, signInAs, signOut } = useSession();
+  const router = useRouter();
   const pathname = usePathname() ?? "/";
   const [open, setOpen] = useState(false);
+  const [busy, setBusy] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const id = useId();
@@ -216,42 +222,106 @@ function DemoRoleSwitcher() {
     };
   }, [open]);
 
-  if (user) {
-    return (
-      <div className="flex items-center gap-2">
-        <span className="hidden text-white/75 sm:inline">{t("nav.viewingAs")}</span>
-        <span className="font-semibold">{t(`role.${user.role}`)}</span>
-        {!pathname.startsWith(ROLE_HOME[user.role]) && (
-          <>
-            <span aria-hidden className="text-white/50">
-              ·
-            </span>
-            <Link
-              href={ROLE_HOME[user.role]}
-              className="flex min-h-11 items-center gap-1.5 font-semibold text-gold underline decoration-1 underline-offset-4 hover:decoration-2"
-            >
-              {t("nav.goHome")}
-              <span aria-hidden>→</span>
-            </Link>
-          </>
-        )}
-        <span aria-hidden className="text-white/50">
-          ·
-        </span>
-        <button
-          type="button"
-          onClick={signOut}
-          title={t("nav.signInHint")}
-          className="min-h-11 underline decoration-1 underline-offset-4 hover:decoration-2"
-        >
-          {t("nav.signOut")}
-        </button>
-      </div>
-    );
+  async function chooseRole(r: Role) {
+    setOpen(false);
+    if (user?.role === r) {
+      router.push(ROLE_HOME[r]);
+      return;
+    }
+    setBusy(true);
+    try {
+      await signInAs(r);
+      router.push(ROLE_HOME[r]);
+    } finally {
+      setBusy(false);
+    }
   }
 
+  async function leave() {
+    setBusy(true);
+    try {
+      // Leave the role's page right away; the session is revoked in parallel.
+      router.push("/");
+      await signOut();
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  const menu = (
+    <div
+      id={`${id}-menu`}
+      hidden={!open}
+      className="motion-pop absolute right-0 top-full z-40 w-72 max-w-[calc(100vw-2rem)] border border-rule bg-surface text-foreground shadow-[0_12px_32px_-16px_rgb(11_42_91/0.35)]"
+    >
+      <FlagBand thickness={3} />
+      <div className="px-4 pb-2 pt-3">
+        <p className="font-display text-lg italic">{t(user ? "nav.switchRole" : "nav.chooseRole")}</p>
+        <p className="mt-1 text-xs leading-snug text-muted">{t("nav.roleLandsHome")}</p>
+      </div>
+      <ul className="border-t border-border pb-1">
+        {ROLES.map((r) => {
+          const current = user?.role === r;
+          return (
+            <li key={r}>
+              <button
+                type="button"
+                data-role={r}
+                aria-current={current ? "true" : undefined}
+                onClick={() => void chooseRole(r)}
+                className="flex min-h-11 w-full items-center justify-between gap-3 px-4 text-left text-[15px] hover:bg-paper focus-visible:bg-paper"
+              >
+                <span className={current ? "font-semibold" : undefined}>{t(`role.${r}`)}</span>
+                <span className="text-xs text-muted">
+                  {current ? t("nav.currentRole") : ROLE_HOME[r]}
+                </span>
+              </button>
+            </li>
+          );
+        })}
+      </ul>
+      {user && (
+        <div className="border-t border-border px-4 py-2">
+          <button
+            type="button"
+            onClick={() => {
+              setOpen(false);
+              void leave();
+            }}
+            className="min-h-11 w-full text-left text-[15px] underline decoration-1 underline-offset-4 hover:decoration-2"
+          >
+            {t("nav.signOut")}
+          </button>
+        </div>
+      )}
+    </div>
+  );
+
   return (
-    <div ref={ref} className="relative">
+    <div ref={ref} className="relative flex items-center gap-2" aria-busy={busy || undefined}>
+      {user && (
+        <>
+          <span className="hidden text-white/75 sm:inline">{t("nav.viewingAs")}</span>
+          <span className="font-semibold">{t(`role.${user.role}`)}</span>
+          {!pathname.startsWith(ROLE_HOME[user.role]) && (
+            <>
+              <span aria-hidden className="text-white/50">
+                ·
+              </span>
+              <Link
+                href={ROLE_HOME[user.role]}
+                className="flex min-h-11 items-center gap-1.5 font-semibold text-gold underline decoration-1 underline-offset-4 hover:decoration-2"
+              >
+                {t("nav.goHome")}
+                <span aria-hidden>→</span>
+              </Link>
+            </>
+          )}
+          <span aria-hidden className="text-white/50">
+            ·
+          </span>
+        </>
+      )}
       <button
         ref={triggerRef}
         type="button"
@@ -259,10 +329,11 @@ function DemoRoleSwitcher() {
         aria-controls={`${id}-menu`}
         aria-describedby={`${id}-hint`}
         title={t("nav.signInHint")}
+        disabled={busy}
         onClick={() => setOpen((o) => !o)}
-        className="flex min-h-11 items-center gap-1.5 font-semibold underline decoration-1 underline-offset-4 hover:decoration-2"
+        className="flex min-h-11 items-center gap-1.5 font-semibold underline decoration-1 underline-offset-4 hover:decoration-2 disabled:opacity-60"
       >
-        {t("nav.signIn")}
+        {t(user ? "nav.switchRole" : "nav.signIn")}
         <svg viewBox="0 0 10 6" className={`size-2.5 transition-transform ${open ? "rotate-180" : ""}`} aria-hidden fill="none">
           <path d="M1 1l4 4 4-4" stroke="currentColor" strokeWidth="1.4" />
         </svg>
@@ -270,34 +341,7 @@ function DemoRoleSwitcher() {
       <span id={`${id}-hint`} className="sr-only">
         {t("nav.signInHint")}
       </span>
-      <div
-        id={`${id}-menu`}
-        hidden={!open}
-        className="motion-pop absolute right-0 top-full z-40 w-72 max-w-[calc(100vw-2rem)] border border-rule bg-surface text-foreground shadow-[0_12px_32px_-16px_rgb(11_42_91/0.35)]"
-      >
-        <FlagBand thickness={3} />
-        <div className="px-4 pb-2 pt-3">
-          <p className="font-display text-lg italic">{t("nav.chooseRole")}</p>
-          <p className="mt-1 text-xs leading-snug text-muted">{t("nav.signInHint")}</p>
-        </div>
-        <ul className="border-t border-border pb-1">
-          {ROLES.map((r) => (
-            <li key={r}>
-              <button
-                type="button"
-                data-role={r}
-                onClick={async () => {
-                  setOpen(false);
-                  await signInAs(r);
-                }}
-                className="flex min-h-11 w-full items-center justify-between gap-3 px-4 text-left text-[15px] hover:bg-paper focus-visible:bg-paper"
-              >
-                {t(`role.${r}`)}
-              </button>
-            </li>
-          ))}
-        </ul>
-      </div>
+      {menu}
     </div>
   );
 }
