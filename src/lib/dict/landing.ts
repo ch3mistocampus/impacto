@@ -2,9 +2,10 @@ export const landing = {
   "landing.archive.kicker": { es: "Archivo de la organización", en: "From the official archive" },
   "landing.archive.title": { es: "Espejo de Agua en el territorio", en: "Espejo de Agua in the field" },
   "landing.archive.body": {
-    es: "Fotografías publicadas por Espejo de Agua de Ibanacuara y Mariela. Son imágenes de su archivo; las cifras de los proyectos de esta demo son ficticias.",
-    en: "Photographs published by Espejo de Agua from Ibanacuara and Mariela. These are archive images; this demo's project figures are fictional.",
+    es: "Fotografías publicadas por Espejo de Agua tras el sismo en el resguardo Ibanacuara. Son imágenes de archivo; las cifras de los proyectos de esta demostración son ficticias.",
+    en: "Photographs published by Espejo de Agua after the earthquake at the Ibanacuara reserve. These are archive images; this demo's project figures are fictional.",
   },
+
   "landing.archive.site": { es: "Visitar el sitio oficial", en: "Visit the official site" },
   "landing.archive.credit": { es: "Foto: Espejo de Agua · Ver fuente", en: "Photo: Espejo de Agua · View source" },
   "landing.archive.roof.caption": { es: "Ibanacuara · Daños en el techo", en: "Ibanacuara · Roof damage" },
@@ -12,11 +13,15 @@ export const landing = {
     es: "Estructura de madera de una vivienda sin techo en Ibanacuara, publicada en el llamado de emergencia de Espejo de Agua.",
     en: "The exposed timber frame of a roofless home in Ibanacuara, published in Espejo de Agua's emergency appeal.",
   },
-  "landing.archive.workshop.caption": { es: "Mariela · Taller comunitario", en: "Mariela · Community workshop" },
-  "landing.archive.workshop.alt": {
-    es: "Participantes sentados en círculo durante un taller comunitario en Mariela, del archivo de Espejo de Agua.",
-    en: "Participants sitting in a circle during a community workshop in Mariela, from Espejo de Agua's archive.",
+  "landing.archive.road.caption": {
+    es: "Resguardo Ibanacuara · Fisura del sismo en el camino",
+    en: "Ibanacuara reserve · Earthquake fissure on the access road",
   },
+  "landing.archive.road.alt": {
+    es: "Una grieta abierta por el sismo atraviesa el camino de tierra hacia el resguardo, del archivo de Espejo de Agua.",
+    en: "An earthquake crack runs along the dirt road to the reserve, from Espejo de Agua's archive.",
+  },
+
   "landing.heroTitle": {
     es: "Cada ladrillo, contado desde la necesidad hasta el techo terminado.",
     en: "Every brick, counted from the need to the finished roof.",

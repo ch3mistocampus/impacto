@@ -11,13 +11,16 @@ const PHOTOS = [
     source: "https://www.espejodeagua.org/emergencia.html",
   },
   {
-    key: "workshop",
-    src: "/espejo-de-agua/mariela-workshop.webp",
-    source: "https://www.espejodeagua.org/galeria.html",
+    key: "road",
+    src: "/espejo-de-agua/earthquake-road.webp",
+    source: "https://www.espejodeagua.org/emergencia.html",
   },
 ] as const;
 
-/** Official archive imagery retains its context, separate from the demo project's evidence. */
+/**
+ * Official archive imagery retains its context, separate from the demo project's evidence.
+ * Only photos without identifiable people are shown (the page promises "no names, no faces").
+ */
 export function OrganizationPhotos() {
   const { t } = useI18n();
   return (

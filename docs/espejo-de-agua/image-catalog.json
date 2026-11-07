@@ -156,9 +156,7 @@
       "contentType": "image/jpeg",
       "intendedUse": "Organization community-work section; Mariela workshop.",
       "width": 1600,
-      "height": 1200,
-      "webPath": "/espejo-de-agua/mariela-workshop.webp",
-      "webBytes": 172626
+      "height": 1200
     },
     {
       "sourceUrl": "https://www.espejodeagua.org/assets/img/convergencia-vital.jpg",
@@ -298,7 +296,9 @@
       "contentType": "image/jpeg",
       "intendedUse": "Earthquake-damaged access route; original event context only.",
       "width": 1053,
-      "height": 1400
+      "height": 1400,
+      "webPath": "/espejo-de-agua/earthquake-road.webp",
+      "webBytes": 278072
     },
     {
       "sourceUrl": "https://www.espejodeagua.org/assets/img/resguardo-vista.jpg",

@@ -6,7 +6,7 @@ Cataloged 50 unique image URLs across the official homepage, gallery, emergency 
 
 ## Placement
 
-The homepage archive section credits Espejo de Agua and links each image to its original source page. The roof photo keeps its Ibanacuara earthquake context, and the workshop keeps its Mariela context. These photos are never used as fictional project covers, donation material images, or verified delivery evidence. Other downloaded photos remain available for future organization or original-event sections.
+The homepage archive section credits Espejo de Agua and links each image to its original source page. The roof photo keeps its Ibanacuara earthquake context, and the road photo keeps its earthquake-fissure context. Photos with identifiable people (such as the Mariela workshop) are kept only as archived originals and are not shown, matching the homepage privacy promise. These photos are never used as fictional project covers, donation material images, or verified delivery evidence. Other downloaded photos remain available for future organization or original-event sections.
 
 ## Rights and attribution
 
@@ -47,7 +47,7 @@ Organization arts-work section; Barranquilla workshop. Downloaded for future con
 
 1600 × 1200 · 272 KiB · [Source image](https://www.espejodeagua.org/assets/img/patty-valores-padres-campesinos-mariela.jpg) · [Source page](https://www.espejodeagua.org/)
 
-Organization community-work section; Mariela workshop. Shown on the homepage from `public/espejo-de-agua/mariela-workshop.webp`.
+Organization community-work section; Mariela workshop. Downloaded for future contextual use; not exposed by the app.
 
 ### convergencia-vital.jpg
 
@@ -71,7 +71,7 @@ Earthquake ground damage; original event context only. Downloaded for future con
 
 1053 × 1400 · 478 KiB · [Source image](https://www.espejodeagua.org/assets/img/terremoto-camino.jpg) · [Source page](https://www.espejodeagua.org/galeria.html)
 
-Earthquake-damaged access route; original event context only. Downloaded for future contextual use; not exposed by the app.
+Earthquake-damaged access route; original event context only. Shown on the homepage from `public/espejo-de-agua/earthquake-road.webp`.
 
 ### resguardo-ibanacuara-condiciones.jpg
 
