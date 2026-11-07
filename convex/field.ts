@@ -15,8 +15,9 @@ import { category, locale, urgency } from "./schema";
  * Lane B — Field intake (role: field_worker).
  *
  * Privacy: `projectPrivate` is written/read here only by the creating field worker.
- * Nothing in this file sends data to AI; `convex/ai.ts` reads ONLY the transcript
- * via `getReportForAi` (never projectPrivate, never photos).
+ * Nothing in this file sends data to AI. `convex/ai.ts` reads ONLY the transcript/audio ref
+ * via `getReportForAi`, and a single photo via `getPhotoForAi` when the worker explicitly asks
+ * for that photo to be analyzed. projectPrivate is never exposed to the AI pipeline.
  */
 
 const FIELD = ["field_worker"] as const;
@@ -36,8 +37,36 @@ export const extractionMaterialValidator = v.object({
 
 export const bilingualText = v.object({ es: v.string(), en: v.string() });
 
+const statusValidator = v.union(v.literal("pending"), v.literal("accepted"), v.literal("discarded"));
+
+/** Opt-in AI suggestions for one photo (stored in fieldReports.draftExtraction.photoSuggestions). */
+export const photoSuggestionValidator = v.object({
+  photoId: v.id("photos"),
+  model: v.string(),
+  createdAt: v.number(),
+  privacyConcern: v.boolean(), // model saw people / faces / house numbers / names
+  observationsEs: v.array(v.string()),
+  observationsEn: v.array(v.string()),
+  observationsStatus: statusValidator,
+  materials: v.array(
+    v.object({
+      itemKey: v.string(),
+      nameEs: v.string(),
+      nameEn: v.string(),
+      quantity: v.union(v.number(), v.null()),
+      unit: v.string(),
+      confidence: v.union(v.literal("high"), v.literal("medium"), v.literal("low")),
+      reasonEs: v.string(),
+      reasonEn: v.string(),
+      status: statusValidator,
+    }),
+  ),
+});
+export type PhotoSuggestion = typeof photoSuggestionValidator.type;
+
 export const extractionValidator = v.object({
-  source: v.union(v.literal("openai"), v.literal("fallback")),
+  // "openai" kept for drafts created before the OpenRouter switch.
+  source: v.union(v.literal("openrouter"), v.literal("openai"), v.literal("fallback")),
   model: v.optional(v.string()),
   notice: v.optional(v.string()), // e.g. why fallback was used
   redactions: v.number(), // # of names/phones/emails stripped before sending to AI
@@ -56,6 +85,7 @@ export const extractionValidator = v.object({
   proposedMilestones: v.optional(v.array(bilingualText)),
   transcriptTranslated: v.union(v.string(), v.null()),
   editedByWorker: v.optional(v.boolean()),
+  photoSuggestions: v.optional(v.array(photoSuggestionValidator)),
 });
 
 const needInput = v.object({
@@ -199,6 +229,12 @@ export const removePhoto = mutation({
     assertEditable(await loadOwnProject(ctx, user, photo.projectId));
     await ctx.storage.delete(photo.storageId);
     await ctx.db.delete("photos", photo._id);
+    const report = await reportForProject(ctx, photo.projectId);
+    const ex = report?.draftExtraction as typeof extractionValidator.type | undefined;
+    if (report && ex?.photoSuggestions?.some((p) => p.photoId === photo._id))
+      await ctx.db.patch("fieldReports", report._id, {
+        draftExtraction: { ...ex, photoSuggestions: ex.photoSuggestions.filter((p) => p.photoId !== photo._id) },
+      });
     return null;
   },
 });
@@ -421,6 +457,37 @@ export const submitForReview = mutation({
   },
 });
 
+/** Worker accepts/discards one AI photo suggestion (a material row or the observations). */
+export const resolvePhotoSuggestion = mutation({
+  args: {
+    sessionToken: v.string(),
+    photoId: v.id("photos"),
+    materialIndex: v.optional(v.number()),
+    observations: v.optional(v.boolean()),
+    status: v.union(v.literal("accepted"), v.literal("discarded")),
+  },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const user = await requireRole(ctx, args.sessionToken, [...FIELD]);
+    const photo = await ctx.db.get(args.photoId);
+    if (!photo || photo.uploadedBy !== user._id) throw new ConvexError({ code: "NOT_FOUND" });
+    assertEditable(await loadOwnProject(ctx, user, photo.projectId));
+    const report = await reportForProject(ctx, photo.projectId);
+    const ex = report?.draftExtraction as typeof extractionValidator.type | undefined;
+    if (!report || !ex?.photoSuggestions) throw new ConvexError({ code: "NOT_FOUND" });
+    const photoSuggestions = ex.photoSuggestions.map((p) => {
+      if (p.photoId !== args.photoId) return p;
+      return {
+        ...p,
+        observationsStatus: args.observations ? args.status : p.observationsStatus,
+        materials: p.materials.map((m, i) => (i === args.materialIndex ? { ...m, status: args.status } : m)),
+      };
+    });
+    await ctx.db.patch("fieldReports", report._id, { draftExtraction: { ...ex, photoSuggestions } });
+    return null;
+  },
+});
+
 // ---------- queries ----------
 
 export const getMyDraft = query({
@@ -568,10 +635,13 @@ export const setAiStatus = internalMutation({
 });
 
 export const storeTranscript = internalMutation({
-  args: { reportId: v.id("fieldReports"), transcript: v.string() },
+  args: { reportId: v.id("fieldReports"), transcript: v.string(), language: v.optional(locale) },
   returns: v.null(),
   handler: async (ctx, args) => {
-    await ctx.db.patch("fieldReports", args.reportId, { transcriptOriginal: args.transcript.trim() });
+    await ctx.db.patch("fieldReports", args.reportId, {
+      transcriptOriginal: args.transcript.trim(),
+      ...(args.language ? { language: args.language } : {}),
+    });
     return null;
   },
 });
@@ -582,7 +652,9 @@ export const storeExtraction = internalMutation({
   handler: async (ctx, args) => {
     const report = await ctx.db.get(args.reportId);
     if (!report) throw new ConvexError({ code: "NOT_FOUND" });
-    const ex = args.extraction;
+    // Keep photo suggestions across re-analysis of the transcript.
+    const prev = report.draftExtraction as typeof extractionValidator.type | undefined;
+    const ex = prev?.photoSuggestions?.length ? { ...args.extraction, photoSuggestions: prev.photoSuggestions } : args.extraction;
     await ctx.db.patch("fieldReports", report._id, {
       draftExtraction: ex,
       aiStatus: "done",
@@ -592,6 +664,37 @@ export const storeExtraction = internalMutation({
     });
     const project = await ctx.db.get(report.projectId);
     if (project && project.status === "draft") await applyExtractionToProject(ctx, project._id, ex);
+    return null;
+  },
+});
+
+/** Authorizes the caller (creator of a draft project) and returns ONLY the photo's storage ref. */
+export const getPhotoForAi = internalQuery({
+  args: { sessionToken: v.string(), photoId: v.id("photos") },
+  returns: v.object({ storageId: v.id("_storage"), reportId: v.id("fieldReports") }),
+  handler: async (ctx, args) => {
+    const user = await requireRole(ctx, args.sessionToken, [...FIELD]);
+    const photo = await ctx.db.get(args.photoId);
+    if (!photo || photo.uploadedBy !== user._id) throw new ConvexError({ code: "NOT_FOUND" });
+    assertEditable(await loadOwnProject(ctx, user, photo.projectId));
+    const report = await reportForProject(ctx, photo.projectId);
+    if (!report) throw new ConvexError({ code: "NOT_FOUND" });
+    return { storageId: photo.storageId, reportId: report._id };
+  },
+});
+
+export const storePhotoSuggestion = internalMutation({
+  args: { reportId: v.id("fieldReports"), suggestion: photoSuggestionValidator },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const report = await ctx.db.get(args.reportId);
+    if (!report) throw new ConvexError({ code: "NOT_FOUND" });
+    const ex = (report.draftExtraction ?? null) as typeof extractionValidator.type | null;
+    if (!ex) throw new ConvexError({ code: "NO_EXTRACTION" });
+    const others = (ex.photoSuggestions ?? []).filter((p) => p.photoId !== args.suggestion.photoId);
+    await ctx.db.patch("fieldReports", report._id, {
+      draftExtraction: { ...ex, photoSuggestions: [...others, args.suggestion].slice(-30) },
+    });
     return null;
   },
 });

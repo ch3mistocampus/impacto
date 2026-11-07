@@ -32,7 +32,29 @@ export const coord = {
   "coord.review": { es: "Revisar", en: "Review" },
   "coord.manage": { es: "Gestionar materiales", en: "Manage materials" },
   "coord.submittedAgo": { es: "Recibido", en: "Received" },
-  "coord.needsCount": { es: "materiales", en: "materials" },
+  "coord.needsCount.one": { es: "material", en: "material" },
+  "coord.needsCount.other": { es: "materiales", en: "materials" },
+  "coord.pledgesCount.one": { es: "compromiso", en: "pledge" },
+  "coord.pledgesCount.other": { es: "compromisos", en: "pledges" },
+
+  // Demo reset (only works when the deployment has DEMO_MODE=true)
+  "coord.demo.title": { es: "Demo", en: "Demo" },
+  "coord.demo.body": {
+    es: "Restablece todos los proyectos, compromisos y registros de demostración a su estado inicial. No afecta datos reales. Tu sesión se mantiene.",
+    en: "Resets every demo project, pledge and record to its initial state. Real data isn't touched. Your session stays signed in.",
+  },
+  "coord.demo.reset": { es: "Restablecer demo", en: "Reset demo" },
+  "coord.demo.disabled": {
+    es: "El restablecimiento está desactivado en este servidor (DEMO_MODE no está activo).",
+    en: "Reset is turned off on this server (DEMO_MODE isn't enabled).",
+  },
+  "coord.demo.confirmTitle": { es: "¿Restablecer la demo?", en: "Reset the demo?" },
+  "coord.demo.confirmBody": {
+    es: "Se borrarán los cambios hechos durante el ensayo (compromisos, recepciones, evidencias, informes) y se volverán a crear los proyectos de demostración. No se puede deshacer.",
+    en: "Changes made during the rehearsal (pledges, receipts, evidence, reports) will be erased and the demo projects re-created. This can't be undone.",
+  },
+  "coord.demo.confirm": { es: "Sí, restablecer", en: "Yes, reset" },
+  "coord.demo.done.toast": { es: "Demo restablecida", en: "Demo reset" },
 
   // Status
   "coord.status.draft": { es: "Borrador", en: "Draft" },

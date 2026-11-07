@@ -175,18 +175,18 @@ export function draftSummary(s: WeeklySnapshot, periodStart: number, periodEnd: 
       .filter((m) => m.pledged || m.received || m.delivered || m.used || m.verified)
       .map((m) =>
         lang === "es"
-          ? `${m.nameEs}: ${fmt(m.pledged)} comprometidos, ${fmt(m.received)} recibidos, ${fmt(m.delivered)} entregados, ${fmt(m.used)} utilizados, ${fmt(m.verified)} verificados.`
-          : `${m.nameEn}: ${fmt(m.pledged)} pledged, ${fmt(m.received)} received, ${fmt(m.delivered)} delivered, ${fmt(m.used)} used, ${fmt(m.verified)} verified.`,
+          ? `${m.nameEs} — comprometido: ${fmt(m.pledged)}; recibido: ${fmt(m.received)}; entregado: ${fmt(m.delivered)}; usado: ${fmt(m.used)}; verificado: ${fmt(m.verified)}.`
+          : `${m.nameEn} — pledged: ${fmt(m.pledged)}; received: ${fmt(m.received)}; delivered: ${fmt(m.delivered)}; used: ${fmt(m.used)}; verified: ${fmt(m.verified)}.`,
       );
   const finLines = (lang: "es" | "en") =>
     s.financials.map((f) =>
       lang === "es"
-        ? `${f.currency}: ${fmt(f.received)} recibidos, ${fmt(f.allocated)} asignados, ${fmt(f.spent)} gastados (aprobados), ${fmt(f.committed)} comprometidos sin recibir.`
-        : `${f.currency}: ${fmt(f.received)} received, ${fmt(f.allocated)} allocated, ${fmt(f.spent)} spent (approved), ${fmt(f.committed)} committed but not yet received.`,
+        ? `${f.currency} — recibido: ${fmt(f.received)}; asignado: ${fmt(f.allocated)}; gastado (aprobado): ${fmt(f.spent)}; comprometido sin recibir: ${fmt(f.committed)}.`
+        : `${f.currency} — received: ${fmt(f.received)}; allocated: ${fmt(f.allocated)}; spent (approved): ${fmt(f.spent)}; committed but not yet received: ${fmt(f.committed)}.`,
     );
   const es = [
     `Resumen semanal del ${from} al ${to}.`,
-    `Nuevos compromisos de materiales: ${s.pledgesCreated}. Totales del período: ${fmt(sum("pledged"))} comprometidos, ${fmt(sum("received"))} recibidos, ${fmt(sum("delivered"))} entregados, ${fmt(sum("used"))} utilizados y ${fmt(sum("verified"))} verificados con evidencia.`,
+    `Nuevos compromisos de materiales: ${s.pledgesCreated}. Totales del período (unidades) — comprometido: ${fmt(sum("pledged"))}; recibido: ${fmt(sum("received"))}; entregado: ${fmt(sum("delivered"))}; usado: ${fmt(sum("used"))}; verificado con evidencia: ${fmt(sum("verified"))}.`,
     ...matLines("es"),
     s.financials.length ? "Finanzas (moneda original, sin conversión):" : "No se registraron movimientos financieros en el período.",
     ...finLines("es"),
@@ -195,7 +195,7 @@ export function draftSummary(s: WeeklySnapshot, periodStart: number, periodEnd: 
   ].join("\n");
   const en = [
     `Weekly summary from ${from} to ${to}.`,
-    `New material pledges: ${s.pledgesCreated}. Period totals: ${fmt(sum("pledged"))} pledged, ${fmt(sum("received"))} received, ${fmt(sum("delivered"))} delivered, ${fmt(sum("used"))} used and ${fmt(sum("verified"))} verified with evidence.`,
+    `New material pledges: ${s.pledgesCreated}. Period totals (units) — pledged: ${fmt(sum("pledged"))}; received: ${fmt(sum("received"))}; delivered: ${fmt(sum("delivered"))}; used: ${fmt(sum("used"))}; verified with evidence: ${fmt(sum("verified"))}.`,
     ...matLines("en"),
     s.financials.length ? "Financials (original currency, no conversion):" : "No financial activity was recorded in this period.",
     ...finLines("en"),

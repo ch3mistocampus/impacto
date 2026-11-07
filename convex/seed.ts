@@ -303,7 +303,12 @@ async function wipeProject(ctx: MutationCtx, projectId: Id<"projects">) {
   await ctx.db.delete(projectId);
 }
 
-async function seedAll(ctx: MutationCtx) {
+/**
+ * Shared reset logic: used by the CLI (`seed:run`, `seed:resetDemo`) and by the coordinator
+ * "Reset demo" button (`demo:resetDemoFromUI`, gated by DEMO_MODE). Sessions are never touched,
+ * and demo users keep their ids, so signed-in demo sessions survive a reset.
+ */
+export async function seedAll(ctx: MutationCtx) {
   const now = Date.now();
 
   // Nonprofit (upsert)
@@ -627,7 +632,7 @@ async function seedAll(ctx: MutationCtx) {
   return { nonprofit: nonprofit?.name ?? "Espejo de Agua", wipedProjects: wiped, projects: PROJECTS.length, users: DEMO_USERS.length };
 }
 
-const seedReturns = v.object({
+export const seedReturns = v.object({
   nonprofit: v.string(),
   wipedProjects: v.number(),
   projects: v.number(),

@@ -223,23 +223,24 @@ export function materialMilestoneText(
 ): { es: string; en: string } {
   const es = `${qty} ${lowerFirst(need.nameEs)}`;
   const en = `${qty} ${lowerFirst(need.nameEn)}`;
+  // Neutral "Label: qty material" phrasing so Spanish agreement holds for any material name.
   switch (kind) {
     case "pledge":
-      return { es: `Compromiso de donación: ${es} (comprometido, no entregado)`, en: `Pledge: ${en} (pledged, not delivered)` };
+      return { es: `Compromiso de donación (aún no entregado): ${es}`, en: `Pledge (not yet delivered): ${en}` };
     case "received":
       return { es: `Recibido por el equipo: ${es}`, en: `Received by the team: ${en}` };
     case "delivered":
-      return { es: `${es} entregados al proyecto`, en: `${en} delivered to the project` };
+      return { es: `Entregado al proyecto: ${es}`, en: `Delivered to the project: ${en}` };
     case "used":
-      return { es: `${es} utilizados en la obra (pendiente de verificación)`, en: `${en} used on site (pending verification)` };
+      return { es: `Usado en la obra (pendiente de verificación): ${es}`, en: `Used on site (pending verification): ${en}` };
     case "verified":
-      return { es: `Uso verificado con evidencia: ${es}`, en: `Use verified with evidence: ${en}` };
+      return { es: `Verificado como usado, con evidencia: ${es}`, en: `Verified as used, with evidence: ${en}` };
     case "returned":
       return { es: `Devuelto: ${es}`, en: `Returned: ${en}` };
     case "pledge_canceled":
-      return { es: `Compromiso cancelado: ${es} vuelven a estar disponibles`, en: `Pledge canceled: ${en} available again` };
+      return { es: `Compromiso cancelado; disponible de nuevo: ${es}`, en: `Pledge canceled; available again: ${en}` };
     case "pledge_expired":
-      return { es: `Compromiso vencido: ${es} vuelven a estar disponibles`, en: `Pledge expired: ${en} available again` };
+      return { es: `Compromiso vencido; disponible de nuevo: ${es}`, en: `Pledge expired; available again: ${en}` };
   }
 }
 

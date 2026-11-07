@@ -13,6 +13,7 @@ import { MaterialImage } from "./MaterialImage";
 import { Timeline, toTimelineItems } from "./Timeline";
 import { PledgeProgress, VerifiedHeadline, pledgeStageQty } from "./PledgeProgress";
 import { DemoStamp, PausedNotice, StatusBadge } from "./PublicMeta";
+import { ConfirmDialog } from "../ConfirmDialog";
 
 export function FollowPledge() {
   const { token } = useParams<{ token: string }>();
@@ -21,6 +22,7 @@ export function FollowPledge() {
   const cancel = useMutation(api.pledges.cancel);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState(false);
+  const [confirming, setConfirming] = useState(false);
 
   if (data === undefined) return <p className="py-16 text-muted">{t("common.loading")}</p>;
   if (data === null) {
@@ -39,7 +41,6 @@ export function FollowPledge() {
   const fmt = new Intl.DateTimeFormat(locale === "es" ? "es-PR" : "en-US", { day: "numeric", month: "long" });
 
   async function onCancel() {
-    if (!window.confirm(t("project.follow.cancelConfirm"))) return;
     setBusy(true);
     setErr(false);
     try {
@@ -48,6 +49,7 @@ export function FollowPledge() {
       setErr(true);
     } finally {
       setBusy(false);
+      setConfirming(false);
     }
   }
 
@@ -119,12 +121,23 @@ export function FollowPledge() {
           <div className="mt-6">
             <button
               type="button"
-              onClick={onCancel}
+              onClick={() => setConfirming(true)}
               disabled={busy}
+              aria-haspopup="dialog"
               className="h-12 px-6 rounded-full border-2 border-brick text-brick font-semibold disabled:opacity-50"
             >
               {busy ? t("project.follow.canceling") : t("project.follow.cancel")}
             </button>
+            <ConfirmDialog
+              open={confirming}
+              title={t("project.follow.cancelTitle")}
+              body={t("project.follow.cancelConfirm")}
+              confirmLabel={busy ? t("project.follow.canceling") : t("project.follow.cancel")}
+              cancelLabel={t("project.follow.cancelKeep")}
+              busy={busy}
+              onConfirm={onCancel}
+              onCancel={() => setConfirming(false)}
+            />
             {err && (
               <p role="alert" className="mt-2 text-sm text-brick">
                 {t("project.follow.cancelError")}

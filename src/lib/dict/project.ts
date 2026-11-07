@@ -168,9 +168,11 @@ export const project = {
   "project.follow.status.canceled": { es: "Cancelado", en: "Canceled" },
   "project.follow.status.expired": { es: "Vencido", en: "Expired" },
   "project.follow.cancel": { es: "Cancelar compromiso", en: "Cancel pledge" },
+  "project.follow.cancelTitle": { es: "¿Cancelar este compromiso?", en: "Cancel this pledge?" },
+  "project.follow.cancelKeep": { es: "Mantener compromiso", en: "Keep pledge" },
   "project.follow.cancelConfirm": {
-    es: "¿Cancelar este compromiso? La cantidad volverá a estar disponible para otras personas.",
-    en: "Cancel this pledge? The quantity will become available to others again.",
+    es: "La cantidad volverá a estar disponible para otras personas.",
+    en: "The quantity will become available to others again.",
   },
   "project.follow.canceling": { es: "Cancelando…", en: "Canceling…" },
   "project.follow.cancelError": {

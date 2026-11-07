@@ -13,6 +13,7 @@ import { useSession } from "@/lib/session";
 import { AnalyzingPanel } from "./AnalyzingPanel";
 import { MaterialsEditor, type NeedRow } from "./MaterialsEditor";
 import { PhotoPicker } from "./PhotoPicker";
+import { PhotoAnalysis, type SuggestedMaterial } from "./PhotoAnalysis";
 import { PrivateDetails, type PrivateState } from "./PrivateDetails";
 import {
   AiBadge,
@@ -77,7 +78,8 @@ export function ProjectScreen({ projectId }: { projectId: string }) {
         </Link>
       </Card>
     );
-  if (analyzing || data.report.aiStatus === "pending") return <AnalyzingPanel />;
+  if (analyzing || data.report.aiStatus === "pending")
+    return <AnalyzingPanel withAudio={data.report.hasAudio && !data.report.transcriptOriginal} />;
   if (data.project.status !== "draft") return <SubmittedView data={data} />;
   if (!data.report.draftExtraction)
     return <TextFallback data={data} onAnalyze={(text, lang) => void runAnalysis(text, lang)} />;
@@ -91,7 +93,7 @@ function TextFallback({ data, onAnalyze }: { data: Draft; onAnalyze: (text: stri
   const report = data.report!;
   const [text, setText] = useState(report.transcriptOriginal);
   const [lang, setLang] = useState<Locale>(report.language);
-  const reason = report.aiError && ["no_api_key_audio", "transcription_failed", "no_input"].includes(report.aiError)
+  const reason = report.aiError && ["no_api_key_audio", "transcription_failed", "transcription_timeout", "no_input"].includes(report.aiError)
     ? (`field.needsText.${report.aiError}` as DictKey)
     : null;
   return (
@@ -230,7 +232,7 @@ function Editor({ data, onReanalyze }: { data: Draft; onReanalyze: (transcript?:
   const [error, setError] = useState<string | null>(null);
   const [photoBusy, setPhotoBusy] = useState(false);
 
-  const save = async () => {
+  const save = async (rowsToSave: NeedRow[] = rows) => {
     if (!sessionToken) return;
     await updateDraft({
       sessionToken,
@@ -241,7 +243,7 @@ function Editor({ data, onReanalyze }: { data: Draft; onReanalyze: (transcript?:
       summaryEs,
       summaryEn,
       urgency,
-      needs: rows.map((r) => {
+      needs: rowsToSave.map((r) => {
         const q = Number(r.qty);
         return {
           needId: r.needId as Id<"materialNeeds"> | undefined,
@@ -313,6 +315,29 @@ function Editor({ data, onReanalyze }: { data: Draft; onReanalyze: (transcript?:
     }
   };
 
+  // Accepting an AI photo suggestion adds an AI-labelled row and saves right away, so the
+  // accepted/discarded state stored on the server always matches the saved needs.
+  const acceptPhotoMaterial = async (m: SuggestedMaterial) => {
+    const row: NeedRow = {
+      rowKey: `photo-${Date.now()}`,
+      itemKey: m.itemKey,
+      nameEs: m.nameEs,
+      nameEn: m.nameEn,
+      qty: m.quantity !== null ? String(m.quantity) : "",
+      unit: m.unit,
+      aiSuggested: true,
+    };
+    const next = [...rows, row];
+    setRows(next);
+    await save(next);
+  };
+  const acceptPhotoObservations = (es: string[], en: string[]) => {
+    const join = (prev: string, add: string[]) => [prev.trim(), ...add].filter(Boolean).join(" ");
+    setDamageEs((d) => join(d, es));
+    setDamageEn((d) => join(d, en));
+    markDirty();
+  };
+
   const otherLang = report.language === "es" ? "en" : "es";
   const busy = status === "saving" || status === "submitting";
   const markDirty = () => status === "saved" && setStatus("idle");
@@ -344,9 +369,10 @@ function Editor({ data, onReanalyze }: { data: Draft; onReanalyze: (transcript?:
               {t("field.source.fallback")}
             </span>
           ) : (
-            <span className="font-semibold">{t("field.source.openai")}</span>
+            <span className="font-semibold">{t("field.source.ai")}</span>
           )}
-          {ex.source === "fallback" && (ex.notice === "openai_error" || ex.notice === "no_api_key") && (
+          {ex.source === "fallback" &&
+            ["ai_error", "ai_timeout", "openai_error", "no_api_key"].includes(ex.notice ?? "") && (
             <span>{t(`field.source.fallback.${ex.notice}` as DictKey)}</span>
           )}
           {ex.model && <span className="opacity-75">· {ex.model}</span>}
@@ -603,6 +629,15 @@ function Editor({ data, onReanalyze }: { data: Draft; onReanalyze: (transcript?:
           }))}
           onAdd={(files) => void addPhotos(files)}
         />
+        {ex && (
+          <PhotoAnalysis
+            photos={data.photos}
+            suggestions={ex.photoSuggestions ?? []}
+            disabled={busy || photoBusy}
+            onAcceptMaterial={acceptPhotoMaterial}
+            onAcceptObservations={acceptPhotoObservations}
+          />
+        )}
         {photoBusy && (
           <p className="mt-2 flex items-center gap-2 text-sm text-muted">
             <Spinner className="h-4 w-4" /> {t("field.saving")}

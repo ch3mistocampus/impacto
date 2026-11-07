@@ -67,8 +67,8 @@ export const donate = {
   "donate.submitting": { es: "Guardando…", en: "Saving…" },
   "donate.close": { es: "Cerrar", en: "Close" },
   "donate.overpledge": {
-    es: "Alguien comprometió materiales hace un momento. Ahora quedan disponibles:",
-    en: "Someone just pledged materials. Now available:",
+    es: "Alguien comprometió materiales hace un momento. Disponible ahora:",
+    en: "Someone just pledged materials. Available now:",
   },
   "donate.errorGeneric": {
     es: "No se pudo guardar el compromiso. Revisa los datos e inténtalo de nuevo.",
@@ -115,7 +115,7 @@ export const donate = {
     en: "You have no pledges saved in this browser yet.",
   },
   "donations.emptyCta": { es: "Elegir materiales", en: "Choose materials" },
-  "donations.verifiedAsUsed": { es: "verificados como usados", en: "verified as used" },
+  "donations.verifiedAsUsed": { es: "Verificado como usado", en: "Verified as used" },
   "donations.notYetVerified": {
     es: "Aún no verificado. Comprometido no es entregado.",
     en: "Not verified yet. Pledged is not delivered.",

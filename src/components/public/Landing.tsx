@@ -14,7 +14,7 @@ import { DemoStamp } from "./PublicMeta";
 import { CATEGORIES, CATEGORY_STYLE, STAGES, type Category } from "./types";
 
 export function Landing() {
-  const { t } = useI18n();
+  const { t, tn } = useI18n();
   const dash = useQuery(api.public.transparencyDashboard, {});
   const [filter, setFilter] = useState<Category | undefined>(undefined);
   const projects = useQuery(api.public.listPublishedProjects, filter ? { category: filter } : {});
@@ -79,7 +79,7 @@ export function Landing() {
                   <p className="text-sm text-muted mt-1">{t(`landing.desc.${c}` as DictKey)}</p>
                   <p className="mt-3 text-sm">
                     <strong className="font-display text-lg tabular-nums">{row?.projects.length ?? "–"}</strong>{" "}
-                    <span className="text-muted">{t("landing.projectsPublished")}</span>
+                    <span className="text-muted">{tn("landing.projectsPublished", row?.projects.length ?? 0)}</span>
                   </p>
                   <div className="mt-3 border-t border-border pt-2" aria-live="polite">
                     {row ? (
@@ -92,7 +92,7 @@ export function Landing() {
                   </div>
                   <p className="mt-3 rounded-xl bg-leaf-soft text-leaf px-3 py-2 text-sm font-semibold">
                     <span className="font-display text-lg tabular-nums mr-1.5">{row?.totals.verified ?? "–"}</span>
-                    {t("landing.verifiedImpact")}
+                    {tn("landing.verifiedImpact", row?.totals.verified ?? 0)}
                   </p>
                   <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2">
                     <Link

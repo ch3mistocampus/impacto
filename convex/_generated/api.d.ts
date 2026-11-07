@@ -11,6 +11,7 @@
 import type * as ai from "../ai.js";
 import type * as coordinator from "../coordinator.js";
 import type * as crons from "../crons.js";
+import type * as demo from "../demo.js";
 import type * as evidence from "../evidence.js";
 import type * as field from "../field.js";
 import type * as financials from "../financials.js";
@@ -33,6 +34,7 @@ declare const fullApi: ApiFromModules<{
   ai: typeof ai;
   coordinator: typeof coordinator;
   crons: typeof crons;
+  demo: typeof demo;
   evidence: typeof evidence;
   field: typeof field;
   financials: typeof financials;

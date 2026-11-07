@@ -6,17 +6,21 @@ import { internal } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
 
 /**
- * Lane B — AI intake. Speech-to-text + structured extraction (OpenAI), with a deterministic
+ * Lane B — AI intake via OpenRouter (OpenAI-compatible chat completions), with a deterministic
  * local fallback so the live demo never depends on the network or an API key.
  *
- * PRIVACY: the only thing sent to the AI provider is the field report audio (for transcription)
- * and the transcript text (for extraction), after regex redaction of obvious names, phone numbers
- * and emails. projectPrivate and photos are NEVER read here.
+ * PRIVACY — what leaves Convex, and only to OpenRouter:
+ *   1. the field report audio, ONLY if the worker left "Send audio to AI for transcription" on
+ *      (otherwise no audio is ever uploaded) — call #1 returns a verbatim transcript;
+ *   2. the transcript AFTER regex redaction of obvious names / phones / emails — call #2 extracts
+ *      the structured draft (so the extraction model never sees the unredacted text);
+ *   3. a single photo, ONLY when the worker explicitly presses "Analizar foto con IA" for that
+ *      photo and ticks the no-people/no-house-numbers confirmation (never automatic).
+ * projectPrivate is NEVER read here. Logs contain model + latency + token counts, never content.
  *
  * Env (Convex dashboard / `npx convex env set`):
- *   OPENAI_API_KEY            optional — without it, the fallback extractor is used
- *   OPENAI_TRANSCRIBE_MODEL   default "gpt-4o-transcribe"
- *   OPENAI_EXTRACT_MODEL      default "gpt-4.1-mini"
+ *   OPENROUTER_API_KEY   optional — without it, the fallback extractor is used (voice needs text)
+ *   AI_MODEL             default "google/gemini-3.8-flash" (must accept audio + image input)
  */
 
 type Category = "roof_shelter" | "reconstruction" | "heal_sow";
@@ -35,7 +39,7 @@ type Material = {
 };
 type Milestone = { es: string; en: string };
 type Extraction = {
-  source: "openai" | "fallback";
+  source: "openrouter" | "fallback";
   model?: string;
   notice?: string;
   redactions: number;
@@ -355,7 +359,183 @@ export function fallbackExtract(transcript: string, language: "es" | "en", redac
   };
 }
 
-// ---------------- OpenAI ----------------
+// ---------------- OpenRouter ----------------
+// Request formats verified against https://openrouter.ai/docs (multimodal/audio, multimodal/images,
+// features/structured-outputs). Audio is base64 only (no URLs) as an `input_audio` content part;
+// images go as an `image_url` data URL; structured output uses `response_format.json_schema`.
+
+const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
+const DEFAULT_MODEL = "google/gemini-3.8-flash";
+const AI_TIMEOUT_MS = 45_000;
+const MAX_AUDIO_BYTES = 20 * 1024 * 1024;
+const MAX_IMAGE_BYTES = 8 * 1024 * 1024;
+
+type AiConfig = { apiKey: string; model: string };
+type AiErrorCode = "timeout" | "network" | "http" | "empty" | "parse" | "too_large" | "unsupported_format";
+
+class AiError extends Error {
+  constructor(
+    public code: AiErrorCode,
+    message: string,
+  ) {
+    super(message);
+    this.name = "AiError";
+  }
+}
+
+function aiConfig(): AiConfig | null {
+  const apiKey = process.env.OPENROUTER_API_KEY;
+  if (!apiKey) return null;
+  return { apiKey, model: process.env.AI_MODEL || DEFAULT_MODEL };
+}
+
+type ContentPart =
+  | { type: "text"; text: string }
+  | { type: "input_audio"; input_audio: { data: string; format: string } }
+  | { type: "image_url"; image_url: { url: string } };
+
+/**
+ * One chat-completions call with strict JSON-schema output. Logs model, latency, token usage and
+ * cost (when OpenRouter reports it) — never prompt or response content.
+ */
+async function callOpenRouter<T>(
+  cfg: AiConfig,
+  task: string,
+  opts: { system: string; user: ContentPart[]; schemaName: string; schema: object; maxTokens: number },
+): Promise<{ data: T; model: string }> {
+  const started = Date.now();
+  let res: Response;
+  try {
+    res = await fetch(OPENROUTER_URL, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${cfg.apiKey}`,
+        "Content-Type": "application/json",
+        "HTTP-Referer": "https://impacto-gules.vercel.app",
+        "X-Title": "Impacto",
+      },
+      body: JSON.stringify({
+        model: cfg.model,
+        temperature: 0,
+        max_tokens: opts.maxTokens,
+        reasoning: { effort: "low" },
+        messages: [
+          { role: "system", content: opts.system },
+          { role: "user", content: opts.user },
+        ],
+        response_format: {
+          type: "json_schema",
+          json_schema: { name: opts.schemaName, strict: true, schema: opts.schema },
+        },
+        // Only route to endpoints that honour response_format (OpenRouter structured-outputs guide).
+        provider: { require_parameters: true },
+      }),
+      signal: AbortSignal.timeout(AI_TIMEOUT_MS),
+    });
+  } catch (e) {
+    const name = e instanceof Error ? e.name : "";
+    const code: AiErrorCode = name === "TimeoutError" || name === "AbortError" ? "timeout" : "network";
+    console.error(JSON.stringify({ ai: task, model: cfg.model, ms: Date.now() - started, error: code }));
+    throw new AiError(code, `${task}_${code}`);
+  }
+  if (!res.ok) {
+    const ms = Date.now() - started;
+    // OpenRouter error bodies describe the failure (model, quota, format) — they don't echo our input.
+    const detail = (await res.text()).slice(0, 300);
+    console.error(JSON.stringify({ ai: task, model: cfg.model, ms, status: res.status, detail }));
+    throw new AiError("http", `${task}_http_${res.status}`);
+  }
+  const json = (await res.json()) as {
+    model?: string;
+    choices?: { message?: { content?: string | null }; finish_reason?: string }[];
+    usage?: { prompt_tokens?: number; completion_tokens?: number; cost?: number };
+  };
+  const model = json.model ?? cfg.model;
+  const ms = Date.now() - started; // includes body read (OpenRouter may send headers early)
+  console.log(
+    JSON.stringify({
+      ai: task,
+      model,
+      ms,
+      finish: json.choices?.[0]?.finish_reason,
+      tokensIn: json.usage?.prompt_tokens,
+      tokensOut: json.usage?.completion_tokens,
+      costUsd: json.usage?.cost,
+    }),
+  );
+  const content = json.choices?.[0]?.message?.content;
+  if (!content) throw new AiError("empty", `${task}_empty`);
+  try {
+    // Some providers wrap JSON in a ```json fence even in structured mode.
+    const raw = content.trim().replace(/^```(?:json)?\s*/i, "").replace(/```$/, "");
+    return { data: JSON.parse(raw) as T, model };
+  } catch {
+    throw new AiError("parse", `${task}_parse`);
+  }
+}
+
+// ---- audio ----
+
+/**
+ * Map a recorded blob's MIME type to the OpenRouter `input_audio.format` label.
+ * Chrome/Firefox record audio/webm (opus); Safari records audio/mp4 (AAC) — labelled "m4a"
+ * (the audio-only MP4 container). See TEST notes in the report for which formats were confirmed.
+ */
+export function audioFormatFor(mime: string): string | null {
+  const m = mime.toLowerCase().split(";")[0].trim();
+  if (m.includes("webm")) return "webm";
+  if (m.includes("ogg") || m.includes("opus")) return "ogg";
+  if (m.includes("mp4") || m.includes("m4a") || m.includes("aac")) return m.includes("aac") && !m.includes("mp4") ? "aac" : "m4a";
+  if (m.includes("wav") || m.includes("wave")) return "wav";
+  if (m.includes("mpeg") || m.includes("mp3")) return "mp3";
+  if (m.includes("aiff")) return "aiff";
+  if (m.includes("flac")) return "flac";
+  return null;
+}
+
+const TRANSCRIBE_SYSTEM = `You are a verbatim speech-to-text engine for disaster-recovery field reports.
+Transcribe exactly what is said, in the language it is spoken (usually Spanish, sometimes English or mixed).
+NEVER translate. NEVER summarize, correct, reorder or add words. Keep numbers as spoken (digits are fine).
+If there is no intelligible speech, return an empty transcript.`;
+
+const TRANSCRIBE_SCHEMA = {
+  type: "object",
+  additionalProperties: false,
+  required: ["transcript", "language"],
+  properties: {
+    transcript: { type: "string" },
+    language: { type: "string", enum: ["es", "en", "other"] },
+  },
+} as const;
+
+async function aiTranscribe(
+  cfg: AiConfig,
+  audio: Blob,
+  hint: "es" | "en",
+): Promise<{ transcript: string; language: "es" | "en" | null; model: string }> {
+  if (audio.size > MAX_AUDIO_BYTES) throw new AiError("too_large", "audio_too_large");
+  const format = audioFormatFor(audio.type || "audio/webm");
+  if (!format) throw new AiError("unsupported_format", `audio_format_${audio.type}`);
+  const data = Buffer.from(await audio.arrayBuffer()).toString("base64");
+  const { data: out, model } = await callOpenRouter<{ transcript?: unknown; language?: unknown }>(cfg, "transcribe", {
+    system: TRANSCRIBE_SYSTEM,
+    user: [
+      {
+        type: "text",
+        text: `Transcribe this audio verbatim. The field worker selected ${hint === "es" ? "Spanish" : "English"} but keep whatever language is actually spoken.`,
+      },
+      { type: "input_audio", input_audio: { data, format } },
+    ],
+    schemaName: "transcript",
+    schema: TRANSCRIBE_SCHEMA,
+    maxTokens: 4000,
+  });
+  const transcript = typeof out.transcript === "string" ? out.transcript.trim().slice(0, 20_000) : "";
+  const language = out.language === "es" || out.language === "en" ? out.language : null;
+  return { transcript, language, model };
+}
+
+// ---- extraction ----
 
 const SYSTEM_PROMPT = `You structure disaster-recovery field reports for a nonprofit in Puerto Rico / Latin America.
 The transcript may be in Spanish or English (or mixed). Keep meaning faithful to the transcript.
@@ -366,7 +546,7 @@ Rules:
   Vague requests with no number (e.g. "materiales para reparar el techo") => quantity null, confidence "low".
 - itemKey must be one of: ${ITEM_KEYS.join(", ")}, or "other". Roof repair with no specific material => "zinc_sheet" with quantity null.
 - unit: short Spanish unit word (e.g. "unidades", "bolsas", "planchas", "galones", "sacos").
-- sourceQuote: the exact words from the transcript supporting this material.
+- sourceQuote: the exact words from the transcript supporting this material (copy them verbatim, original language).
 - category: roof_shelter (roofs, tarps, shelter), reconstruction (walls, structure, bricks, cement), heal_sow (gardens, seeds, soil, community healing).
 - damageDescriptionEs/En: one or two short sentences describing ONLY the damage stated in the transcript. No names, no locations.
 - urgency is a SUGGESTION for the worker to confirm: high only if the transcript indicates danger, exposure to rain, vulnerable people, or says urgent.
@@ -432,99 +612,223 @@ const JSON_SCHEMA = {
   },
 } as const;
 
-async function openaiExtract(apiKey: string, transcript: string, language: "es" | "en"): Promise<Omit<Extraction, "source" | "redactions">> {
-  const model = process.env.OPENAI_EXTRACT_MODEL || "gpt-4.1-mini";
-  const res = await fetch("https://api.openai.com/v1/chat/completions", {
-    method: "POST",
-    headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-    body: JSON.stringify({
-      model,
-      temperature: 0,
-      messages: [
-        { role: "system", content: SYSTEM_PROMPT },
-        {
-          role: "user",
-          content: `Transcript language selected by the field worker: ${language === "es" ? "Spanish (es)" : "English (en)"}.\nTranscript:\n"""${transcript}"""`,
-        },
-      ],
-      response_format: { type: "json_schema", json_schema: { name: "field_report", strict: true, schema: JSON_SCHEMA } },
-    }),
-    signal: AbortSignal.timeout(45_000),
-  });
-  if (!res.ok) throw new Error(`openai_extract_${res.status}: ${(await res.text()).slice(0, 200)}`);
-  const json = (await res.json()) as { choices?: { message?: { content?: string } }[] };
-  const content = json.choices?.[0]?.message?.content;
-  if (!content) throw new Error("openai_extract_empty");
-  const p = JSON.parse(content) as Omit<Extraction, "source" | "redactions" | "model">;
+/** Every number explicitly stated in the text — digit runs ("200", "1,000") and spelled-out runs ("doscientos"). */
+function statedNumbers(text: string): Set<number> {
+  const out = new Set<number>();
+  for (const d of text.match(/\d[\d.,]*/g) ?? []) {
+    const n = Number(d.replace(/[.,](?=\d{3}(\D|$))/g, "").replace(",", "."));
+    if (Number.isFinite(n)) out.add(n);
+  }
+  const toks = text.split(/\s+/).map(norm).filter(Boolean);
+  let run: string[] = [];
+  const flush = () => {
+    if (run.length) {
+      const n = parseNumberTokens(run);
+      if (n !== null) out.add(n);
+    }
+    run = [];
+  };
+  for (let i = 0; i < toks.length; i++) {
+    const t = toks[i];
+    if (isNumTok(t) || (NUM_JOINERS.has(t) && run.length > 0 && i + 1 < toks.length && isNumTok(toks[i + 1]))) run.push(t);
+    else flush();
+  }
+  flush();
+  return out;
+}
 
-  const cats: Category[] = ["roof_shelter", "reconstruction", "heal_sow"];
-  const urg: Urgency[] = ["low", "medium", "high"];
-  const conf: Confidence[] = ["high", "medium", "low"];
-  const str = (x: unknown, d = "") => (typeof x === "string" ? x.slice(0, 2000) : d);
-  return {
-    model,
-    titleEs: str(p.titleEs),
-    titleEn: str(p.titleEn),
-    category: cats.includes(p.category) ? p.category : "reconstruction",
-    summaryEs: str(p.summaryEs),
-    summaryEn: str(p.summaryEn),
-    urgency: urg.includes(p.urgency) ? p.urgency : "medium",
-    damageDescriptionEs: str(p.damageDescriptionEs),
-    damageDescriptionEn: str(p.damageDescriptionEn),
-    materials: (Array.isArray(p.materials) ? p.materials : []).slice(0, 30).map((m) => ({
-      itemKey: (ITEM_KEYS as readonly string[]).includes(m.itemKey) ? m.itemKey : "other",
+const CATS: Category[] = ["roof_shelter", "reconstruction", "heal_sow"];
+const URGS: Urgency[] = ["low", "medium", "high"];
+const CONFS: Confidence[] = ["high", "medium", "low"];
+const str = (x: unknown, d = "", max = 2000) => (typeof x === "string" ? x.slice(0, max) : d);
+const itemKeyOf = (x: unknown) => (typeof x === "string" && (ITEM_KEYS as readonly string[]).includes(x) ? x : "other");
+
+async function aiExtract(
+  cfg: AiConfig,
+  transcript: string,
+  language: "es" | "en",
+): Promise<Omit<Extraction, "source" | "redactions">> {
+  type Raw = Omit<Extraction, "source" | "redactions" | "model">;
+  const { data: p, model } = await callOpenRouter<Raw>(cfg, "extract", {
+    system: SYSTEM_PROMPT,
+    user: [
+      {
+        type: "text",
+        text: `Transcript language selected by the field worker: ${language === "es" ? "Spanish (es)" : "English (en)"}.\nTranscript:\n"""${transcript}"""`,
+      },
+    ],
+    schemaName: "field_report",
+    schema: JSON_SCHEMA,
+    maxTokens: 4000,
+  });
+
+  // Post-response quantity check: a quantity survives only if that number is explicitly stated in
+  // the transcript. Anything else is treated as invented => null + low confidence + needs confirmation.
+  const stated = statedNumbers(transcript);
+  let dropped = 0;
+  const materials: Material[] = (Array.isArray(p.materials) ? p.materials : []).slice(0, 30).map((m) => {
+    const q = typeof m.quantity === "number" && Number.isFinite(m.quantity) && m.quantity > 0 ? m.quantity : null;
+    const ok = q !== null && stated.has(q);
+    if (q !== null && !ok) dropped++;
+    return {
+      itemKey: itemKeyOf(m.itemKey),
       nameEs: str(m.nameEs),
       nameEn: str(m.nameEn),
-      quantity: typeof m.quantity === "number" && Number.isFinite(m.quantity) && m.quantity > 0 ? m.quantity : null,
+      quantity: ok ? q : null,
       unit: str(m.unit, "unidades") || "unidades",
-      confidence: conf.includes(m.confidence) ? m.confidence : "low",
-      approximate: m.approximate === true,
-      sourceQuote: str(m.sourceQuote),
-    })),
-    missingQuestions: (Array.isArray(p.missingQuestions) ? p.missingQuestions : [])
-      .slice(0, 10)
-      .map((q) => ({ es: str(q.es), en: str(q.en) })),
+      confidence: ok ? (CONFS.includes(m.confidence) ? m.confidence : "low") : "low",
+      approximate: ok && m.approximate === true,
+      sourceQuote: str(m.sourceQuote, "", 500),
+    };
+  });
+  if (dropped) console.warn(JSON.stringify({ ai: "extract", quantityCheckDropped: dropped }));
+  const missingQuestions = (Array.isArray(p.missingQuestions) ? p.missingQuestions : [])
+    .slice(0, 10)
+    .map((q) => ({ es: str(q.es), en: str(q.en) }));
+  // Safety net: if the model asked nothing, still ask for every unknown quantity.
+  if (!missingQuestions.length)
+    for (const m of materials.filter((x) => x.quantity === null))
+      missingQuestions.push({
+        es: `¿Qué cantidad exacta de ${m.nameEs.toLowerCase()} se necesita?`,
+        en: `What exact quantity of ${m.nameEn.toLowerCase()} is needed?`,
+      });
+
+  return {
+    model,
+    titleEs: str(p.titleEs, "", 200),
+    titleEn: str(p.titleEn, "", 200),
+    category: CATS.includes(p.category) ? p.category : "reconstruction",
+    summaryEs: str(p.summaryEs),
+    summaryEn: str(p.summaryEn),
+    urgency: URGS.includes(p.urgency) ? p.urgency : "medium",
+    damageDescriptionEs: str(p.damageDescriptionEs),
+    damageDescriptionEn: str(p.damageDescriptionEn),
+    materials,
+    missingQuestions: missingQuestions.slice(0, 12),
     proposedMilestones: (Array.isArray(p.proposedMilestones) ? p.proposedMilestones : [])
       .slice(0, 8)
-      .map((q) => ({ es: str(q.es).slice(0, 200), en: str(q.en).slice(0, 200) }))
+      .map((q) => ({ es: str(q.es, "", 200), en: str(q.en, "", 200) }))
       .filter((q) => q.es || q.en),
-    transcriptTranslated: typeof p.transcriptTranslated === "string" ? p.transcriptTranslated : null,
+    transcriptTranslated: typeof p.transcriptTranslated === "string" ? p.transcriptTranslated.slice(0, 20_000) : null,
   };
 }
 
-async function openaiTranscribe(apiKey: string, audio: Blob, language: "es" | "en"): Promise<string> {
-  const model = process.env.OPENAI_TRANSCRIBE_MODEL || "gpt-4o-transcribe";
-  const type = audio.type || "audio/webm";
-  const ext = type.includes("mp4") || type.includes("m4a") || type.includes("aac")
-    ? "m4a"
-    : type.includes("ogg")
-      ? "ogg"
-      : type.includes("wav")
-        ? "wav"
-        : type.includes("mpeg") || type.includes("mp3")
-          ? "mp3"
-          : "webm";
-  const form = new FormData();
-  form.append("file", new File([audio], `report.${ext}`, { type }));
-  form.append("model", model);
-  form.append("language", language); // hint only; transcript stays in the original language
-  form.append("response_format", "json");
-  const res = await fetch("https://api.openai.com/v1/audio/transcriptions", {
-    method: "POST",
-    headers: { Authorization: `Bearer ${apiKey}` },
-    body: form,
-    signal: AbortSignal.timeout(60_000),
+// ---- photo analysis ----
+
+const PHOTO_SYSTEM = `You help a disaster-recovery nonprofit draft a materials list from ONE photo of damage.
+Describe ONLY physical damage and building materials visible in the photo.
+Rules:
+- Never describe, identify or guess anything about people, faces, names, house numbers, street signs, licence plates or locations.
+- If the photo shows people, faces, readable house numbers, names, documents or licence plates, set privacyConcern=true.
+- observationsEs/En: 1-4 short factual sentences about the visible damage (Spanish and English, same order).
+- materials: building materials likely needed to repair what is visible. itemKey must be one of: ${ITEM_KEYS.join(", ")}, or "other".
+- quantity: a number ONLY if the items are clearly countable in the photo (e.g. 3 missing roof sheets). Otherwise null. Never estimate areas or volumes.
+- confidence: how sure you are this material is needed, from the photo alone. Prefer "low"/"medium".
+- reasonEs/En: one short phrase pointing to what in the photo supports it.
+- unit: short Spanish unit word ("unidades", "planchas", "bolsas", ...).`;
+
+const PHOTO_SCHEMA = {
+  type: "object",
+  additionalProperties: false,
+  required: ["privacyConcern", "observationsEs", "observationsEn", "materials"],
+  properties: {
+    privacyConcern: { type: "boolean" },
+    observationsEs: { type: "array", items: { type: "string" } },
+    observationsEn: { type: "array", items: { type: "string" } },
+    materials: {
+      type: "array",
+      items: {
+        type: "object",
+        additionalProperties: false,
+        required: ["itemKey", "nameEs", "nameEn", "quantity", "unit", "confidence", "reasonEs", "reasonEn"],
+        properties: {
+          itemKey: { type: "string", enum: [...ITEM_KEYS, "other"] },
+          nameEs: { type: "string" },
+          nameEn: { type: "string" },
+          quantity: { type: ["integer", "null"] },
+          unit: { type: "string" },
+          confidence: { type: "string", enum: ["high", "medium", "low"] },
+          reasonEs: { type: "string" },
+          reasonEn: { type: "string" },
+        },
+      },
+    },
+  },
+} as const;
+
+type PhotoSuggestion = {
+  photoId: Id<"photos">;
+  model: string;
+  createdAt: number;
+  privacyConcern: boolean;
+  observationsEs: string[];
+  observationsEn: string[];
+  observationsStatus: "pending" | "accepted" | "discarded";
+  materials: {
+    itemKey: string;
+    nameEs: string;
+    nameEn: string;
+    quantity: number | null;
+    unit: string;
+    confidence: Confidence;
+    reasonEs: string;
+    reasonEn: string;
+    status: "pending" | "accepted" | "discarded";
+  }[];
+};
+
+async function aiAnalyzePhoto(cfg: AiConfig, image: Blob, photoId: Id<"photos">): Promise<PhotoSuggestion> {
+  if (image.size > MAX_IMAGE_BYTES) throw new AiError("too_large", "image_too_large");
+  const mime = /^image\/(jpeg|png|webp)$/.test(image.type) ? image.type : "image/jpeg";
+  const url = `data:${mime};base64,${Buffer.from(await image.arrayBuffer()).toString("base64")}`;
+  type Raw = {
+    privacyConcern?: unknown;
+    observationsEs?: unknown;
+    observationsEn?: unknown;
+    materials?: { [k: string]: unknown }[];
+  };
+  const { data: p, model } = await callOpenRouter<Raw>(cfg, "photo", {
+    system: PHOTO_SYSTEM,
+    user: [
+      { type: "text", text: "Analyze this damage photo." },
+      { type: "image_url", image_url: { url } },
+    ],
+    schemaName: "photo_suggestions",
+    schema: PHOTO_SCHEMA,
+    maxTokens: 2000,
   });
-  if (!res.ok) throw new Error(`openai_transcribe_${res.status}: ${(await res.text()).slice(0, 200)}`);
-  const json = (await res.json()) as { text?: string };
-  return (json.text ?? "").trim();
+  const strs = (x: unknown) => (Array.isArray(x) ? x : []).filter((s): s is string => typeof s === "string").slice(0, 4).map((s) => s.slice(0, 300));
+  return {
+    photoId,
+    model,
+    createdAt: Date.now(),
+    privacyConcern: p.privacyConcern === true,
+    observationsEs: strs(p.observationsEs),
+    observationsEn: strs(p.observationsEn),
+    observationsStatus: "pending",
+    materials: (Array.isArray(p.materials) ? p.materials : []).slice(0, 8).map((m) => {
+      const q = typeof m.quantity === "number" && Number.isInteger(m.quantity) && m.quantity > 0 && m.quantity <= 100 ? m.quantity : null;
+      return {
+        itemKey: itemKeyOf(m.itemKey),
+        nameEs: str(m.nameEs, "", 120),
+        nameEn: str(m.nameEn, "", 120),
+        quantity: q,
+        unit: str(m.unit, "unidades", 40) || "unidades",
+        // Photo suggestions are never "high": a picture can't confirm a need.
+        confidence: m.confidence === "medium" ? "medium" : "low",
+        reasonEs: str(m.reasonEs, "", 200),
+        reasonEn: str(m.reasonEn, "", 200),
+        status: "pending",
+      };
+    }),
+  };
 }
 
 // ---------------- actions ----------------
 
 const resultValidator = v.object({
   status: v.union(v.literal("done"), v.literal("needs_text")),
-  source: v.optional(v.union(v.literal("openai"), v.literal("fallback"))),
+  source: v.optional(v.union(v.literal("openrouter"), v.literal("fallback"))),
   reason: v.optional(v.string()),
 });
 
@@ -535,48 +839,95 @@ export const transcribeAndExtract = action({
     // Authorization + data minimization: this query returns only transcript/audio ref.
     const info: { transcript: string; language: "es" | "en"; audioStorageId: Id<"_storage"> | null } =
       await ctx.runQuery(internal.field.getReportForAi, args);
-    const apiKey = process.env.OPENAI_API_KEY;
+    const cfg = aiConfig();
     await ctx.runMutation(internal.field.setAiStatus, { reportId: args.reportId, aiStatus: "pending" });
 
     let transcript = info.transcript.trim();
+    let language = info.language;
     if (!transcript) {
       if (!info.audioStorageId) {
         await ctx.runMutation(internal.field.setAiStatus, { reportId: args.reportId, aiStatus: "error", aiError: "no_input" });
         return { status: "needs_text", reason: "no_input" };
       }
-      if (!apiKey) {
+      if (!cfg) {
         await ctx.runMutation(internal.field.setAiStatus, { reportId: args.reportId, aiStatus: "error", aiError: "no_api_key_audio" });
         return { status: "needs_text", reason: "no_api_key_audio" };
       }
+      // Call #1: audio -> verbatim transcript (original language). Stored before redaction so the
+      // worker sees exactly what they said; only the redacted copy goes to call #2.
       try {
         const blob = await ctx.storage.get(info.audioStorageId);
-        if (!blob) throw new Error("audio_missing");
-        transcript = await openaiTranscribe(apiKey, blob, info.language);
-        if (!transcript) throw new Error("empty_transcript");
-        await ctx.runMutation(internal.field.storeTranscript, { reportId: args.reportId, transcript });
+        if (!blob) throw new AiError("empty", "audio_missing");
+        const r = await aiTranscribe(cfg, blob, info.language);
+        if (!r.transcript) throw new AiError("empty", "empty_transcript");
+        transcript = r.transcript;
+        if (r.language) language = r.language;
+        await ctx.runMutation(internal.field.storeTranscript, {
+          reportId: args.reportId,
+          transcript,
+          language: r.language ?? undefined,
+        });
       } catch (e) {
-        const msg = e instanceof Error ? e.message : String(e);
-        console.error("transcription failed", msg);
-        await ctx.runMutation(internal.field.setAiStatus, { reportId: args.reportId, aiStatus: "error", aiError: "transcription_failed" });
-        return { status: "needs_text", reason: "transcription_failed" };
+        const code = e instanceof AiError ? e.code : "network";
+        console.error("transcription failed", e instanceof Error ? e.message : String(e));
+        const reason = code === "timeout" ? "transcription_timeout" : "transcription_failed";
+        await ctx.runMutation(internal.field.setAiStatus, { reportId: args.reportId, aiStatus: "error", aiError: reason });
+        return { status: "needs_text", reason };
       }
     }
 
-    // Strip obvious names/phones/emails before the transcript leaves Convex.
+    // Call #2: strip obvious names/phones/emails before the transcript is used for extraction.
     const { text: safe, count } = redact(transcript);
     let extraction: Extraction;
-    if (apiKey) {
+    if (cfg) {
       try {
-        extraction = { source: "openai", redactions: count, ...(await openaiExtract(apiKey, safe, info.language)) };
+        extraction = { source: "openrouter", redactions: count, ...(await aiExtract(cfg, safe, language)) };
       } catch (e) {
         console.error("extraction failed, using fallback", e instanceof Error ? e.message : e);
-        extraction = fallbackExtract(safe, info.language, count, "openai_error");
+        const notice = e instanceof AiError && e.code === "timeout" ? "ai_timeout" : "ai_error";
+        extraction = fallbackExtract(safe, language, count, notice);
       }
     } else {
-      extraction = fallbackExtract(safe, info.language, count, "no_api_key");
+      extraction = fallbackExtract(safe, language, count, "no_api_key");
     }
     await ctx.runMutation(internal.field.storeExtraction, { reportId: args.reportId, extraction });
     return { status: "done", source: extraction.source };
+  },
+});
+
+const photoResultValidator = v.object({
+  status: v.union(v.literal("done"), v.literal("error")),
+  reason: v.optional(v.string()),
+  privacyConcern: v.optional(v.boolean()),
+  materials: v.optional(v.number()),
+});
+
+/**
+ * Opt-in, per-photo analysis. Never called automatically: the UI requires a button press AND a
+ * ticked "no people / faces / house numbers / names" confirmation, which is re-checked here.
+ * The stored photo is already EXIF-stripped + re-encoded client-side (src/lib/image.ts).
+ */
+export const analyzePhoto = action({
+  args: { sessionToken: v.string(), photoId: v.id("photos"), confirmedNoPeople: v.boolean() },
+  returns: photoResultValidator,
+  handler: async (ctx, args): Promise<typeof photoResultValidator.type> => {
+    if (!args.confirmedNoPeople) return { status: "error", reason: "not_confirmed" };
+    const info: { storageId: Id<"_storage">; reportId: Id<"fieldReports"> } = await ctx.runQuery(
+      internal.field.getPhotoForAi,
+      { sessionToken: args.sessionToken, photoId: args.photoId },
+    );
+    const cfg = aiConfig();
+    if (!cfg) return { status: "error", reason: "no_api_key" };
+    try {
+      const blob = await ctx.storage.get(info.storageId);
+      if (!blob) return { status: "error", reason: "photo_missing" };
+      const suggestion = await aiAnalyzePhoto(cfg, blob, args.photoId);
+      await ctx.runMutation(internal.field.storePhotoSuggestion, { reportId: info.reportId, suggestion });
+      return { status: "done", privacyConcern: suggestion.privacyConcern, materials: suggestion.materials.length };
+    } catch (e) {
+      console.error("photo analysis failed", e instanceof Error ? e.message : String(e));
+      return { status: "error", reason: e instanceof AiError && e.code === "timeout" ? "timeout" : "failed" };
+    }
   },
 });
 
@@ -598,5 +949,66 @@ export const testFallback = internalAction({
       args.language ?? (args.demo ?? (/\b(we|the|need|and|bags?|bricks?)\b/i.test(text) ? "en" : "es"));
     const r = redact(text);
     return { redacted: r.text, extraction: fallbackExtract(r.text, language, r.count, "test") };
+  },
+});
+
+/**
+ * Live smoke tests against OpenRouter (costs a few cents; internal only — not callable by clients):
+ *   npx convex run ai:testLive '{"demo":"es"}'                       -> redaction + extraction
+ *   npx convex run ai:testLive '{"transcript":"...","language":"en"}'
+ *   npx convex run ai:testLive '{"audioBase64":"...","mime":"audio/wav"}'  -> transcribe + extract
+ *   npx convex run ai:testLive '{"storageId":"...","mime":"audio/webm"}'   -> same, from storage
+ *   npx convex run ai:testLive '{"imageStorageId":"..."}'                 -> photo analysis
+ */
+export const testLive = internalAction({
+  args: {
+    transcript: v.optional(v.string()),
+    demo: v.optional(v.union(v.literal("es"), v.literal("en"))),
+    language: v.optional(v.union(v.literal("es"), v.literal("en"))),
+    audioBase64: v.optional(v.string()),
+    storageId: v.optional(v.id("_storage")),
+    mime: v.optional(v.string()),
+    imageStorageId: v.optional(v.id("_storage")),
+    skipExtract: v.optional(v.boolean()),
+  },
+  returns: v.any(),
+  handler: async (ctx, args) => {
+    const cfg = aiConfig();
+    if (!cfg) return { error: "OPENROUTER_API_KEY not set" };
+    if (args.imageStorageId) {
+      const blob = await ctx.storage.get(args.imageStorageId);
+      if (!blob) return { error: "image missing" };
+      return { photo: await aiAnalyzePhoto(cfg, blob, "test" as Id<"photos">) };
+    }
+    let language: "es" | "en" = args.language ?? (args.demo ?? "es");
+    let transcript = args.transcript ?? (args.demo === "en" ? DEMO_TRANSCRIPT_EN : DEMO_TRANSCRIPT_ES);
+    let transcription: unknown = null;
+    if (args.audioBase64 || args.storageId) {
+      let blob: Blob | null = null;
+      if (args.storageId) blob = await ctx.storage.get(args.storageId);
+      else {
+        // Round-trip through Convex storage, exactly like a recorded upload.
+        const sid = await ctx.storage.store(
+          new Blob([Buffer.from(args.audioBase64!, "base64")], { type: args.mime ?? "audio/wav" }),
+        );
+        blob = await ctx.storage.get(sid);
+        await ctx.storage.delete(sid);
+      }
+      if (!blob) return { error: "audio missing" };
+      const t0 = Date.now();
+      try {
+        const r = await aiTranscribe(cfg, blob, language);
+        transcription = { ...r, format: audioFormatFor(blob.type), bytes: blob.size, ms: Date.now() - t0 };
+        transcript = r.transcript;
+        if (r.language) language = r.language;
+      } catch (e) {
+        return { transcriptionError: e instanceof Error ? e.message : String(e), format: audioFormatFor(blob.type) };
+      }
+      if (args.skipExtract) return { transcription };
+    }
+    const r = redact(transcript);
+    const t0 = Date.now();
+    const extraction = await aiExtract(cfg, r.text, language);
+    return { transcription, redacted: r.text, redactions: r.count, ms: Date.now() - t0, extraction };
   },
 });

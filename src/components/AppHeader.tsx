@@ -26,23 +26,41 @@ export function AppHeader() {
         </nav>
         <div className="ml-auto flex items-center gap-2">
           {user ? (
-            <button onClick={signOut} className="text-sm px-3 py-1.5 rounded-full border border-border">
+            <button
+              onClick={signOut}
+              title={t("nav.signInHint")}
+              className="text-sm px-3 py-1.5 rounded-full border border-border"
+            >
               {t(`role.${user.role}`)} · {t("nav.signOut")}
             </button>
           ) : (
-            <select
-              aria-label={t("nav.signIn")}
-              className="text-sm px-2 py-1.5 rounded-full border border-border bg-surface"
-              value=""
-              onChange={(e) => e.target.value && signInAs(e.target.value as Role)}
-            >
-              <option value="">{t("nav.signIn")}</option>
-              {ROLES.map((r) => (
-                <option key={r} value={r}>
-                  {t(`role.${r}`)}
-                </option>
-              ))}
-            </select>
+            <span className="flex items-center gap-1.5">
+              <span
+                aria-hidden
+                title={t("nav.signInHint")}
+                className="hidden sm:inline rounded-full bg-amber-soft px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-amber"
+              >
+                {t("nav.demoTag")}
+              </span>
+              <select
+                aria-label={t("nav.signIn")}
+                aria-describedby="signin-demo-hint"
+                title={t("nav.signInHint")}
+                className="text-sm px-2 py-1.5 rounded-full border border-border bg-surface"
+                value=""
+                onChange={(e) => e.target.value && signInAs(e.target.value as Role)}
+              >
+                <option value="">{t("nav.signIn")}</option>
+                {ROLES.map((r) => (
+                  <option key={r} value={r}>
+                    {t(`role.${r}`)}
+                  </option>
+                ))}
+              </select>
+              <span id="signin-demo-hint" className="sr-only">
+                {t("nav.signInHint")}
+              </span>
+            </span>
           )}
           <button
             onClick={() => setLocale(locale === "es" ? "en" : "es")}

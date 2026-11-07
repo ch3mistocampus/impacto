@@ -66,7 +66,7 @@ export function PledgeProgress({ data, compact = false }: { data: FollowPledgeDa
   );
 }
 
-/** "50 ladrillos verificados como usados" — only when something is verified. */
+/** "Verificado como usado: 50 ladrillos" — neutral wording for any material; only when something is verified. */
 export function VerifiedHeadline({ data, className = "" }: { data: FollowPledgeData; className?: string }) {
   const { t, pick, locale } = useI18n();
   const n = pledgeStageQty(data).verified;
@@ -74,7 +74,7 @@ export function VerifiedHeadline({ data, className = "" }: { data: FollowPledgeD
   const name = pick(data.need.nameEs, data.need.nameEn).toLocaleLowerCase(locale);
   return (
     <p className={`font-display font-semibold text-leaf ${className}`}>
-      <span className="tabular-nums">{n.toLocaleString()}</span> {name} {t("donations.verifiedAsUsed")}
+      {t("donations.verifiedAsUsed")}: <span className="tabular-nums">{n.toLocaleString()}</span> {name}
     </p>
   );
 }

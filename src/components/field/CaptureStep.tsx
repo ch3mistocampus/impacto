@@ -11,7 +11,8 @@ import { useSession } from "@/lib/session";
 import { AudioRecorder, type MicIssue } from "./AudioRecorder";
 import { PhotoPicker } from "./PhotoPicker";
 import { AnalyzingPanel } from "./AnalyzingPanel";
-import { Card, DEMO_TRANSCRIPT, btnPrimary, btnSecondary, inputCls, uploadFile } from "./ui";
+import { toSpeechWav } from "./audioWav";
+import { Card, DEMO_TRANSCRIPT, LockIcon, btnPrimary, btnSecondary, inputCls, uploadFile } from "./ui";
 
 type LocalPhoto = { key: string; file: File; url: string };
 
@@ -33,14 +34,17 @@ export function CaptureStep() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [micIssue, setMicIssue] = useState<MicIssue | null>(null);
+  // Per-report consent: audio is only uploaded (and sent to the AI service) when this is on.
+  const [audioToAi, setAudioToAi] = useState(true);
   const textRef = useRef<HTMLTextAreaElement>(null);
 
   // Mic denied/unsupported → switch to typing and focus the text box.
   useEffect(() => {
-    if (micIssue && mode === "text") textRef.current?.focus();
-  }, [micIssue, mode]);
+    if ((micIssue || !audioToAi) && mode === "text") textRef.current?.focus();
+  }, [micIssue, audioToAi, mode]);
 
-  const hasInput = (mode === "voice" && !!audio) || (mode === "text" && text.trim().length > 0);
+  const sendsAudio = mode === "voice" && audioToAi && !!audio;
+  const hasInput = sendsAudio || (mode === "text" && text.trim().length > 0);
 
   const applyDemo = () => {
     setMode("text");
@@ -60,8 +64,9 @@ export function CaptureStep() {
         transcript: mode === "text" ? text.trim() : undefined,
       });
       projectId = created.projectId;
-      if (mode === "voice" && audio) {
-        const sid = await uploadFile(await genUrl({ sessionToken }), audio);
+      if (sendsAudio && audio) {
+        // webm (Chrome) / mp4 (Safari) -> 16 kHz mono WAV, the format every audio model accepts.
+        const sid = await uploadFile(await genUrl({ sessionToken }), await toSpeechWav(audio));
         await attachAudio({ sessionToken, reportId: created.reportId, storageId: sid as Id<"_storage"> });
       }
       for (const p of photos) {
@@ -84,7 +89,7 @@ export function CaptureStep() {
     }
   };
 
-  if (busy) return <AnalyzingPanel />;
+  if (busy) return <AnalyzingPanel withAudio={sendsAudio} />;
 
   return (
     <div className="mx-auto max-w-xl space-y-4 pt-6">
@@ -133,16 +138,55 @@ export function CaptureStep() {
         </div>
 
         <div className="mt-4">
+          {mode === "voice" && (
+            <div className="mb-3 rounded-xl border border-sky/40 bg-sky-soft/50 p-3">
+              <label className="flex min-h-11 cursor-pointer items-center gap-3 font-semibold">
+                <input
+                  type="checkbox"
+                  checked={audioToAi}
+                  onChange={(e) => {
+                    setAudioToAi(e.target.checked);
+                    if (!e.target.checked) setMode("text");
+                  }}
+                  className="h-5 w-5 shrink-0 accent-clay"
+                />
+                {t("field.audioAi.toggle")}
+              </label>
+              <p className="mt-1 flex items-start gap-1.5 text-xs text-muted">
+                <LockIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                {t("field.audioAi.notice")}
+              </p>
+            </div>
+          )}
           {mode === "voice" ? (
-            <AudioRecorder
-              onChange={setAudio}
-              onUnavailable={(issue) => {
-                setMicIssue(issue);
-                setMode("text");
-              }}
-            />
+            audioToAi ? (
+              <AudioRecorder
+                onChange={setAudio}
+                onUnavailable={(issue) => {
+                  setMicIssue(issue);
+                  setMode("text");
+                }}
+              />
+            ) : (
+              <p className="rounded-xl bg-amber-soft px-3 py-2 text-sm text-amber">{t("field.audioAi.offVoice")}</p>
+            )
           ) : (
             <>
+              {!audioToAi && (
+                <p className="mb-2 flex items-start justify-between gap-2 rounded-xl bg-amber-soft px-3 py-2 text-sm text-amber">
+                  <span>{t("field.audioAi.off")}</span>
+                  <button
+                    type="button"
+                    className="shrink-0 font-semibold underline underline-offset-4"
+                    onClick={() => {
+                      setAudioToAi(true);
+                      setMode("voice");
+                    }}
+                  >
+                    {t("field.audioAi.toggle")}
+                  </button>
+                </p>
+              )}
               {micIssue && (
                 <p role="alert" className="mb-2 rounded-xl bg-amber-soft px-3 py-2 text-sm text-amber">
                   {t(micIssue === "denied" ? "field.mic.denied" : "field.mic.unsupported")}

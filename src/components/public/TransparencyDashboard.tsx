@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useQuery } from "convex/react";
 import { useI18n } from "@/lib/i18n";
-import type { DictKey } from "@/lib/dict";
 import { FinancialsTable } from "./Financials";
 import { LedgerBar, StageLegend } from "./LedgerBar";
 import { MaterialImage } from "./MaterialImage";
@@ -23,7 +22,7 @@ const COUNTERS = [
 ] as const;
 
 export function TransparencyDashboard() {
-  const { t, pick } = useI18n();
+  const { t, tn, pick } = useI18n();
   const dash = useQuery(api.public.transparencyDashboard, {});
   const reports = useQuery(api.public.listWeeklyReports, {});
 
@@ -54,7 +53,7 @@ export function TransparencyDashboard() {
                 <dd className={`font-display text-4xl font-semibold tabular-nums ${warn ? "text-amber" : ""}`}>
                   {v ?? "–"}
                 </dd>
-                <dt className="mt-1 text-sm text-muted leading-snug">{t(`tr.counter.${k}` as DictKey)}</dt>
+                <dt className="mt-1 text-sm text-muted leading-snug">{tn(`tr.counter.${k}`, v ?? 0)}</dt>
               </div>
             );
           })}
@@ -91,7 +90,7 @@ export function TransparencyDashboard() {
                     {t(`category.${cat.category}`)}
                   </h2>
                   <p className="text-sm text-muted">
-                    {cat.projects.length} {t("landing.projectsPublished")}
+                    {cat.projects.length} {tn("landing.projectsPublished", cat.projects.length)}
                   </p>
                 </div>
               </div>
@@ -161,7 +160,7 @@ const SNAP_STAGES = ["pledged", "received", "delivered", "used", "verified"] as 
 const SNAP_COUNTS = ["pledgesCreated", "milestonesVerified", "evidenceApproved", "projectsPublished", "projectsPaused"] as const;
 
 function ReportItem({ r, summary }: { r: WeeklyReport; summary: string }) {
-  const { t, pick } = useI18n();
+  const { t, tn, pick } = useI18n();
   const fmt = useDateFmt();
   const snap = r.snapshot;
   return (
@@ -183,7 +182,7 @@ function ReportItem({ r, summary }: { r: WeeklyReport; summary: string }) {
         {SNAP_COUNTS.map((k) => (
           <div key={k}>
             <dd className="font-display text-xl font-semibold tabular-nums">{snap[k]}</dd>
-            <dt className="text-xs text-muted leading-snug">{t(`tr.snap.${k}` as DictKey)}</dt>
+            <dt className="text-xs text-muted leading-snug">{tn(`tr.snap.${k}`, snap[k])}</dt>
           </div>
         ))}
       </dl>

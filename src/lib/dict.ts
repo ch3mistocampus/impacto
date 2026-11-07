@@ -26,6 +26,11 @@ export const dict = d({
   "nav.field": { es: "Campo", en: "Field" },
   "nav.coordinator": { es: "Coordinación", en: "Coordinator" },
   "nav.signIn": { es: "Entrar (demo)", en: "Sign in (demo)" },
+  "nav.signInHint": {
+    es: "Inicio de sesión de demostración: eliges un rol ficticio, sin contraseña. No es una cuenta real.",
+    en: "Demo login: pick a fictional role, no password. Not a real account.",
+  },
+  "nav.demoTag": { es: "Demo", en: "Demo" },
   "nav.signOut": { es: "Salir", en: "Sign out" },
   "lang.toggle": { es: "English", en: "Español" },
 

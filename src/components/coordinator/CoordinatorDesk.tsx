@@ -2,12 +2,13 @@
 
 import Link from "next/link";
 import { useState, type KeyboardEvent } from "react";
-import { useQuery } from "convex/react";
+import { useMutation, useQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import { useI18n } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
 import type { DictKey } from "@/lib/dict";
-import { AiNever, Chip, DemoLabel, Skeleton, categoryTone, formatDate, statusTone } from "./ui";
+import { AiNever, Button, Chip, DemoLabel, Skeleton, categoryTone, formatDate, statusTone, useAction } from "./ui";
+import { ConfirmDialog } from "../ConfirmDialog";
 import { FinancialsPanel } from "./Financials";
 import { WeeklyReportsPanel } from "./WeeklyReports";
 import type { InboxItem } from "./types";
@@ -100,12 +101,66 @@ export function CoordinatorDesk() {
           <PledgeList />
         )}
       </div>
+
+      <DemoControls />
     </div>
   );
 }
 
+/** Rehearsal helper: resets synthetic demo data. Server-gated by role + DEMO_MODE env var. */
+function DemoControls() {
+  const { t } = useI18n();
+  const { sessionToken } = useSession();
+  const enabled = useQuery(api.demo.isEnabled, {});
+  const reset = useMutation(api.demo.resetDemoFromUI);
+  const { busy, run } = useAction();
+  const [confirming, setConfirming] = useState(false);
+
+  return (
+    <section
+      aria-labelledby="coord-demo-title"
+      className="mt-16 rounded-lg border border-dashed border-amber/60 bg-amber-soft/40 px-4 py-4 sm:px-5"
+    >
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+        <div className="min-w-0 flex-1">
+          <h2 id="coord-demo-title" className="text-sm font-semibold uppercase tracking-wide text-amber">
+            {t("coord.demo.title")}
+          </h2>
+          <p className="mt-1 max-w-2xl text-sm text-muted">
+            {enabled === false ? t("coord.demo.disabled") : t("coord.demo.body")}
+          </p>
+        </div>
+        <Button
+          variant="danger"
+          size="sm"
+          aria-haspopup="dialog"
+          disabled={!sessionToken || enabled !== true}
+          busy={busy === "reset"}
+          onClick={() => setConfirming(true)}
+        >
+          {t("coord.demo.reset")}
+        </Button>
+      </div>
+      <ConfirmDialog
+        open={confirming}
+        title={t("coord.demo.confirmTitle")}
+        body={t("coord.demo.confirmBody")}
+        confirmLabel={t("coord.demo.confirm")}
+        cancelLabel={t("common.cancel")}
+        busy={busy === "reset"}
+        onCancel={() => setConfirming(false)}
+        onConfirm={async () => {
+          if (!sessionToken) return;
+          await run("reset", () => reset({ sessionToken }), t("coord.demo.done.toast"));
+          setConfirming(false);
+        }}
+      />
+    </section>
+  );
+}
+
 function ProjectList({ items, empty, mode }: { items: InboxItem[]; empty: string; mode: "review" | "manage" }) {
-  const { t, pick, locale } = useI18n();
+  const { t, tn, pick, locale } = useI18n();
   if (items.length === 0) return <Empty text={empty} />;
   return (
     <ul className="divide-y divide-border overflow-hidden rounded-lg border border-border bg-surface">
@@ -131,7 +186,7 @@ function ProjectList({ items, empty, mode }: { items: InboxItem[]; empty: string
               <p className="mt-1.5 truncate font-display text-lg font-semibold">{pick(p.titleEs, p.titleEn)}</p>
               <p className="text-sm text-muted">
                 {p.publicAlias}
-                {p.region ? ` · ${p.region}` : ""} · {p.needsCount} {t("coord.needsCount")} ·{" "}
+                {p.region ? ` · ${p.region}` : ""} · {p.needsCount} {tn("coord.needsCount", p.needsCount)} ·{" "}
                 {mode === "review"
                   ? `${t("coord.submittedAgo")} ${formatDate(p.createdAt, locale)}`
                   : p.publishedAt
@@ -146,7 +201,7 @@ function ProjectList({ items, empty, mode }: { items: InboxItem[]; empty: string
               {mode === "manage" && p.activePledgesCount > 0 && (
                 <span className="text-sm text-muted">
                   <strong className="tabular-nums text-foreground">{p.activePledgesCount}</strong>{" "}
-                  {t("coord.tab.pledges").toLowerCase()}
+                  {tn("coord.pledgesCount", p.activePledgesCount)}
                 </span>
               )}
               <span className="rounded-md bg-clay px-3 py-1.5 text-sm font-medium text-white group-hover:brightness-110">
