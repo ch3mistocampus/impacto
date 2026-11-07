@@ -177,10 +177,11 @@ body {
 @keyframes grow-x {
   from { transform: scaleX(0); }
 }
+/* Uses `scale` (not transform) so it composes with Tailwind's rotate-* utilities. */
 @keyframes stamp-in {
-  0% { opacity: 0; transform: scale(1.35) rotate(var(--stamp-rot, -2deg)); }
-  60% { opacity: 1; transform: scale(0.97) rotate(var(--stamp-rot, -2deg)); }
-  100% { opacity: 1; transform: scale(1) rotate(var(--stamp-rot, -2deg)); }
+  0% { opacity: 0; scale: 1.35; }
+  60% { opacity: 1; scale: 0.97; }
+  100% { opacity: 1; scale: 1; }
 }
 @keyframes count-pop {
   from { opacity: 0; transform: translateY(6px) scale(0.96); }

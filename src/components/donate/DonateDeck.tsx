@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useEffectEvent, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { useEffect, useEffectEvent, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
@@ -9,7 +9,7 @@ import { useI18n } from "@/lib/i18n";
 import { CategoryChips } from "@/components/public/Landing";
 import { Kicker, btn, inputCls, labelCls } from "@/components/ui/tricolor";
 import { isCategory, type Category } from "@/components/public/types";
-import { SwipeCard } from "./SwipeCard";
+import { EXIT_MS, SwipeCard } from "./SwipeCard";
 import { ContributionSheet } from "./ContributionSheet";
 import { useReducedMotion } from "./useReducedMotion";
 import { parsePledges, pledgesSnapshot, subscribePledges, type SavedPledge } from "./followTokens";
@@ -33,6 +33,9 @@ export function DonateDeck() {
   const savedRaw = useSyncExternalStore(subscribePledges, pledgesSnapshot, () => "");
   const saved = useMemo(() => parsePledges(savedRaw), [savedRaw]);
   const exitTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // The stack beneath the top card reads `--drag` (0..1): how far it has stepped forward.
+  const stack = useRef<HTMLDivElement>(null);
+  const setDrag = (p: number) => stack.current?.style.setProperty("--drag", String(p));
 
   useEffect(
     () => () => {
@@ -56,6 +59,12 @@ export function DonateDeck() {
   const remaining = filtered.filter((c) => !dismissed.has(c.needId));
   const top = remaining[0];
 
+  // A new top card: the cards below have been re-keyed one step up, so drop the drag offset in
+  // the same frame (before paint) and they stay exactly where the fly-out left them.
+  useLayoutEffect(() => {
+    stack.current?.style.setProperty("--drag", "0");
+  }, [top?.needId]);
+
   // The sheet follows the live deck entry so availability updates reactively.
   const sheetCard: DeckCard | null = sheetSnap
     ? (deck?.find((c) => c.needId === sheetSnap.needId) ?? {
@@ -73,7 +82,7 @@ export function DonateDeck() {
         setDismissed((d) => new Set(d).add(id));
         setExiting(null);
       },
-      reducedMotion ? 120 : 260,
+      reducedMotion ? EXIT_MS / 2 : EXIT_MS,
     );
   }
 
@@ -169,13 +178,24 @@ export function DonateDeck() {
 
       <div className="max-w-xl w-full mx-auto lg:mx-0 lg:max-w-[34rem] lg:justify-self-center">
         <section aria-label={t("donate.swipeHelp")} aria-live="polite">
-          <div className="relative h-[36rem] lg:h-[35rem]">
+          <div ref={stack} className="relative h-[36rem] lg:h-[35rem]">
             {deck === undefined ? (
-              <div className="absolute inset-0 rounded-[2px] bg-surface border border-border grid place-items-center text-muted">
-                {t("common.loading")}
+              <div className="absolute inset-0 rounded-[2px] bg-surface border border-border overflow-hidden" aria-busy>
+                <span className="sr-only">{t("common.loading")}</span>
+                <div aria-hidden className="h-[5px] bg-paper" />
+                <div aria-hidden className="mx-auto mt-8 grid w-3/4 gap-4 motion-safe:animate-pulse">
+                  <div className="mx-auto h-3 w-1/2 bg-paper" />
+                  <div className="mx-auto h-9 w-3/4 bg-paper" />
+                  <div className="mx-auto mt-2 h-16 w-1/3 bg-paper" />
+                  <div className="mt-4 grid gap-2.5">
+                    {Array.from({ length: 6 }, (_, i) => (
+                      <div key={i} className="h-3 bg-paper" />
+                    ))}
+                  </div>
+                </div>
               </div>
             ) : !top ? (
-              <div className="absolute inset-0 rounded-[2px] border border-dashed border-rule/40 grid place-items-center p-8 text-center">
+              <div className="motion-rise absolute inset-0 rounded-[2px] border border-dashed border-rule/40 grid place-items-center p-8 text-center">
                 <div>
                   <p className="font-display text-2xl font-normal leading-snug">
                     {filtered.length === 0 ? t("donate.noNeeds") : t("donate.empty")}
@@ -194,12 +214,13 @@ export function DonateDeck() {
                   .reverse()
                   .map((c, i, arr) => {
                     const depth = arr.length - i; // 2 = furthest
+                    const d = `(${depth} - var(--drag, 0))`;
                     return (
                       <div
                         key={c.needId}
                         aria-hidden
-                        className="absolute inset-0 rounded-[2px] bg-surface border border-border"
-                        style={{ transform: `translate(${depth * 4}px, ${depth * 6}px)` }}
+                        className="motion-fade absolute inset-0 rounded-[2px] bg-surface border border-border transition-transform duration-300 ease-[var(--ease-out)]"
+                        style={{ transform: `translate(calc(${d} * 4px), calc(${d} * 6px))` }}
                       />
                     );
                   })}
@@ -210,6 +231,7 @@ export function DonateDeck() {
                   reducedMotion={reducedMotion}
                   onPass={pass}
                   onHelp={() => help("request_instructions")}
+                  onProgress={setDrag}
                 />
               </>
             )}
@@ -288,10 +310,10 @@ function MyPledgesList({ id, saved }: { id: string; saved: SavedPledge[] }) {
       </div>
       <ul className="mt-3 border-t border-rule divide-y divide-border border-b border-b-border">
         {saved.slice(0, 6).map((p) => (
-          <li key={p.token}>
+          <li key={p.token} className="motion-rise motion-stagger">
             <Link
               href={`/follow/${p.token}`}
-              className="group flex min-h-11 items-baseline gap-3 py-2.5 hover:bg-paper"
+              className="group flex min-h-11 items-baseline gap-3 py-2.5 transition-colors hover:bg-paper"
               aria-label={`${p.qty} ${pick(p.nameEs, p.nameEn)} (${p.alias}). ${t("donate.follow")}`}
             >
               <span className="font-display text-xl font-normal tabular-nums text-gold-ink">{p.qty}</span>

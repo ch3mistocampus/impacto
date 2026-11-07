@@ -49,6 +49,12 @@ export function ContributionSheet({
   const create = useMutation(api.pledges.create);
   const titleId = useId();
 
+  // Keep the last card on screen while the dialog animates closed (the parent clears `card`
+  // immediately), so the sheet doesn't empty itself mid-exit.
+  const [lastCard, setLastCard] = useState<DeckCard | null>(card);
+  if (card && card.needId !== lastCard?.needId) setLastCard(card);
+  const shown = card ?? lastCard;
+
   const available = card?.ledger.availableToPledge ?? 0;
   const [qty, setQty] = useState(1);
   const [mode, setMode] = useState<Mode>("have_materials");
@@ -82,8 +88,8 @@ export function ContributionSheet({
     if (!card && d.open) d.close();
   }, [card]);
 
-  const unit = u(card?.unit);
-  const itemName = card ? pick(card.nameEs, card.nameEn) : "";
+  const unit = u(shown?.unit);
+  const itemName = shown ? pick(shown.nameEs, shown.nameEn) : "";
   const max = Math.max(0, available);
   const clamp = (n: number) => Math.max(1, Math.min(max || 1, Math.round(n) || 1));
   const overMax = qty > max;
@@ -137,9 +143,8 @@ export function ContributionSheet({
   }
 
   function close() {
-    const pledged = !!done;
-    setDone(null);
-    onClose(pledged);
+    // `done` is cleared on the next open, so the receipt stays visible while the sheet slides away.
+    onClose(!!done);
   }
 
   return (
@@ -153,24 +158,24 @@ export function ContributionSheet({
       onClick={(e) => {
         if (e.target === ref.current) close();
       }}
-      className="m-0 mt-auto sm:m-auto w-full max-w-none sm:max-w-lg max-h-[92dvh] rounded-t-[6px] sm:rounded-[2px] border border-border bg-surface text-foreground p-0 backdrop:bg-[#081530]/55 open:flex flex-col overflow-hidden"
+      className="motion-dialog motion-sheet m-0 mt-auto sm:m-auto w-full max-w-none sm:max-w-lg max-h-[92dvh] rounded-t-[6px] sm:rounded-[2px] border border-border bg-surface text-foreground p-0 backdrop:bg-[#081530]/55 open:flex flex-col overflow-hidden"
     >
       <FlagBand thickness={5} className="shrink-0" />
       <div className="flex items-start gap-3 px-5 sm:px-7 pt-4 pb-4 border-b border-border">
-        {card && <MaterialGlyph itemKey={card.itemKey} className="mt-1 size-10 shrink-0 text-foreground" />}
+        {shown && <MaterialGlyph itemKey={shown.itemKey} className="mt-1 size-10 shrink-0 text-foreground" />}
         <div className="min-w-0 flex-1">
           <h2 id={titleId} className="font-display text-2xl font-normal leading-tight">
             {done ? t("donate.successTitle") : t("donate.sheetTitle")}
           </h2>
           <p className="mt-0.5 text-sm text-muted truncate">
             {itemName}
-            {card && <span>, {card.publicAlias}</span>}
+            {shown && <span>, {shown.publicAlias}</span>}
           </p>
         </div>
         <button
           type="button"
           onClick={close}
-          className="-mr-2 size-11 shrink-0 grid place-items-center rounded-[2px] text-2xl leading-none text-muted hover:text-foreground hover:bg-paper"
+          className="press -mr-2 size-11 shrink-0 grid place-items-center rounded-[2px] text-2xl leading-none text-muted hover:text-foreground hover:bg-paper"
           aria-label={t("donate.close")}
         >
           <span aria-hidden>×</span>
@@ -178,7 +183,7 @@ export function ContributionSheet({
       </div>
 
       <div className="overflow-y-auto px-5 sm:px-7 py-6">
-        {!card ? null : done ? (
+        {!shown ? null : done ? (
           <Success done={done} unit={unit} itemName={itemName} onContinue={close} />
         ) : (
           <form onSubmit={submit} noValidate className="space-y-7">
@@ -196,7 +201,7 @@ export function ContributionSheet({
                   type="button"
                   onClick={() => setQty(clamp(qty - 1))}
                   disabled={qty <= 1}
-                  className="w-16 shrink-0 text-3xl font-light hover:bg-paper disabled:opacity-35 disabled:hover:bg-transparent"
+                  className="press w-16 shrink-0 text-3xl font-light hover:bg-paper disabled:opacity-35 disabled:hover:bg-transparent"
                   aria-label={t("donate.decrease")}
                 >
                   <span aria-hidden>−</span>
@@ -210,14 +215,15 @@ export function ContributionSheet({
                     max={max}
                     value={qty}
                     onChange={(e) => setQty(clamp(Number(e.target.value)))}
-                    className="w-full h-20 bg-transparent text-center font-display text-5xl font-normal tabular-nums focus:outline-none focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-navy [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                    key={qty}
+                    className="motion-count w-full h-20 bg-transparent text-center font-display text-5xl font-normal tabular-nums focus:outline-none focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-navy [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                   />
                 </label>
                 <button
                   type="button"
                   onClick={() => setQty(clamp(qty + 1))}
                   disabled={qty >= max}
-                  className="w-16 shrink-0 text-3xl font-light hover:bg-paper disabled:opacity-35 disabled:hover:bg-transparent"
+                  className="press w-16 shrink-0 text-3xl font-light hover:bg-paper disabled:opacity-35 disabled:hover:bg-transparent"
                   aria-label={t("donate.increase")}
                 >
                   <span aria-hidden>+</span>
@@ -322,7 +328,7 @@ export function ContributionSheet({
 }
 
 function quickCls(active: boolean) {
-  return `min-h-11 rounded-[2px] px-4 text-sm font-semibold tabular-nums transition-colors ${
+  return `press min-h-11 rounded-[2px] px-4 text-sm font-semibold tabular-nums ${
     active ? "bg-navy text-on-navy" : "bg-surface text-foreground shadow-[inset_0_0_0_1px_var(--border)] hover:shadow-[inset_0_0_0_1px_var(--rule)]"
   }`;
 }
@@ -340,9 +346,9 @@ function Success({
 }) {
   const { t, locale } = useI18n();
   return (
-    <div className="text-center">
+    <div className="motion-rise text-center">
       <Kicker className="text-base">{t("donate.receipt.kicker")}</Kicker>
-      <p className="mt-2 font-display text-7xl font-normal tabular-nums leading-none">
+      <p className="motion-count mt-2 font-display text-7xl font-normal tabular-nums leading-none">
         {new Intl.NumberFormat(intlLocale(locale)).format(done.qty)}
       </p>
       <p className="mt-2 text-lg">
@@ -350,7 +356,7 @@ function Success({
       </p>
       <DoubleRule className="my-5 mx-8" />
       <p
-        className="inline-flex -rotate-2 items-center gap-2.5 rounded-[2px] border border-gold-ink px-5 py-2.5 font-display italic text-2xl text-gold-ink outline outline-1 outline-offset-[3px] outline-gold-ink"
+        className="motion-stamp inline-flex -rotate-2 items-center gap-2.5 rounded-[2px] border border-gold-ink px-5 py-2.5 font-display italic text-2xl text-gold-ink outline outline-1 outline-offset-[3px] outline-gold-ink"
         role="status"
       >
         <StageSwatch stage="pledged" size={14} />

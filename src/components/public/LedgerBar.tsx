@@ -63,7 +63,7 @@ export function LedgerBar({
             </dt>
             <div className={`${track} bg-stage-track overflow-hidden`} aria-hidden>
               <div
-                className="h-full transition-[width] duration-700 ease-out motion-reduce:transition-none"
+                className="motion-bar h-full transition-[width] duration-700 ease-[var(--ease-out)] motion-reduce:transition-none"
                 style={{ ...STAGE_FILL[k], width: `${pct(ledger[k])}%` }}
               />
             </div>

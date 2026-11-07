@@ -32,14 +32,14 @@ export function ProjectCard({ p, hrefBase = "/p" }: { p: ProjectCardData; hrefBa
   return (
     <Link
       href={`${hrefBase}/${p.projectId}`}
-      className="group grid grid-cols-[3.75rem_1fr] sm:grid-cols-[4.5rem_1fr] gap-x-4 gap-y-3 border-b border-border py-5 last:border-b-0 hover:bg-paper/60 focus-visible:bg-paper/60 transition-colors"
+      className="motion-rise motion-stagger group grid grid-cols-[3.75rem_1fr] sm:grid-cols-[4.5rem_1fr] gap-x-4 gap-y-3 border-b border-border py-5 last:border-b-0 hover:bg-paper/60 focus-visible:bg-paper/60 transition-colors duration-200"
     >
-      <div className="aspect-square overflow-hidden border border-border bg-surface text-foreground">
+      <div className="aspect-square overflow-hidden border border-border bg-surface text-foreground transition-[border-color,box-shadow] duration-300 group-hover:border-rule/40 group-hover:shadow-[0_6px_18px_-12px_rgb(11_42_91/0.5)]">
         <MaterialImage
           src={p.coverPhotoUrl ?? s.image}
           alt=""
           emoji={s.emoji}
-          className={`size-full ${p.coverPhotoUrl ? "object-cover" : "p-2"}`}
+          className={`size-full transition-transform duration-500 ease-[var(--ease-out)] motion-safe:group-hover:scale-[1.06] ${p.coverPhotoUrl ? "object-cover" : "p-2"}`}
         />
       </div>
       <div className="min-w-0">
