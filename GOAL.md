@@ -44,3 +44,55 @@ Shared files (`convex/schema.ts`, `convex/lib/*`, `src/lib/*`, layout, globals.c
 
 ## Material itemKeys (for icons in `public/materials/<itemKey>.png`)
 `bricks, cement_bag, zinc_sheet, wood_beam, nails, tarp, paint, rebar, seeds, soil, water_tank, tools`
+
+---
+
+# Update 2 (2026-11-07) — see `docs/UPDATE-2026-11-07.md`
+
+Incremental only: never restart or replace working features. Keep internal status values; map labels in UI.
+
+## Status label mapping (UI only — DB values unchanged)
+| DB `projects.status` | Label ES / EN |
+|---|---|
+| draft | Borrador / Draft |
+| in_review | Pendiente de revisión / Pending review |
+| published | Activo / Active |
+| paused | Pausado por seguridad / Paused for safety (legitimate state, never "failure") |
+| completed | Completado / Completed |
+| rejected | Archivado / Archived |
+
+Categories (copy): Techo y abrigo / Roof and Shelter · Reconstrucción / Reconstruction · Sanar y sembrar / Heal and Sow.
+
+## Six-stage material ledger
+`requested → pledged → received → delivered → used → verified`
+- `materialEvents.eventType` adds `delivered` and `verified`. Order enforced: delivered ≤ received, used ≤ delivered, verified ≤ used.
+- `NeedLedger` adds `delivered` and `verified` (numbers). Public "impact" counts only `verified`.
+- Every event records `verifiedBy` (actor) + `_creationTime`; may reference `evidenceId`.
+
+## Evidence (new table `evidence`)
+`{ projectId, needId?, materialEventId?, type: receipt|delivery_photo|handover_doc|staff_note|before_photo|after_photo, privateStorageId?, publicStorageId?, noteEs?, noteEn?, reviewStatus: pending|approved|rejected, publicApproved: boolean, uploadedBy, reviewedBy? }`
+Originals are private. Only `publicApproved` evidence (using `publicStorageId`, a redacted/approved copy — for MVP may be the same file after coordinator review) appears publicly. Uploads are EXIF-stripped + compressed client-side (canvas re-encode) — shared helper `src/lib/image.ts` (Lane B owns).
+
+## Financials (P1)
+`donations` = contributions: status committed|received|allocated; `expenses` gain `spent` semantics when approved. Always original currency, no FX. Public: per-project and per-category `{ currency, received, allocated, spent }` grouped by currency.
+
+## Weekly transparency report (P1, demo step 8)
+New table `weeklyReports { periodStart, periodEnd, snapshot (any, computed from real records), summaryEs, summaryEn, status: draft|published, reviewedBy?, publishedAt? }`. Coordinator generates from actual records, reviews, publishes. Public lists published ones.
+
+## New API (Lane A2 implements; others consume — exact names)
+- `public.getProject` / `donorDeck` / `followPledge` ledgers include `delivered`, `verified`; `getProject` adds `asOf: number`, `approvedAt`, `evidence[]` (public approved only: `{evidenceId,type,url,noteEs,noteEn,createdAt}`), `financials[]` (`{currency,received,allocated,spent}`), and `timeline` entries for delivered/verified.
+- `public.transparencyDashboard()` → `{ asOf, categories: [{ category, projects: [card…], totals: { requested,pledged,received,delivered,used,verified }, financials[] }], transparency: { weeklyReportsPublished, receiptsRecorded, handoversSigned, milestonesVerified, outstandingUnverified } }`
+- `public.myPledges({ followTokens: string[] })` → array of followPledge results (for `/donations`).
+- `public.listWeeklyReports()` → published reports.
+- `coordinator.recordMaterialEvent` accepts eventType `received|delivered|used|verified|returned` + optional `evidenceId`.
+- `coordinator.generateEvidenceUploadUrl`, `coordinator.addEvidence({ projectId, needId?, materialEventId?, type, storageId?, noteEs?, noteEn? })`, `coordinator.reviewEvidence({ evidenceId, approve, publicStorageId? })`, `coordinator.listEvidence({ projectId })` (with private URLs).
+- `coordinator.recordContribution({ projectId?, amount, currency, status, donorName?, externalReference? })`, `coordinator.recordExpense({ projectId, amount, currency, category, supplierRegion?, localLabor?, receiptStorageId? })`, `coordinator.approveExpense({ expenseId, approve })`, `coordinator.financials({ projectId? })`.
+- `coordinator.generateWeeklyReport({ periodStart, periodEnd })` → reportId (draft), `coordinator.updateWeeklyReport({ reportId, summaryEs, summaryEn })`, `coordinator.publishWeeklyReport({ reportId })`, `coordinator.listWeeklyReports()`.
+- `field.*` extraction adds `proposedMilestones: [{ es, en }]`.
+
+## New routes
+- `/transparency` (public dashboard: 3 buckets → projects, 6-stage totals, financials, transparency counters, weekly reports, as-of date, "Datos de demostración" label)
+- `/transparency/projects/[id]` (reuse ProjectDetail; `/p/[id]` keeps working)
+- `/donations` (donor's pledges via stored follow tokens + verified impact)
+- `/nonprofit/review` → coordinator inbox; `/nonprofit/projects/[id]` → coordinator project (redirect or re-export)
+- `/field/projects/[id]` → field project (redirect or re-export of `/field/[id]`)
