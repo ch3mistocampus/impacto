@@ -1,0 +1,643 @@
+{
+  "retrievedAt": "2026-11-07T20:59:41.690105+00:00",
+  "publisher": "Espejo de Agua",
+  "rights": "Source-site imagery; no explicit open reuse license was found on the parsed pages. Attribution is recorded, not a license grant.",
+  "usage": "Organization and original-event context only. Do not attach these images to fictional households or use them as delivery/verified-impact evidence.",
+  "pages": [
+    "https://www.espejodeagua.org/",
+    "https://www.espejodeagua.org/galeria.html",
+    "https://www.espejodeagua.org/emergencia.html",
+    "https://www.espejodeagua.org/proyecto-techo-camino-y-semilla.html"
+  ],
+  "images": [
+    {
+      "sourceUrl": "https://www.espejodeagua.org/assets/img/logo-header.png",
+      "sourcePages": [
+        "https://www.espejodeagua.org/",
+        "https://www.espejodeagua.org/galeria.html",
+        "https://www.espejodeagua.org/emergencia.html",
+        "https://www.espejodeagua.org/proyecto-techo-camino-y-semilla.html"
+      ],
+      "sourceCaptions": [],
+      "localPath": "assets/espejo-de-agua/originals/logo-header.png",
+      "bytes": 10321,
+      "sha256": "0043123845efc945025c042d2254161bfae0189441220f36fcab923cdfff6230",
+      "contentType": "image/png",
+      "intendedUse": "Organization attribution; preserve the original logo.",
+      "width": 80,
+      "height": 80,
+      "webPath": "/espejo-de-agua/logo.png",
+      "webBytes": 10321
+    },
+    {
+      "sourceUrl": "https://www.espejodeagua.org/assets/img/patty-cuentos-barranquilla.jpg",
+      "sourcePages": [
+        "https://www.espejodeagua.org/",
+        "https://www.espejodeagua.org/galeria.html"
+      ],
+      "sourceCaptions": [
+        "Patricia narrando cuentos a niñas y niños al atardecer",
+        "Patricia telling stories to children at sunset",
+        "Función de cuentos al atardecer, Barranquilla"
+      ],
+      "selection": "Catalog only; not selected for this integration."
+    },
+    {
+      "sourceUrl": "https://www.espejodeagua.org/nido/assets/img/sello.svg",
+      "sourcePages": [
+        "https://www.espejodeagua.org/"
+      ],
+      "sourceCaptions": [],
+      "selection": "Catalog only; not selected for this integration."
+    },
+    {
+      "sourceUrl": "https://www.espejodeagua.org/assets/img/patty-clase-campesina.jpg",
+      "sourcePages": [
+        "https://www.espejodeagua.org/",
+        "https://www.espejodeagua.org/galeria.html"
+      ],
+      "sourceCaptions": [
+        "Patricia Ruiz Tatis con niñas y niños de una escuela rural",
+        "Patricia Ruiz Tatis with children from a rural school",
+        "Con niñas y niños de una escuela rural"
+      ],
+      "selection": "Catalog only; not selected for this integration."
+    },
+    {
+      "sourceUrl": "https://www.espejodeagua.org/assets/img/victoria-osorio.jpg",
+      "sourcePages": [
+        "https://www.espejodeagua.org/"
+      ],
+      "sourceCaptions": [
+        "Retrato de Victoria Osorio"
+      ],
+      "selection": "Catalog only; not selected for this integration."
+    },
+    {
+      "sourceUrl": "https://www.espejodeagua.org/assets/img/zoila-profile.jpg",
+      "sourcePages": [
+        "https://www.espejodeagua.org/"
+      ],
+      "sourceCaptions": [
+        "Retrato de Zoila Sotomayor",
+        "Portrait of Zoila Sotomayor"
+      ],
+      "selection": "Catalog only; not selected for this integration."
+    },
+    {
+      "sourceUrl": "https://www.espejodeagua.org/assets/img/junta-sofia-rodriquez.jpg",
+      "sourcePages": [
+        "https://www.espejodeagua.org/"
+      ],
+      "sourceCaptions": [
+        "Retrato de Sofía Rodríguez",
+        "Portrait of Sofía Rodríguez"
+      ],
+      "selection": "Catalog only; not selected for this integration."
+    },
+    {
+      "sourceUrl": "https://www.espejodeagua.org/assets/img/patty-teatro-barranquilla.jpg",
+      "sourcePages": [
+        "https://www.espejodeagua.org/",
+        "https://www.espejodeagua.org/galeria.html"
+      ],
+      "sourceCaptions": [
+        "Taller de teatro con jóvenes, Barranquilla",
+        "Theatre workshop with youth, Barranquilla"
+      ],
+      "localPath": "assets/espejo-de-agua/originals/patty-teatro-barranquilla.jpg",
+      "bytes": 176541,
+      "sha256": "7b8e4349e818c6c2258ab34c25bd6462ba2beddcd8ac18bb16f0e78d3fa79a1d",
+      "contentType": "image/jpeg",
+      "intendedUse": "Organization arts-work section; Barranquilla workshop.",
+      "width": 1178,
+      "height": 1169
+    },
+    {
+      "sourceUrl": "https://www.espejodeagua.org/assets/img/patty-escuela-salud-territorio8.jpg",
+      "sourcePages": [
+        "https://www.espejodeagua.org/",
+        "https://www.espejodeagua.org/galeria.html"
+      ],
+      "sourceCaptions": [
+        "Patricia con niñas y niños de escuela rural mostrando sus carteleras",
+        "Patricia with rural schoolchildren showing their artwork",
+        "Encuentro de escuela y salud en el territorio"
+      ],
+      "selection": "Catalog only; not selected for this integration."
+    },
+    {
+      "sourceUrl": "https://www.espejodeagua.org/assets/img/proyecto-aiwa-santamarta-2017.jpg",
+      "sourcePages": [
+        "https://www.espejodeagua.org/",
+        "https://www.espejodeagua.org/galeria.html"
+      ],
+      "sourceCaptions": [
+        "Equipo del proyecto Aiwa en Santa Marta",
+        "Aiwa project team in Santa Marta",
+        "Proyecto Aiwa, Santa Marta 2017"
+      ],
+      "selection": "Catalog only; not selected for this integration."
+    },
+    {
+      "sourceUrl": "https://www.espejodeagua.org/assets/img/patty-valores-padres-campesinos-mariela.jpg",
+      "sourcePages": [
+        "https://www.espejodeagua.org/",
+        "https://www.espejodeagua.org/galeria.html"
+      ],
+      "sourceCaptions": [
+        "Taller de valores con familias campesinas",
+        "Values workshop with campesino families",
+        "Taller de valores con padres campesinos, vereda Mariela"
+      ],
+      "localPath": "assets/espejo-de-agua/originals/patty-valores-padres-campesinos-mariela.jpg",
+      "bytes": 278341,
+      "sha256": "d76f45d5e41f37646e0a515d0816f16596f8686eb8c9131d90cba5618eb5ed2f",
+      "contentType": "image/jpeg",
+      "intendedUse": "Organization community-work section; Mariela workshop.",
+      "width": 1600,
+      "height": 1200,
+      "webPath": "/espejo-de-agua/mariela-workshop.webp",
+      "webBytes": 172626
+    },
+    {
+      "sourceUrl": "https://www.espejodeagua.org/assets/img/convergencia-vital.jpg",
+      "sourcePages": [
+        "https://www.espejodeagua.org/",
+        "https://www.espejodeagua.org/galeria.html"
+      ],
+      "sourceCaptions": [
+        "Mujeres Embera Chamí en encuentro comunitario, Convergencia Vital",
+        "Embera Chamí women at a community gathering, Convergencia Vital",
+        "Encuentro comunitario, Convergencia Vital"
+      ],
+      "localPath": "assets/espejo-de-agua/originals/convergencia-vital.jpg",
+      "bytes": 150230,
+      "sha256": "8c4ae6560f3ac2f083a1eeb41b3949652b7c9b23cd4207acef10f4860da175ae",
+      "contentType": "image/jpeg",
+      "intendedUse": "Organization community-work section; Convergencia Vital.",
+      "width": 1178,
+      "height": 1181
+    },
+    {
+      "sourceUrl": "https://www.espejodeagua.org/assets/img/pedagogia-artistica.jpg",
+      "sourcePages": [
+        "https://www.espejodeagua.org/",
+        "https://www.espejodeagua.org/galeria.html"
+      ],
+      "sourceCaptions": [
+        "Niñas pintando mándalas en taller de pedagogía artística",
+        "Girls painting mandalas in an art-pedagogy workshop",
+        "Niñas pintando mándalas — pedagogía artística"
+      ],
+      "selection": "Catalog only; not selected for this integration."
+    },
+    {
+      "sourceUrl": "https://www.espejodeagua.org/assets/img/embera-clase.jpg",
+      "sourcePages": [
+        "https://www.espejodeagua.org/",
+        "https://www.espejodeagua.org/galeria.html"
+      ],
+      "sourceCaptions": [
+        "Niñas y niños Embera Chamí en clase",
+        "Embera Chamí children in class"
+      ],
+      "selection": "Catalog only; not selected for this integration."
+    },
+    {
+      "sourceUrl": "https://www.espejodeagua.org/assets/img/patty-teatro-embera.jpg",
+      "sourcePages": [
+        "https://www.espejodeagua.org/",
+        "https://www.espejodeagua.org/galeria.html"
+      ],
+      "sourceCaptions": [
+        "Taller de teatro en el resguardo",
+        "Theatre workshop at the resguardo",
+        "Taller de teatro en el resguardo Embera Chamí"
+      ],
+      "selection": "Catalog only; not selected for this integration."
+    },
+    {
+      "sourceUrl": "https://www.espejodeagua.org/assets/img/patty-clase-nutricion-saludable.jpg",
+      "sourcePages": [
+        "https://www.espejodeagua.org/",
+        "https://www.espejodeagua.org/galeria.html"
+      ],
+      "sourceCaptions": [
+        "Clase de nutrición saludable",
+        "Healthy-nutrition class"
+      ],
+      "selection": "Catalog only; not selected for this integration."
+    },
+    {
+      "sourceUrl": "https://www.espejodeagua.org/assets/img/patty-cuentos-campesinos-mariela.jpg",
+      "sourcePages": [
+        "https://www.espejodeagua.org/",
+        "https://www.espejodeagua.org/galeria.html"
+      ],
+      "sourceCaptions": [
+        "Función de cuentos con familias campesinas",
+        "Storytelling session with campesino families",
+        "Cuentos con familias campesinas, vereda Mariela"
+      ],
+      "selection": "Catalog only; not selected for this integration."
+    },
+    {
+      "sourceUrl": "https://www.espejodeagua.org/assets/img/patty-embera-artesanias.jpg",
+      "sourcePages": [
+        "https://www.espejodeagua.org/",
+        "https://www.espejodeagua.org/galeria.html"
+      ],
+      "sourceCaptions": [
+        "Artesanías Embera Chamí",
+        "Embera Chamí crafts"
+      ],
+      "selection": "Catalog only; not selected for this integration."
+    },
+    {
+      "sourceUrl": "https://www.espejodeagua.org/assets/img/patty-teatro-color.jpg",
+      "sourcePages": [
+        "https://www.espejodeagua.org/",
+        "https://www.espejodeagua.org/galeria.html"
+      ],
+      "sourceCaptions": [
+        "Personajes de teatro comunitario",
+        "Community theatre characters"
+      ],
+      "selection": "Catalog only; not selected for this integration."
+    },
+    {
+      "sourceUrl": "https://www.espejodeagua.org/assets/img/terremoto-grietas.jpg",
+      "sourcePages": [
+        "https://www.espejodeagua.org/galeria.html",
+        "https://www.espejodeagua.org/emergencia.html"
+      ],
+      "sourceCaptions": [
+        "Grietas del sismo en el suelo del resguardo"
+      ],
+      "localPath": "assets/espejo-de-agua/originals/terremoto-grietas.jpg",
+      "bytes": 516153,
+      "sha256": "f4933a9979d6e0e56ce6f8733b9764574b93c4f6e3330d9b45e30f0445ceb593",
+      "contentType": "image/jpeg",
+      "intendedUse": "Earthquake ground damage; original event context only.",
+      "width": 1053,
+      "height": 1400
+    },
+    {
+      "sourceUrl": "https://www.espejodeagua.org/assets/img/terremoto-camino.jpg",
+      "sourcePages": [
+        "https://www.espejodeagua.org/galeria.html",
+        "https://www.espejodeagua.org/emergencia.html"
+      ],
+      "sourceCaptions": [
+        "Fisura del sismo en el camino al resguardo"
+      ],
+      "localPath": "assets/espejo-de-agua/originals/terremoto-camino.jpg",
+      "bytes": 489053,
+      "sha256": "143a64af69ca84b39ab8aa93ba444f0f6054aee7ffc9908ad066c2f3d0ec995e",
+      "contentType": "image/jpeg",
+      "intendedUse": "Earthquake-damaged access route; original event context only.",
+      "width": 1053,
+      "height": 1400
+    },
+    {
+      "sourceUrl": "https://www.espejodeagua.org/assets/img/resguardo-vista.jpg",
+      "sourcePages": [
+        "https://www.espejodeagua.org/galeria.html",
+        "https://www.espejodeagua.org/emergencia.html"
+      ],
+      "sourceCaptions": [
+        "Niñas y niños en el campamento del resguardo tras el sismo",
+        "Niñas y niños en el campamento del resguardo"
+      ],
+      "selection": "Catalog only; not selected for this integration."
+    },
+    {
+      "sourceUrl": "https://www.espejodeagua.org/assets/img/resguardo-ibanacuara-condiciones.jpg",
+      "sourcePages": [
+        "https://www.espejodeagua.org/galeria.html",
+        "https://www.espejodeagua.org/emergencia.html"
+      ],
+      "sourceCaptions": [
+        "Refugios improvisados con plásticos en el resguardo de Ibanacuara",
+        "Refugios improvisados con plásticos en el resguardo"
+      ],
+      "localPath": "assets/espejo-de-agua/originals/resguardo-ibanacuara-condiciones.jpg",
+      "bytes": 243459,
+      "sha256": "0cd1eef88a82ed59544de099a8f49127ad9d39ba24bf8d68dbd686c6a79ddf90",
+      "contentType": "image/jpeg",
+      "intendedUse": "Temporary shelter context; Ibanacuara only.",
+      "width": 1200,
+      "height": 1600
+    },
+    {
+      "sourceUrl": "https://www.espejodeagua.org/assets/img/resguardo-ibanacuara-condiciones2.jpg",
+      "sourcePages": [
+        "https://www.espejodeagua.org/galeria.html",
+        "https://www.espejodeagua.org/emergencia.html"
+      ],
+      "sourceCaptions": [
+        "Vivienda colapsada tras el sismo, resguardo de Ibanacuara",
+        "Vivienda colapsada tras el sismo"
+      ],
+      "localPath": "assets/espejo-de-agua/originals/resguardo-ibanacuara-condiciones2.jpg",
+      "bytes": 426899,
+      "sha256": "4e65f3c63e5b73a07ae08d3c815852b432c0fc3d7fff36ca10dbc7c25095dec4",
+      "contentType": "image/jpeg",
+      "intendedUse": "Damaged housing context; Ibanacuara only.",
+      "width": 1200,
+      "height": 1600
+    },
+    {
+      "sourceUrl": "https://www.espejodeagua.org/assets/img/resguardo-ibanacuara-condiciones3.jpg",
+      "sourcePages": [
+        "https://www.espejodeagua.org/galeria.html",
+        "https://www.espejodeagua.org/emergencia.html"
+      ],
+      "sourceCaptions": [
+        "Encuentro comunitario en el campamento tras el sismo",
+        "Encuentro comunitario en el campamento"
+      ],
+      "selection": "Catalog only; not selected for this integration."
+    },
+    {
+      "sourceUrl": "https://www.espejodeagua.org/assets/img/resguardo-ibanacuara-condiciones4.jpg",
+      "sourcePages": [
+        "https://www.espejodeagua.org/galeria.html"
+      ],
+      "sourceCaptions": [
+        "Refugio improvisado tras el sismo"
+      ],
+      "localPath": "assets/espejo-de-agua/originals/resguardo-ibanacuara-condiciones4.jpg",
+      "bytes": 155414,
+      "sha256": "15997708b017d822c58421a61ff263ec8f8a94bb8e470e2b2cae8abbd63e9040",
+      "contentType": "image/jpeg",
+      "intendedUse": "Temporary shelter context; Ibanacuara only.",
+      "width": 1200,
+      "height": 1600
+    },
+    {
+      "sourceUrl": "https://www.espejodeagua.org/assets/img/resguardo-ibanacuara-condiciones5.jpg",
+      "sourcePages": [
+        "https://www.espejodeagua.org/galeria.html",
+        "https://www.espejodeagua.org/emergencia.html"
+      ],
+      "sourceCaptions": [
+        "Estructura de vivienda sin techo tras el sismo",
+        "Vivienda sin techo tras el sismo, resguardo de Ibanacuara",
+        "Roofless home after the earthquake, Ibanacuara resguardo"
+      ],
+      "localPath": "assets/espejo-de-agua/originals/resguardo-ibanacuara-condiciones5.jpg",
+      "bytes": 424065,
+      "sha256": "d9336006a28f7ecd6272034b18f3937c2e3701d51226b152eca420f03e8e1913",
+      "contentType": "image/jpeg",
+      "intendedUse": "Roof damage context; Ibanacuara only.",
+      "width": 1600,
+      "height": 1200,
+      "webPath": "/espejo-de-agua/ibanacuara-roof.webp",
+      "webBytes": 295724
+    },
+    {
+      "sourceUrl": "https://www.espejodeagua.org/assets/img/resguardo-ibanacuara-condiciones6.jpg",
+      "sourcePages": [
+        "https://www.espejodeagua.org/galeria.html"
+      ],
+      "sourceCaptions": [
+        "Techos dañados en el resguardo tras el sismo"
+      ],
+      "localPath": "assets/espejo-de-agua/originals/resguardo-ibanacuara-condiciones6.jpg",
+      "bytes": 201954,
+      "sha256": "008f9736b99593476cba3b158e5363bd1a5c7435673d1e2879adf5df3cf892fb",
+      "contentType": "image/jpeg",
+      "intendedUse": "Roof damage context; Ibanacuara only.",
+      "width": 1200,
+      "height": 1600
+    },
+    {
+      "sourceUrl": "https://www.espejodeagua.org/assets/img/resguardo-ibanacuara-condiciones7.jpg",
+      "sourcePages": [
+        "https://www.espejodeagua.org/galeria.html"
+      ],
+      "sourceCaptions": [
+        "Campamento improvisado en el resguardo de Ibanacuara"
+      ],
+      "localPath": "assets/espejo-de-agua/originals/resguardo-ibanacuara-condiciones7.jpg",
+      "bytes": 465289,
+      "sha256": "f11b0109b59426366229011466cb10509a1f4e5d7d4ec9ca90a81115ea7ff554",
+      "contentType": "image/jpeg",
+      "intendedUse": "Camp context; Ibanacuara only.",
+      "width": 1200,
+      "height": 1600
+    },
+    {
+      "sourceUrl": "https://www.espejodeagua.org/assets/img/patty-cuentos-personas-mayores.jpg",
+      "sourcePages": [
+        "https://www.espejodeagua.org/galeria.html"
+      ],
+      "sourceCaptions": [
+        "Cuentería con personas mayores"
+      ],
+      "selection": "Catalog only; not selected for this integration."
+    },
+    {
+      "sourceUrl": "https://www.espejodeagua.org/assets/img/patty-teatro-embera2.jpg",
+      "sourcePages": [
+        "https://www.espejodeagua.org/galeria.html"
+      ],
+      "sourceCaptions": [
+        "Taller de teatro en el resguardo Embera Chamí"
+      ],
+      "selection": "Catalog only; not selected for this integration."
+    },
+    {
+      "sourceUrl": "https://www.espejodeagua.org/assets/img/patty-teatro-embera3.jpg",
+      "sourcePages": [
+        "https://www.espejodeagua.org/galeria.html"
+      ],
+      "sourceCaptions": [
+        "Taller de teatro en el resguardo Embera Chamí"
+      ],
+      "selection": "Catalog only; not selected for this integration."
+    },
+    {
+      "sourceUrl": "https://www.espejodeagua.org/assets/img/patty-teatro-embera4.jpg",
+      "sourcePages": [
+        "https://www.espejodeagua.org/galeria.html"
+      ],
+      "sourceCaptions": [
+        "Taller de teatro en el resguardo Embera Chamí"
+      ],
+      "selection": "Catalog only; not selected for this integration."
+    },
+    {
+      "sourceUrl": "https://www.espejodeagua.org/assets/img/patty-teatro-embera5.jpg",
+      "sourcePages": [
+        "https://www.espejodeagua.org/galeria.html"
+      ],
+      "sourceCaptions": [
+        "Taller de teatro en el resguardo Embera Chamí"
+      ],
+      "selection": "Catalog only; not selected for this integration."
+    },
+    {
+      "sourceUrl": "https://www.espejodeagua.org/assets/img/patty-teatro-embera6.jpg",
+      "sourcePages": [
+        "https://www.espejodeagua.org/galeria.html"
+      ],
+      "sourceCaptions": [
+        "Taller de teatro en el resguardo Embera Chamí"
+      ],
+      "selection": "Catalog only; not selected for this integration."
+    },
+    {
+      "sourceUrl": "https://www.espejodeagua.org/assets/img/patty-embera-artesanias2.jpg",
+      "sourcePages": [
+        "https://www.espejodeagua.org/galeria.html"
+      ],
+      "sourceCaptions": [
+        "Artesanías Embera Chamí"
+      ],
+      "selection": "Catalog only; not selected for this integration."
+    },
+    {
+      "sourceUrl": "https://www.espejodeagua.org/assets/img/patty-escuela-salud-territorio.jpg",
+      "sourcePages": [
+        "https://www.espejodeagua.org/galeria.html"
+      ],
+      "sourceCaptions": [
+        "Encuentro de escuela y salud en el territorio"
+      ],
+      "selection": "Catalog only; not selected for this integration."
+    },
+    {
+      "sourceUrl": "https://www.espejodeagua.org/assets/img/patty-escuela-salud-territorio2.jpg",
+      "sourcePages": [
+        "https://www.espejodeagua.org/galeria.html"
+      ],
+      "sourceCaptions": [
+        "Encuentro de escuela y salud en el territorio"
+      ],
+      "selection": "Catalog only; not selected for this integration."
+    },
+    {
+      "sourceUrl": "https://www.espejodeagua.org/assets/img/patty-escuela-salud-territorio3.jpg",
+      "sourcePages": [
+        "https://www.espejodeagua.org/galeria.html"
+      ],
+      "sourceCaptions": [
+        "Encuentro de escuela y salud en el territorio"
+      ],
+      "selection": "Catalog only; not selected for this integration."
+    },
+    {
+      "sourceUrl": "https://www.espejodeagua.org/assets/img/patty-escuela-salud-territorio4.jpg",
+      "sourcePages": [
+        "https://www.espejodeagua.org/galeria.html"
+      ],
+      "sourceCaptions": [
+        "Encuentro comunitario de salud y territorio"
+      ],
+      "selection": "Catalog only; not selected for this integration."
+    },
+    {
+      "sourceUrl": "https://www.espejodeagua.org/assets/img/patty-escuela-salud-territorio5.jpg",
+      "sourcePages": [
+        "https://www.espejodeagua.org/galeria.html"
+      ],
+      "sourceCaptions": [
+        "Encuentro de escuela y salud en el territorio"
+      ],
+      "selection": "Catalog only; not selected for this integration."
+    },
+    {
+      "sourceUrl": "https://www.espejodeagua.org/assets/img/patty-escuela-salud-territorio7.jpg",
+      "sourcePages": [
+        "https://www.espejodeagua.org/galeria.html"
+      ],
+      "sourceCaptions": [
+        "Encuentro de escuela y salud en el territorio"
+      ],
+      "selection": "Catalog only; not selected for this integration."
+    },
+    {
+      "sourceUrl": "https://www.espejodeagua.org/assets/img/patty-escuela-salud-territorio9.jpg",
+      "sourcePages": [
+        "https://www.espejodeagua.org/galeria.html"
+      ],
+      "sourceCaptions": [
+        "Encuentro de escuela y salud en el territorio"
+      ],
+      "selection": "Catalog only; not selected for this integration."
+    },
+    {
+      "sourceUrl": "https://www.espejodeagua.org/assets/img/patty-escuela-rural-filandia.jpg",
+      "sourcePages": [
+        "https://www.espejodeagua.org/galeria.html"
+      ],
+      "sourceCaptions": [
+        "Escuela rural, Filandia"
+      ],
+      "selection": "Catalog only; not selected for this integration."
+    },
+    {
+      "sourceUrl": "https://www.espejodeagua.org/assets/img/patty-clase-nutricion-saludable-sanandres.jpg",
+      "sourcePages": [
+        "https://www.espejodeagua.org/galeria.html"
+      ],
+      "sourceCaptions": [
+        "Clase de nutrición saludable, San Andrés"
+      ],
+      "selection": "Catalog only; not selected for this integration."
+    },
+    {
+      "sourceUrl": "https://www.espejodeagua.org/assets/img/patty-valores-padres-campesinos-mariela2.jpg",
+      "sourcePages": [
+        "https://www.espejodeagua.org/galeria.html"
+      ],
+      "sourceCaptions": [
+        "Taller de valores con padres campesinos, vereda Mariela"
+      ],
+      "selection": "Catalog only; not selected for this integration."
+    },
+    {
+      "sourceUrl": "https://www.espejodeagua.org/assets/img/patty-valores-pacientes-cancer-clinica-bonadona-barranquilla-2022.jpg",
+      "sourcePages": [
+        "https://www.espejodeagua.org/galeria.html"
+      ],
+      "sourceCaptions": [
+        "Taller de valores con pacientes, Clínica Bonnadona, Barranquilla 2022"
+      ],
+      "selection": "Catalog only; not selected for this integration."
+    },
+    {
+      "sourceUrl": "https://www.espejodeagua.org/assets/img/ally-aho.png",
+      "sourcePages": [
+        "https://www.espejodeagua.org/proyecto-techo-camino-y-semilla.html"
+      ],
+      "sourceCaptions": [
+        "AHO! Wellness Tech"
+      ],
+      "selection": "Catalog only; not selected for this integration."
+    },
+    {
+      "sourceUrl": "https://www.espejodeagua.org/assets/img/ally-esto-es-quindio.png",
+      "sourcePages": [
+        "https://www.espejodeagua.org/proyecto-techo-camino-y-semilla.html"
+      ],
+      "sourceCaptions": [
+        "Esto es Quindío"
+      ],
+      "selection": "Catalog only; not selected for this integration."
+    },
+    {
+      "sourceUrl": "https://www.espejodeagua.org/assets/img/ally-ai-collective.png",
+      "sourcePages": [
+        "https://www.espejodeagua.org/proyecto-techo-camino-y-semilla.html"
+      ],
+      "sourceCaptions": [
+        "The AI Collective"
+      ],
+      "selection": "Catalog only; not selected for this integration."
+    }
+  ]
+}

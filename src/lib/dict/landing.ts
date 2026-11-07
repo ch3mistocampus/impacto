@@ -1,4 +1,22 @@
 export const landing = {
+  "landing.archive.kicker": { es: "Archivo de la organización", en: "From the official archive" },
+  "landing.archive.title": { es: "Espejo de Agua en el territorio", en: "Espejo de Agua in the field" },
+  "landing.archive.body": {
+    es: "Fotografías publicadas por Espejo de Agua de Ibanacuara y Mariela. Son imágenes de su archivo; las cifras de los proyectos de esta demo son ficticias.",
+    en: "Photographs published by Espejo de Agua from Ibanacuara and Mariela. These are archive images; this demo's project figures are fictional.",
+  },
+  "landing.archive.site": { es: "Visitar el sitio oficial", en: "Visit the official site" },
+  "landing.archive.credit": { es: "Foto: Espejo de Agua · Ver fuente", en: "Photo: Espejo de Agua · View source" },
+  "landing.archive.roof.caption": { es: "Ibanacuara · Daños en el techo", en: "Ibanacuara · Roof damage" },
+  "landing.archive.roof.alt": {
+    es: "Estructura de madera de una vivienda sin techo en Ibanacuara, publicada en el llamado de emergencia de Espejo de Agua.",
+    en: "The exposed timber frame of a roofless home in Ibanacuara, published in Espejo de Agua's emergency appeal.",
+  },
+  "landing.archive.workshop.caption": { es: "Mariela · Taller comunitario", en: "Mariela · Community workshop" },
+  "landing.archive.workshop.alt": {
+    es: "Participantes sentados en círculo durante un taller comunitario en Mariela, del archivo de Espejo de Agua.",
+    en: "Participants sitting in a circle during a community workshop in Mariela, from Espejo de Agua's archive.",
+  },
   "landing.heroTitle": {
     es: "Cada ladrillo, contado desde la necesidad hasta el techo terminado.",
     en: "Every brick, counted from the need to the finished roof.",
